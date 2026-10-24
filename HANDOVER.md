@@ -44,6 +44,8 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 - Template: one block per product x region x TPA (a TPA may have several blocks only for disjoint plans, e.g. NE plans);
   `_KEYS` holds live `='Sheet'!$C$7` formulas, so renamed sheets / moved cells are followed; positional fallback if lost.
 - Merit contract IP4-8 pinned in `contracts/` with 4 description strings redacted (client names); columns verbatim.
+- Determinism: byte-identical on one platform/library build; across platforms (Linux sandbox vs Windows, CPython 3.14
+  zlib-ng, openpyxl XML backend) xlsx bytes differ but canonical XML content is identical (tested).
 - Data-boundary test scans pw/, registry/, fixtures/, tests/, tools/, contracts/ for the tokens listed in
   `examples/ufic_2027/expected_structure.json`.
 
