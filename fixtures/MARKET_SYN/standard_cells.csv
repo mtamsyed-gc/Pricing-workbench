@@ -1,0 +1,7 @@
+age,gender,member_category,marital,maternity_eligible,nationality_group,group_size_band,weight
+35,M,EMPLOYEE,MARRIED,N,OTHER,25,40
+32,F,EMPLOYEE,MARRIED,Y,OTHER,25,25
+31,F,SPOUSE,MARRIED,Y,OTHER,25,15
+6,M,CHILD,SINGLE,N,OTHER,25,10
+8,F,CHILD,SINGLE,N,OTHER,25,10
+52,M,EMPLOYEE,MARRIED,N,OTHER,25,8

@@ -105,10 +105,11 @@ def _rows_from_sources(sources, ctx, comp_id, level=None):
         for cell in read_grid(ctx["reader"], src, ctx["maps"], ctx["plans_by_label"], ctx["band_maps"],
                               ctx["text_values"]):
             for k in cell["keys"]:
-                rows.append({"key": k, "value": cell["raw"], "status": cell["status"],
+                rows.append({"key": k, "value": cell.get("value", cell["raw"]), "status": cell["status"],
                              "labels": cell["labels"], "source_ref": cell["ref"]})
             ctx["index"].append({"scope_id": ctx["scope"].scope_id, "component_id": comp_id, "level": level,
-                                 "ref": cell["ref"], "raw": cell["raw"], "status": cell["status"],
+                                 "ref": cell["ref"], "raw": cell["raw"], "value": cell.get("value", cell["raw"]),
+                                 "status": cell["status"],
                                  "keys": cell["keys"]})
     return rows
 

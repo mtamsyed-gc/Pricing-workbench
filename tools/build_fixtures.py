@@ -694,6 +694,137 @@ def build_expo(out: Path, alpha_spec_path: Path, contract_path: Path):
                    "unmapped; some age-72 P7 parents hit REFER cells.", "seed": SEED, "rows": n}, d / "README.json")
 
 
+# =============================================================================================== MARKET_SYN (WS2)
+SME_NETS = ["CN", "GN", "RN", "RN2", "RN3", "VN"]
+SME_LEVERS = ["Room type", "Annual Medical Limit", "PEC limit", "OP consultation deductible", "OP lab / radiology copay",
+              "Pharmacy limit", "Pharmacy copay", "IP coinsurance", "Medication type", "Territory",
+              "Other adjustment 1", "Other adjustment 2"]
+SME_ADDONS = ["Dental", "Optical", "Maternity", "Physiotherapy", "OP Psychiatric", "Alternative Medicine",
+              "Nursing at Home", "Routine Health Check-up", "Repatriation"]
+
+
+def _sme_intake(path: Path, plan: dict):
+    """Fictional plan in the SME-INTAKE v2.4 cell layout (only the input cells the adapter reads)."""
+    wb = new_workbook(path, title=f"fictional SME intake {plan['pid']}")
+    a = wb.add_worksheet("A_Plan")
+    for cell, v in [("C5", plan["pid"]), ("C6", plan["name"]), ("C7", plan["insurer"]), ("C8", plan["status"]),
+                    ("C9", "Yes"), ("C10", "SME"), ("C11", plan["emirate"]), ("C12", "2026-01-01"),
+                    ("C13", plan["period"]), ("C14", "AED"), ("C15", plan["basis"])]:
+        a.write(cell, v)
+    if plan.get("g2n"):
+        a.write_number("C16", plan["g2n"])
+    for i, v in enumerate(["Covered from enrolment", 500, 1000, "Yes", 8, 3, 30, "Yes"]):
+        a.write(22 + i, 2, v)
+    for i in range(10):
+        a.write(33 + i, 2, "Yes" if i in plan.get("other_yes", []) else "No")
+    b = wb.add_worksheet("B_Rates")
+    bands = plan["bands"]
+    for j, n in enumerate(SME_NETS):
+        b.write(5 + j, 2, "Yes" if n in plan["nets"] else "No")
+    for i, (lo, hi) in enumerate(bands):
+        b.write_number(15 + i, 1, lo)
+        b.write_number(15 + i, 2, hi)
+    for j, n in enumerate(SME_NETS):
+        c0 = 1 + 4 * j
+        for k, h in enumerate(["Principal M", "Principal F", "Dependent M", "Dependent F"]):
+            b.write(40, c0 + k, h)
+        if n not in plan["nets"]:
+            continue
+        lvl = plan["nets"][n]
+        for i, (lo, hi) in enumerate(bands):
+            mid = (lo + min(hi, 80)) / 2
+            for k, f in enumerate([1.0, 1.12, 0.93, 1.05]):
+                v = round(lvl * (0.6 + 0.011 * mid + 0.0004 * mid * mid) * f / (12 if plan["period"] == "Monthly" else 1), 2)
+                b.write_number(41 + i, c0 + k, v)
+    for k, lev in enumerate(SME_LEVERS):
+        for j, n in enumerate(SME_NETS):
+            if n in plan["nets"]:
+                b.write(65 + k, 1 + j, plan["design"][lev])
+    c = wb.add_worksheet("C_Factors")
+    for i, (lev, opt, net, f) in enumerate(plan.get("factors", [])):
+        c.write(4 + i, 0, lev)
+        c.write(4 + i, 1, opt)
+        c.write(4 + i, 2, net)
+        c.write_number(4 + i, 3, f)
+    d = wb.add_worksheet("D_Optional")
+    for i, row in enumerate(plan.get("optional", [])):
+        for k, v in enumerate(row):
+            d.write(4 + i, k, v)
+    e = wb.add_worksheet("E_TOB")
+    for k, ben in enumerate(SME_ADDONS):
+        lim, cop, inb = plan["package"].get(ben, ("Not Covered", "n/a", "No"))
+        e.write(4 + k, 0, ben)
+        e.write(4 + k, 1, lim)
+        e.write(4 + k, 2, cop)
+        e.write(4 + k, 3, inb)
+    wb.close()
+
+
+def build_market_syn(out: Path):
+    d = out / "MARKET_SYN"
+    (d / "intake").mkdir(parents=True, exist_ok=True)
+    base_design = {"Room type": "Private", "Annual Medical Limit": 1000000, "PEC limit": "Up to AML",
+                   "OP consultation deductible": "AED 50", "OP lab / radiology copay": "10%", "Pharmacy limit": "Up to AED 5,000",
+                   "Pharmacy copay": "20%", "IP coinsurance": "0%", "Medication type": "Branded", "Territory": "UAE only",
+                   "Other adjustment 1": "Standard", "Other adjustment 2": "Standard"}
+    bands7 = [(0, 17), (18, 29), (30, 39), (40, 49), (50, 59), (60, 64), (65, 100)]
+    plans = [
+        {"pid": "MKT-ALPINE-2026", "name": "Alpine SME", "insurer": "Fictional Insurer One", "status": "Placed",
+         "emirate": "Dubai & Northern Emirates", "period": "Annual", "basis": "Net", "bands": bands7,
+         "nets": {"CN": 3900.0, "GN": 3100.0, "RN": 2500.0, "RN3": 1500.0}, "design": base_design,
+         "factors": [("OP lab / radiology copay", "0%", "All", 1.035), ("OP lab / radiology copay", "20%", "All", 0.962),
+                     ("Room type", "Semi Private", "All", 0.955)],
+         "optional": [("Maternity", 10000, "10% Copayment", "All", "Flat per member", "Eligible females (maternity ages)", 2400.0),
+                      ("Dental", 2000, "20% Copayment", "All", "Flat per member", "All members", 310.0)],
+         "package": {"Maternity": (10000, "10% Copayment", "No"), "Dental": (2000, "20% Copayment", "No"),
+                     "Physiotherapy": (10, "20% Copayment", "Yes")}, "other_yes": [0, 4]},
+        {"pid": "MKT-BIRCH-2026", "name": "Birch SME", "insurer": "Fictional Insurer Two", "status": "Placed",
+         "emirate": "Dubai", "period": "Monthly", "basis": "Gross", "g2n": 0.82,
+         "bands": [(0, 17), (18, 39), (40, 59), (60, 100)],
+         "nets": {"GN": 3500.0, "RN": 2700.0, "RN2": 2100.0}, "design": {**base_design, "Annual Medical Limit": 500000,
+                                                                       "OP lab / radiology copay": "20%", "Room type": "Semi Private"},
+         "factors": [("Annual Medical Limit", 1000000, "All", 1.03)],
+         "package": {"Maternity": (10000, "10% Copayment", "Yes"), "Optical": (500, "20% Copayment", "No")},
+         "other_yes": [4]},
+        {"pid": "MKT-CEDAR-2026", "name": "Cedar SME", "insurer": "Fictional Insurer Three", "status": "Placed",
+         "emirate": "Dubai", "period": "Annual", "basis": "Net", "bands": bands7,
+         "nets": {"CN": 4300.0, "GN": 3300.0, "RN3": 1650.0, "VN": 1250.0},
+         "design": {**base_design, "OP lab / radiology copay": "0%", "Pharmacy copay": "10%"},
+         "optional": [("Maternity", 15000, "10% Copayment", "GN", "Flat per member", "Married eligible females (maternity ages)", 3300.0),
+                      ("Maternity", 15000, "10% Copayment", "All", "Flat per member", "Married eligible females (maternity ages)", 2900.0)],
+         "package": {"Maternity": (15000, "10% Copayment", "No"), "Dental": (2000, "20% Copayment", "No")},
+         "other_yes": [0, 4, 5]},
+    ]
+    for p in plans:
+        _sme_intake(d / "intake" / f"{p['pid']}.xlsx", p)
+
+    def wcsv(name, header, rows):
+        with (d / name).open("w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f, lineterminator="\n")
+            w.writerow(header)
+            w.writerows(rows)
+    wcsv("tier_map.csv", ["catalogue_id", "plan", "tier", "weight"],
+         [["ANY", n, n, "1"] for n in SME_NETS] +
+         [["ANY", "P1", "CN", "1"], ["ANY", "P2", "GN", "1"], ["ANY", "P3", "RN", "1"],      # CAT_ALPHA and its submissions
+          ["ANY", "P4", "RN2", "1"], ["ANY", "P5", "RN3", "1"], ["ANY", "P6", "RN3", "0.5"],
+          ["ANY", "P6", "VN", "0.5"], ["ANY", "P7", "VN", "1"],
+          ["CAT_GAMMA", "G1", "CN", "1"], ["CAT_GAMMA", "G2", "GN", "1"], ["CAT_GAMMA", "G3", "RN", "1"], ["CAT_GAMMA", "G4", "RN3", "1"],
+          ["CAT_IPMI", "PLUS", "CN", "1"], ["CAT_IPMI", "CORE", "GN", "1"]])
+    wcsv("option_map.csv", ["catalogue_id", "family", "option", "canonical_option"],
+         [["ANY", "copay_op_diag", "AED25", "AED 25"], ["ANY", "aml", "1250000", "1500000"]])
+    wcsv("standard_cells.csv", ["age", "gender", "member_category", "marital", "maternity_eligible", "nationality_group",
+                                "group_size_band", "weight"],
+         [[35, "M", "EMPLOYEE", "MARRIED", "N", "OTHER", 25, 40], [32, "F", "EMPLOYEE", "MARRIED", "Y", "OTHER", 25, 25],
+          [31, "F", "SPOUSE", "MARRIED", "Y", "OTHER", 25, 15], [6, "M", "CHILD", "SINGLE", "N", "OTHER", 25, 10],
+          [8, "F", "CHILD", "SINGLE", "N", "OTHER", 25, 10], [52, "M", "EMPLOYEE", "MARRIED", "N", "OTHER", 25, 8]])
+    rel = {"copay_op_diag": {"0%": 1.04, "10%": 1.0, "20%": 0.96, "AED 25": 1.01},
+           "aml": {"300000": 0.95, "500000": 0.97, "750000": 0.985, "1000000": 1.0, "1500000": 1.012, "2000000": 1.02}}
+    _dump({"_note": "FICTIONAL market relativities for tests (stand-in for a market basis imported at run time).",
+           "source": "fictional fixture", "placeholder": True,
+           "entries": [{"family": f, "option": o, "network": "ANY", "relativity": v} for f, d_ in rel.items() for o, v in d_.items()]},
+          d / "market_basis.json")
+
+
 # =============================================================================================== RUN_SYN (WS1)
 def build_run_syn(out: Path):
     """Synthetic run inputs for B1/B2/TreatyFeed on CAT_ALPHA x EXPO_SYN x SUB_X/SUB_Y (all fictional)."""
@@ -721,6 +852,14 @@ def build_run_syn(out: Path):
                       "lapse": {"BOOK_IND_GREEN": 0.06, "BOOK_IND_OTHER": 0.04}},
            "v5": {"outlier_band": [0.7, 1.3]},
            "benefit_overrides": [],
+           "benchmark": {"market_folders": ["../MARKET_SYN/intake"],
+                         "market_catalogues": ["../CAT_GAMMA/spec.json", "../CAT_IPMI/spec.json"],
+                         "subjects": ["@expiring", "@options"],
+                         "tier_map": "../MARKET_SYN/tier_map.csv", "tier_ladder": ["CN", "GN", "RN", "RN2", "RN3", "VN"],
+                         "standard_cells": "../MARKET_SYN/standard_cells.csv", "use_exposure_mix": True,
+                         "market_basis": "../MARKET_SYN/market_basis.json", "option_map": "../MARKET_SYN/option_map.csv",
+                         "richness_families": ["copay_op_diag", "aml"], "currency": "AED", "fx": {"AED": 1.0, "USD": 3.6725},
+                         "basis": "NET", "basis_factors": {}, "gap_share": 0.5, "peer_same_region": False},
            "scorecard": {"weights_file": "../../examples/scorecard_weights.json", "terms_scores": "terms_scores.csv",
                          "panels": [{"panel_id": "PANEL_XY", "lead": "SUB_X", "members": {"SUB_X": 0.6, "SUB_Y": 0.4}}],
                          "grid_step": 0.1, "show_reinsurer_names": False, "market_facing": False,
@@ -740,6 +879,7 @@ def main(argv=None):
     build_retiree(out)
     build_ipmi(out)
     build_expo(out, out / "CAT_ALPHA" / "spec.json", REPO / "contracts" / "merit_model_contract_IP4-8.json")
+    build_market_syn(out)
     build_run_syn(out)
     print(f"fixtures written to {out}")
 

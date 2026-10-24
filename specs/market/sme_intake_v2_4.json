@@ -1,0 +1,340 @@
+{
+ "_note": "Layout + taxonomy reconciliation for the SME Product Benchmarking Tool intake template (SME-INTAKE v2.4, PBM repo branch claude/keen-babbage-efpwps, sme_benchmarking/build/build_template.py). Cell positions are the template's constants; maps link its lists to registry dimensions / benefit codes (WS2). null = no registry home yet: carried in the reconciliation report; CR #13 proposes the missing dimensions. No rates or market data here.",
+ "layout_id": "SME-INTAKE v2.4",
+ "template_version": "SME-INTAKE v2.4",
+ "plan": {
+  "sheet": "A_Plan",
+  "cells": {
+   "plan_id": "C5",
+   "name": "C6",
+   "insurer": "C7",
+   "status": "C8",
+   "include": "C9",
+   "segment": "C10",
+   "emirate": "C11",
+   "effective_date": "C12",
+   "rate_period": "C13",
+   "currency": "C14",
+   "premium_basis": "C15",
+   "gross_to_net": "C16",
+   "max_age": "C46",
+   "small_group_size": "C47",
+   "small_group_loading": "C48"
+  },
+  "terms_row0": 23,
+  "terms_col": "C",
+  "terms": [
+   "pec_cover",
+   "ip_cap_enc",
+   "ip_cap_ann",
+   "emergency",
+   "antenatal",
+   "scans",
+   "newborn",
+   "companion"
+  ],
+  "other_row0": 34,
+  "other_col": "C",
+  "other_detail_col": "D"
+ },
+ "rates": {
+  "sheet": "B_Rates",
+  "networks": [
+   "CN",
+   "GN",
+   "RN",
+   "RN2",
+   "RN3",
+   "VN"
+  ],
+  "offered_row0": 6,
+  "offered_col": "C",
+  "band_row0": 16,
+  "band_lower_col": "B",
+  "band_upper_col": "C",
+  "max_bands": 20,
+  "header_row": 41,
+  "rate_row0": 42,
+  "first_rate_col": 2,
+  "cols_per_network": 4,
+  "columns": {
+   "Principal M": {
+    "member_category": "PRINCIPAL",
+    "gender": "M"
+   },
+   "Principal F": {
+    "member_category": "PRINCIPAL",
+    "gender": "F"
+   },
+   "Dependent M": {
+    "member_category": "DEPENDANT",
+    "gender": "M"
+   },
+   "Dependent F": {
+    "member_category": "DEPENDANT",
+    "gender": "F"
+   }
+  },
+  "design_row0": 66,
+  "design_first_col": 2,
+  "levers": [
+   "Room type",
+   "Annual Medical Limit",
+   "PEC limit",
+   "OP consultation deductible",
+   "OP lab / radiology copay",
+   "Pharmacy limit",
+   "Pharmacy copay",
+   "IP coinsurance",
+   "Medication type",
+   "Territory",
+   "Other adjustment 1",
+   "Other adjustment 2"
+  ]
+ },
+ "factors": {
+  "sheet": "C_Factors",
+  "row0": 5,
+  "max_rows": 600,
+  "cols": {
+   "lever": "A",
+   "option": "B",
+   "network": "C",
+   "factor": "D"
+  }
+ },
+ "optional": {
+  "sheet": "D_Optional",
+  "row0": 5,
+  "max_rows": 600,
+  "cols": {
+   "benefit": "A",
+   "limit": "B",
+   "copay": "C",
+   "network": "D",
+   "form": "E",
+   "applies": "F",
+   "value": "G"
+  }
+ },
+ "package": {
+  "sheet": "E_TOB",
+  "row0": 5,
+  "cols": {
+   "limit": "B",
+   "copay": "C",
+   "in_base": "D"
+  },
+  "benefits": [
+   "Dental",
+   "Optical",
+   "Maternity",
+   "Physiotherapy",
+   "OP Psychiatric",
+   "Alternative Medicine",
+   "Nursing at Home",
+   "Routine Health Check-up",
+   "Repatriation"
+  ],
+  "net_override_row0": 19
+ },
+ "emirates": {
+  "Dubai": {
+   "regulator": "DHA",
+   "rating_region": "DXB"
+  },
+  "Abu Dhabi": {
+   "regulator": "DOH",
+   "rating_region": "AUH"
+  },
+  "Northern Emirates": {
+   "regulator": "MOH_NE",
+   "rating_region": "NE"
+  },
+  "Dubai & Northern Emirates": {
+   "regulator": "DHA",
+   "rating_region": "DXB_NE"
+  }
+ },
+ "product_type": "SME",
+ "tpa_set": [
+  "ANY"
+ ],
+ "network_tier_rank": {
+  "CN": 1,
+  "GN": 2,
+  "RN": 3,
+  "RN2": 4,
+  "RN3": 5,
+  "VN": 6
+ },
+ "not_covered": "Not Covered",
+ "lever_map": {
+  "Room type": {
+   "family": null,
+   "benefit_code": "room_type",
+   "pending_dim": "room_type",
+   "value_map": {
+    "Shared / Ward": "SHARED",
+    "Semi Private": "SEMI_PRIVATE",
+    "Private": "PRIVATE",
+    "Suite": null
+   }
+  },
+  "Annual Medical Limit": {
+   "family": "aml",
+   "benefit_code": "aml"
+  },
+  "PEC limit": {
+   "family": null,
+   "benefit_code": "pec_cover",
+   "pending_dim": "pec_limit"
+  },
+  "OP consultation deductible": {
+   "family": "ded_consult",
+   "benefit_code": "consult_deductible"
+  },
+  "OP lab / radiology copay": {
+   "family": "copay_op_diag",
+   "benefit_code": "op_diag_copay"
+  },
+  "Pharmacy limit": {
+   "family": "pharmacy_limit",
+   "benefit_code": "pharmacy_limit"
+  },
+  "Pharmacy copay": {
+   "family": "copay_pharmacy",
+   "benefit_code": "pharmacy_copay"
+  },
+  "IP coinsurance": {
+   "family": "copay_ip",
+   "benefit_code": "ip_copay"
+  },
+  "Medication type": {
+   "family": null,
+   "benefit_code": null,
+   "pending_dim": "medication_type"
+  },
+  "Territory": {
+   "family": null,
+   "benefit_code": "territory",
+   "pending_dim": "territory",
+   "value_map": {
+    "UAE only": "UAE",
+    "Worldwide": "WW"
+   }
+  },
+  "Other adjustment 1": {
+   "family": null,
+   "benefit_code": null
+  },
+  "Other adjustment 2": {
+   "family": null,
+   "benefit_code": null
+  }
+ },
+ "addon_map": {
+  "Dental": {
+   "module": "module_dental",
+   "benefit_code": "dental_limit"
+  },
+  "Optical": {
+   "module": "module_optical",
+   "benefit_code": "optical_limit"
+  },
+  "Maternity": {
+   "module": "module_maternity",
+   "benefit_code": "mat_ip_limit"
+  },
+  "Physiotherapy": {
+   "module": null,
+   "benefit_code": "physio_sessions",
+   "pending_dim": "module_physio"
+  },
+  "OP Psychiatric": {
+   "module": null,
+   "benefit_code": null,
+   "pending_dim": "module_op_psych"
+  },
+  "Alternative Medicine": {
+   "module": null,
+   "benefit_code": "alt_medicine_limit",
+   "pending_dim": "module_alt_medicine"
+  },
+  "Nursing at Home": {
+   "module": null,
+   "benefit_code": null,
+   "pending_dim": "module_home_nursing"
+  },
+  "Routine Health Check-up": {
+   "module": null,
+   "benefit_code": null,
+   "pending_dim": "module_health_check"
+  },
+  "Repatriation": {
+   "module": null,
+   "benefit_code": "repatriation",
+   "pending_dim": "module_repatriation"
+  }
+ },
+ "applies_map": {
+  "All members": {
+   "unit": "PER_MEMBER",
+   "eligibility": {}
+  },
+  "Principals": {
+   "unit": "PER_MEMBER",
+   "eligibility": {
+    "member_category": "PRINCIPAL"
+   }
+  },
+  "Dependents": {
+   "unit": "PER_MEMBER",
+   "eligibility": {
+    "member_category": "DEPENDANT"
+   }
+  },
+  "Females": {
+   "unit": "PER_MEMBER",
+   "eligibility": {
+    "gender": "F"
+   }
+  },
+  "Eligible females (maternity ages)": {
+   "unit": "PER_ELIGIBLE_FEMALE",
+   "eligibility": {
+    "maternity_eligible": "Y"
+   }
+  },
+  "Married eligible females (maternity ages)": {
+   "unit": "PER_ELIGIBLE_FEMALE",
+   "eligibility": {
+    "maternity_eligible": "Y",
+    "marital": "MARRIED"
+   }
+  },
+  "Adults (18+)": null
+ },
+ "terms_map": {
+  "pec_cover": null,
+  "ip_cap_enc": null,
+  "ip_cap_ann": null,
+  "emergency": null,
+  "antenatal": "mat_op_visits",
+  "scans": "mat_scans",
+  "newborn": "newborn_days",
+  "companion": null
+ },
+ "other_map": {
+  "Direct billing at all network providers": null,
+  "Emergency treatment outside UAE": null,
+  "Home-country elective cover": null,
+  "Second medical opinion": null,
+  "Telemedicine": "telehealth",
+  "Wellness / preventive programme": "preventive",
+  "Hearing aids": null,
+  "Organ transplant cover": null,
+  "Renal dialysis cover": null,
+  "Mental health in-patient cover": null
+ }
+}
