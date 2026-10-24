@@ -196,10 +196,12 @@ def fill_template(template_path: Path, out_path: Path, seed: int = 4, value_fn=N
 # ---------------------------------------------------------------------------------------------- to catalogue
 _BLOCK_DIMS = ("product_type", "regulator", "rating_region", "tpa")
 
-# TPA factor basis of submitted per-TPA block values (HANDOVER open item 4; owner decision 24 Oct 2026, provisional).
+# TPA factor basis of submitted per-TPA block values (HANDOVER item 4; owner decision 24 Oct 2026, FINAL for all
+# products of the first applied case: one table + TPA factor where a TPA factor exists; none -> A and B coincide).
 #   "PRE"  (option A): block value = base before the catalogue's TPA factor; the issued TPA factor still applies.
+#          The template Cover states this ("TPA basis").
 #   "POST" (option B): block value = the TPA's final base; TPA factor tables (family "tpa") are neutralised to 1.0.
-# Switching to POST needs the owner's confirmation and a change request (SPEC §8.0 wording, Existing Rates, Cover).
+#          Kept for other cedants; using it needs the owner's decision per tender.
 TPA_FACTOR_BASIS = "PRE"
 TPA_FAMILY = "tpa"
 
@@ -233,6 +235,7 @@ def to_catalogue(parsed: ParsedSubmission, template_spec: dict, catalogue_id: st
         by_block.setdefault(c.block_id, []).append(c)
     proposed = {k: v for k, v in parsed.values.items() if parsed.kinds.get(k) == "MULTIPLIER" and v is not None}
     addons = {k: v for k, v in parsed.values.items() if parsed.kinds.get(k) == "ADDON" and v is not None}
+    addon_fill = ns["reference_sheets"].get("addons") == "FILL"
     for sh in ns["sheets"]:
         for b in sh["blocks"]:
             scope = RatingScope(scope_id=_safe_id(b["block_id"]), product_type=sh["product_type"], regulator=sh.get("regulator"),
@@ -293,7 +296,9 @@ def to_catalogue(parsed: ParsedSubmission, template_spec: dict, catalogue_id: st
                             r["value"] = 1.0
                             r["source_ref"] = "TPA factor neutralised (submitted block is post-TPA-factor)"
                     if comp.type == "MODULE":
-                        _apply(c2, addons, "addon", exp_scope.scope_id)
+                        # FILL mode: reinsurers quote their own rider rates; a blank is NOT quoted, never the expiring
+                        # rate carried over (owner decision 24 Oct 2026, HANDOVER item 11)
+                        _apply(c2, addons, "addon", exp_scope.scope_id, blank_is_missing=addon_fill)
                     scope.components.append(c2)
                 scope.benefits = copy.deepcopy(exp_scope.benefits)
             cat.scopes.append(scope)
@@ -303,7 +308,9 @@ def to_catalogue(parsed: ParsedSubmission, template_spec: dict, catalogue_id: st
     return cat
 
 
-def _apply(comp: Component, supplied: dict, prefix: str, scope_id: str):
+def _apply(comp: Component, supplied: dict, prefix: str, scope_id: str, blank_is_missing: bool = False):
+    """Replace issued values by submitted ones. blank_is_missing: rows the submission left blank (or non-numeric)
+    become None with source_ref 'not quoted ...' (the evaluator then marks those cells REFER, 'rider not quoted')."""
     from ..model import canonical_key_str
     from ..registry import load_registry
     order = load_registry().order
@@ -311,4 +318,9 @@ def _apply(comp: Component, supplied: dict, prefix: str, scope_id: str):
         ck = f"{prefix}|scope={scope_id}|component={comp.component_id}|" + canonical_key_str(r["key"], order)
         if ck in supplied and isinstance(supplied[ck], float):
             r["value"] = supplied[ck]
+            r["status"] = "VALUE"
             r["source_ref"] = f"submitted {prefix}"
+        elif blank_is_missing and r.get("value") is not None:
+            r["value"] = None
+            r["status"] = "REFER"
+            r["source_ref"] = f"not quoted ({prefix} left blank in the submission)"

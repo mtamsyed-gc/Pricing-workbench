@@ -120,10 +120,10 @@ def test_score_inputs_and_lead_only_panel():
     assert v[("Y", "COMMISSION")] == 15.0 and v[("X", "CAP")] == 120
     pi = panel_inputs(si, _ri(), [{"panel_id": "P", "lead": "Y", "members": {"X": 0.25, "Y": 0.75}}])
     p = pi.set_index("criterion")["value"]
-    assert abs(p["PRICE"] - (0.25 * 1.03 + 0.75 * 0.99)) < 1e-12
-    s = [0.25 * a + 0.75 * b for a, b in zip([1.03, 1.04, 1.02], [0.99, 0.98, 1.00])]
-    assert abs(p["ROBUSTNESS_SPREAD"] - (max(s) - min(s))) < 1e-12
-    assert p["COMMISSION"] == 15.0 and p["SHARE"] == 30           # lead-only terms
+    # followers write at the lead's rates and terms (owner, 24 Oct 2026): every metric is the lead's ...
+    assert p["PRICE"] == 0.99 and abs(p["ROBUSTNESS_SPREAD"] - 0.02) < 1e-12 and p["UNPRICED_SHARE"] == 0.02
+    assert p["COMMISSION"] == 15.0 and p["CAP"] == 110
+    assert p["SHARE"] == 80                                       # ... except capacity: 50 + 30 offered
     raises(SpecError, panel_inputs, si, _ri(), [{"panel_id": "P", "lead": "Y", "members": {"X": 0.3, "Y": 0.6}}])
     raises(SpecError, panel_inputs, si, _ri(), [{"panel_id": "P", "lead": "Z", "members": {"X": 0.5, "Y": 0.5}}])
     raises(SpecError, panel_inputs, si, _ri(), [{"panel_id": "X", "lead": "Y", "members": {"X": 0.5, "Y": 0.5}}])

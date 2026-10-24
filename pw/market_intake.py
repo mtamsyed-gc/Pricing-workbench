@@ -218,10 +218,14 @@ def spec_from_sme_intake(path: Path, layout: dict | None = None, catalogue_id: s
             rep.add("addons", ben, "NOT_PRICED", f"package level {level} has no module dimension "
                                                  f"({am.get('pending_dim') or 'unmapped'}); kept out of the price")
             continue
+        bridged = False
         if not priced:
-            rep.add("addons", ben, "NOT_PRICED", f"package level {level} not priced at this exact level on "
-                                                 f"{O.title}; kept out of the price (the tool bridges or uses its reference)")
-            continue
+            priced, why = _bridge(opt_rows, ben, lim, cop)
+            if not priced:
+                rep.add("addons", ben, "NOT_PRICED", f"package level {level} not priced on {O.title} and not bridgeable "
+                                                     f"({why}); kept out of the price")
+                continue
+            bridged = True
         forms = {(_s(v["form"]), _s(v["applies"])) for _, v in priced}
         if len(forms) > 1:
             rep.add("addons", ben, "NOT_PRICED", f"mixed pricing forms {sorted(forms)}; kept out of the price")
@@ -240,13 +244,15 @@ def spec_from_sme_intake(path: Path, layout: dict | None = None, catalogue_id: s
             val = float(v["value"]) * (scale if form == "Flat per member" else 1.0)
             rows.append({"key": {fam: level, "network": "ANY" if net == "All" else net},
                          "value": (1.0 + float(v["value"])) if form == "Multiplier on base" else val,
-                         "source_ref": f"{O.title}!G{rr}"})
+                         "source_ref": (f"{O.title}!G{rr[0]}:G{rr[1]} bridged (linear on limit)" if bridged
+                                        else f"{O.title}!G{rr}")})
         components.append({"component_id": f"m_{fam}", "type": "MODULE", "family": fam, "keys": [fam, "network"],
                            "unit": ap["unit"], "eligibility": ap["eligibility"],
                            "mode": "MULTIPLY" if form == "Multiplier on base" else "ADD", "rows": rows})
         for p in plans:
             p["defaults"][fam] = level
-        rep.add("addons", ben, "PRICED", f"{level}: {form}, {applies}")
+        rep.add("addons", ben, "BRIDGED" if bridged else "PRICED",
+                f"{level}: {form}, {applies}" + (" - interpolated between the file's own priced limits" if bridged else ""))
 
     # ---- benefit lines: lever defaults, terms, other benefits
     for n in offered:
@@ -302,6 +308,39 @@ def spec_from_sme_intake(path: Path, layout: dict | None = None, catalogue_id: s
                               "text": "small-group loading (not in the base price)"})
     wb.close()
     return spec, rep.rows
+
+
+def _bridge(opt_rows, ben, lim, cop):
+    """Owner decision 24 Oct 2026 (HANDOVER item 20): a package level the file does not price exactly is interpolated
+    linearly on the limit between the file's OWN two nearest priced limits (same benefit, co-pay, network, pricing
+    form and applies-to). No extrapolation beyond the file's lowest / highest priced limit. Returns
+    ([(rows (r_lo, r_hi), vals)], reason)."""
+    target = _num(lim)
+    if target is None:
+        return [], f"limit {lim!r} is not numeric"
+    cand = {}
+    for rr, v in opt_rows:
+        if _s(v["benefit"]) != ben or _s(v["copay"]) != cop:
+            continue
+        x, y = _num(_opt(v["limit"])), _num(v["value"])
+        if x is None or y is None:
+            continue
+        cand.setdefault(_s(v["network"]), []).append((x, y, rr, v))
+    if not cand:
+        return [], "no priced limits for this benefit and co-pay"
+    out = []
+    for net, pts in sorted(cand.items()):
+        pts.sort(key=lambda t: t[0])
+        lo = [p for p in pts if p[0] < target]
+        hi = [p for p in pts if p[0] > target]
+        if not lo or not hi:
+            return [], f"limit {target:g} outside the file's priced range on {net} ({pts[0][0]:g}-{pts[-1][0]:g})"
+        a, b = lo[-1], hi[0]
+        if (_s(a[3]["form"]), _s(a[3]["applies"])) != (_s(b[3]["form"]), _s(b[3]["applies"])):
+            return [], f"neighbouring limits use different pricing forms on {net}"
+        val = a[1] + (b[1] - a[1]) * (target - a[0]) / (b[0] - a[0])
+        out.append(((a[2], b[2]), {**a[3], "limit": lim, "value": val}))
+    return out, ""
 
 
 def load_sme_intake(path: Path, layout: dict | None = None, catalogue_id: str | None = None) -> tuple[Catalogue, list]:

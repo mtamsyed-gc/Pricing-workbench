@@ -1,5 +1,5 @@
 {
- "_note": "UFIC 2027 tender template STRUCTURE ONLY (SPEC §8.4): no rates or factor values. Derived from reference/ufic/. Age bands from age_bands.json (DXB15/AUH8/SME8 placeholders). Market-facing text says 'lead reinsurer' (F8).",
+ "_note": "UFIC 2027 tender template STRUCTURE ONLY (SPEC §8.4): no rates or factor values. Age bands, plan -> network map and block splits confirmed by the owner from the catalogue on 24 Oct 2026. Market-facing text says 'lead reinsurer' (F8). Rider rates are quoted by reinsurers (Add-ons sheet in FILL mode).",
  "template_spec_version": "1",
  "cedant": "UFIC",
  "tender_id": "UFIC_MED_QS_2027",
@@ -48,7 +48,6 @@
     "copay_op_diag": "0%",
     "ded_consult": "20% up to AED 50 (standard)",
     "copay_pharmacy": "0%",
-    "aml": "per Factor Tables (reference per network tier, F5)",
     "network_option": "Option 1"
    },
    "blocks": [
@@ -56,42 +55,49 @@
      "block_id": "IND_DXBNE_NEXTCARE",
      "tpa": "NEXTCARE",
      "label": "NEXTCARE",
-     "comment": "F1 (SPEC §12): plan -> network labels per TPA as in the reference; rows A-C look shifted for NC/NAS - confirm with UFIC before issue",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
        "plan_id": "A",
-       "label": "Plan A",
-       "network": "CN"
+       "label": "Plan A / 1",
+       "network": "GN+",
+       "plan_number": 1
       },
       {
        "plan_id": "B",
-       "label": "Plan B",
-       "network": "GN"
+       "label": "Plan B / 2",
+       "network": "GN",
+       "plan_number": 2
       },
       {
        "plan_id": "C",
-       "label": "Plan C",
-       "network": "RN"
+       "label": "Plan C / 3",
+       "network": "RN",
+       "plan_number": 3
       },
       {
        "plan_id": "D",
-       "label": "Plan D",
-       "network": "RN2"
+       "label": "Plan D / 4",
+       "network": "RN2",
+       "plan_number": 4
       },
       {
        "plan_id": "E",
-       "label": "Plan E",
-       "network": "RN3"
+       "label": "Plan E / 5",
+       "network": "RN3",
+       "plan_number": 5
       },
       {
        "plan_id": "F",
-       "label": "Plan F",
-       "network": "PCP-RN3"
+       "label": "Plan F / 6",
+       "network": "PCP-RN3",
+       "plan_number": 6
       },
       {
        "plan_id": "G",
-       "label": "Plan G",
-       "network": "PCP-C"
+       "label": "Plan G / 7",
+       "network": "PCP-C",
+       "plan_number": 7
       }
      ]
     },
@@ -99,42 +105,49 @@
      "block_id": "IND_DXBNE_NAS",
      "tpa": "NAS",
      "label": "NAS",
-     "comment": "F1 (SPEC §12): plan -> network labels per TPA as in the reference; rows A-C look shifted for NC/NAS - confirm with UFIC before issue",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
        "plan_id": "A",
-       "label": "Plan A",
-       "network": "GN+"
+       "label": "Plan A / 1",
+       "network": "CN",
+       "plan_number": 1
       },
       {
        "plan_id": "B",
-       "label": "Plan B",
-       "network": "CN"
+       "label": "Plan B / 2",
+       "network": "GN",
+       "plan_number": 2
       },
       {
        "plan_id": "C",
-       "label": "Plan C",
-       "network": "GN"
+       "label": "Plan C / 3",
+       "network": "RN",
+       "plan_number": 3
       },
       {
        "plan_id": "D",
-       "label": "Plan D",
-       "network": "RN"
+       "label": "Plan D / 4",
+       "network": "SRN",
+       "plan_number": 4
       },
       {
        "plan_id": "E",
-       "label": "Plan E",
-       "network": "SRN"
+       "label": "Plan E / 5",
+       "network": "WN",
+       "plan_number": 5
       },
       {
        "plan_id": "F",
-       "label": "Plan F",
-       "network": "WN"
+       "label": "Plan F / 6",
+       "network": "VN",
+       "plan_number": 6
       },
       {
        "plan_id": "G",
-       "label": "Plan G",
-       "network": "VN/VL"
+       "label": "Plan G / 7",
+       "network": "VN+",
+       "plan_number": 7
       }
      ]
     },
@@ -142,42 +155,49 @@
      "block_id": "IND_DXBNE_MEDNET",
      "tpa": "MEDNET",
      "label": "MEDNET",
-     "comment": "F1 (SPEC §12): plan -> network labels per TPA as in the reference; rows A-C look shifted for NC/NAS - confirm with UFIC before issue",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
        "plan_id": "A",
-       "label": "Plan A",
-       "network": "Gold Mednet"
+       "label": "Plan A / 1",
+       "network": "Gold",
+       "plan_number": 1
       },
       {
        "plan_id": "B",
-       "label": "Plan B",
-       "network": "Silver Premium"
+       "label": "Plan B / 2",
+       "network": "Silver Premium",
+       "plan_number": 2
       },
       {
        "plan_id": "C",
-       "label": "Plan C",
-       "network": "Silver Classic"
+       "label": "Plan C / 3",
+       "network": "Silver Classic",
+       "plan_number": 3
       },
       {
        "plan_id": "D",
-       "label": "Plan D",
-       "network": "Green"
+       "label": "Plan D / 4",
+       "network": "Green",
+       "plan_number": 4
       },
       {
        "plan_id": "E",
-       "label": "Plan E",
-       "network": "Emerald (clinic-restricted)"
+       "label": "Plan E / 5",
+       "network": "Emerald",
+       "plan_number": 5
       },
       {
        "plan_id": "F",
-       "label": "Plan F",
-       "network": "Pearl (clinic-restricted)"
+       "label": "Plan F / 6",
+       "network": "Pearl",
+       "plan_number": 6
       },
       {
        "plan_id": "G",
-       "label": "Plan G",
-       "network": "Silk Road (clinic-restricted)"
+       "label": "Plan G / 7",
+       "network": "Silk Road",
+       "plan_number": 7
       }
      ]
     },
@@ -185,22 +205,25 @@
      "block_id": "IND_DXBNE_AAFIYA",
      "tpa": "AAFIYA",
      "label": "AAFIYA",
-     "comment": "F3 (SPEC §12): confirm which co-pay multipliers apply to this block",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
-       "plan_id": "APN_PLUS",
+       "plan_id": "E",
        "label": "APN Plus",
-       "network": "APN Plus"
+       "network": "APN Plus",
+       "plan_number": 5
       },
       {
-       "plan_id": "ESSENTIAL",
+       "plan_id": "F",
        "label": "Essential",
-       "network": "Essential"
+       "network": "Essential",
+       "plan_number": 6
       },
       {
-       "plan_id": "APN",
+       "plan_id": "G",
        "label": "APN",
-       "network": "APN"
+       "network": "APN",
+       "plan_number": 7
       }
      ]
     }
@@ -226,7 +249,7 @@
        "key": {
         "member_category": "PRINCIPAL"
        },
-       "age_bands": "AUH8"
+       "age_bands": "AUH8_EMP"
       },
       {
        "label": "Dependant",
@@ -246,41 +269,47 @@
      "block_id": "IND_AUH_NEXTCARE",
      "tpa": "NEXTCARE",
      "label": "NEXTCARE",
-     "comment": "HANDOVER open item 2: marital / member-section splits available, OFF by default (SPEC §8.0) pending the owner; F2 (SPEC §12): co-pay block labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved). Married-F and Employee/SI vs Dependant priced separately (HANDOVER item 2).",
      "splits": {
-      "marital": false,
-      "member_section": false
+      "marital": true,
+      "member_section": true
      },
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "GN+"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "GN+",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "GN"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "GN",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "RN"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "RN",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "RN2"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "RN2",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "RN3"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "RN3",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "PCP-AUH"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "PCP-AUH",
+       "plan_number": 6
       }
      ]
     },
@@ -288,41 +317,47 @@
      "block_id": "IND_AUH_MEDNET",
      "tpa": "MEDNET",
      "label": "MEDNET",
-     "comment": "HANDOVER open item 2: marital / member-section splits available, OFF by default (SPEC §8.0) pending the owner; F2 (SPEC §12): co-pay block labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved). Married-F and Employee/SI vs Dependant priced separately (HANDOVER item 2).",
      "splits": {
-      "marital": false,
-      "member_section": false
+      "marital": true,
+      "member_section": true
      },
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "Gold"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "Gold",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "Silver Premium"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "Silver Premium",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "Silver Classic"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "Silver Classic",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "Green"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "Green",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "Emerald"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "Emerald",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "Silk Road"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "Silk Road",
+       "plan_number": 6
       }
      ]
     },
@@ -330,41 +365,47 @@
      "block_id": "IND_AUH_NAS",
      "tpa": "NAS",
      "label": "NAS",
-     "comment": "HANDOVER open item 2: marital / member-section splits available, OFF by default (SPEC §8.0) pending the owner; F2 (SPEC §12): co-pay block labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved). Married-F and Employee/SI vs Dependant priced separately (HANDOVER item 2).",
      "splits": {
-      "marital": false,
-      "member_section": false
+      "marital": true,
+      "member_section": true
      },
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "GN+ (Gold)"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "CN",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "GN"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "GN",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "RN"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "RN",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "SRN"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "SRN",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "WN (Emerald)"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "WN",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "VN (Silk Road)"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "VN",
+       "plan_number": 6
       }
      ]
     },
@@ -374,16 +415,23 @@
      "label": "AAFIYA",
      "plans": [
       {
-       "plan_id": "APN_PLUS",
+       "plan_id": "E",
        "label": "APN Plus",
-       "network": "APN Plus"
+       "network": "APN Plus",
+       "plan_number": 5
       },
       {
-       "plan_id": "ESSENTIAL",
+       "plan_id": "F",
        "label": "Essential",
-       "network": "Essential"
+       "network": "Essential",
+       "plan_number": 6
       }
-     ]
+     ],
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved). Married-F and Employee/SI vs Dependant priced separately (HANDOVER item 2).",
+     "splits": {
+      "marital": true,
+      "member_section": true
+     }
     }
    ]
   },
@@ -394,50 +442,57 @@
    "regulator": "DHA",
    "rating_region": "DXB_NE",
    "mandatory": true,
-   "age_bands": "SME8",
+   "age_bands": "SME_DXBNE9",
    "column_set": "MF",
    "copay_basis": {
     "copay_op_diag": "0%",
     "copay_ip": "Nil",
     "pharmacy_limit": "AML (unlimited)",
-    "copay_pharmacy": "0%"
+    "copay_pharmacy": "0%",
+    "network_option": "Option 1"
    },
    "blocks": [
     {
      "block_id": "SME_DXB_NE_NAS",
      "tpa": "NAS",
      "label": "NAS",
-     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "GN+"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "CN",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "GN"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "GN",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "RNE"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "RN",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "RN"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "SRN",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "RN2"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "WN",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "RN3/PCP"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "VN",
+       "plan_number": 6
       }
      ]
     },
@@ -445,37 +500,43 @@
      "block_id": "SME_DXB_NE_NEXTCARE",
      "tpa": "NEXTCARE",
      "label": "NEXTCARE",
-     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "GN+"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "GN+",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "GN"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "GN",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "RNE"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "RN",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "RN"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "RN2",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "RN2"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "RN3",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "RN3/PCP"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "PCP-RN3",
+       "plan_number": 6
       }
      ]
     },
@@ -483,37 +544,43 @@
      "block_id": "SME_DXB_NE_MEDNET",
      "tpa": "MEDNET",
      "label": "MEDNET",
-     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "GN+"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "Gold",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "GN"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "Silver Premium",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "RNE"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "Silver Classic",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "RN"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "Green",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "RN2"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "Emerald",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "RN3/PCP"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "Pearl",
+       "plan_number": 6
       }
      ]
     }
@@ -526,7 +593,6 @@
    "regulator": "DOH",
    "rating_region": "AUH",
    "mandatory": true,
-   "age_bands": "SME8",
    "column_set": "MF",
    "copay_basis": {
     "copay_op_diag": "0%",
@@ -539,37 +605,43 @@
      "block_id": "SME_AUH_NAS",
      "tpa": "NAS",
      "label": "NAS",
-     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "GN+"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "CN",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "GN"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "GN",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "RNE"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "RN",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "RN"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "SRN",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "RN2"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "WN",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "RN3/PCP"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "VN",
+       "plan_number": 6
       }
      ]
     },
@@ -577,37 +649,43 @@
      "block_id": "SME_AUH_NEXTCARE",
      "tpa": "NEXTCARE",
      "label": "NEXTCARE",
-     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "GN+"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "GN+",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "GN"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "GN",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "RNE"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "RN",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "RN"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "RN2",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "RN2"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "RN3",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "RN3/PCP"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "PCP-RN3",
+       "plan_number": 6
       }
      ]
     },
@@ -615,39 +693,61 @@
      "block_id": "SME_AUH_MEDNET",
      "tpa": "MEDNET",
      "label": "MEDNET",
-     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "comment": "Plan -> network per TPA from the catalogue's master plan table (owner, 24 Oct 2026; SPEC §12 F1 resolved).",
      "plans": [
       {
-       "plan_id": "P1",
-       "label": "Plan 1",
-       "network": "GN+"
+       "plan_id": "A",
+       "label": "Plan A / 1",
+       "network": "Gold",
+       "plan_number": 1
       },
       {
-       "plan_id": "P2",
-       "label": "Plan 2",
-       "network": "GN"
+       "plan_id": "B",
+       "label": "Plan B / 2",
+       "network": "Silver Premium",
+       "plan_number": 2
       },
       {
-       "plan_id": "P3",
-       "label": "Plan 3",
-       "network": "RNE"
+       "plan_id": "C",
+       "label": "Plan C / 3",
+       "network": "Silver Classic",
+       "plan_number": 3
       },
       {
-       "plan_id": "P4",
-       "label": "Plan 4",
-       "network": "RN"
+       "plan_id": "D",
+       "label": "Plan D / 4",
+       "network": "Green",
+       "plan_number": 4
       },
       {
-       "plan_id": "P5",
-       "label": "Plan 5",
-       "network": "RN2"
+       "plan_id": "E",
+       "label": "Plan E / 5",
+       "network": "Emerald",
+       "plan_number": 5
       },
       {
-       "plan_id": "P6",
-       "label": "Plan 6",
-       "network": "RN3/PCP"
+       "plan_id": "F",
+       "label": "Plan F / 6",
+       "network": "Pearl",
+       "plan_number": 6
       }
      ]
+    }
+   ],
+   "sections": [
+    {
+     "label": "Employee",
+     "key": {
+      "member_category": "PRINCIPAL"
+     },
+     "age_bands": "SME_AUH4_EMP"
+    },
+    {
+     "label": "Dependent",
+     "key": {
+      "member_category": "DEPENDANT"
+     },
+     "age_bands": "SME_AUH4"
     }
    ]
   },
@@ -832,7 +932,7 @@
  "reference_sheets": {
   "existing_rates": true,
   "factor_tables": true,
-  "addons": "READ_ONLY",
+  "addons": "FILL",
   "tob_summary": false,
   "terms": true
  },
@@ -845,17 +945,12 @@
   "outlier_shading": false
  },
  "source_flags": [
-  "F1",
   "F2",
   "F3",
   "F4",
-  "F5",
   "F6",
   "F7",
   "F8"
  ],
- "pending": [
-  "age bands DXB15/AUH8/SME8 (HANDOVER 1)",
-  "AUH Individual splits (HANDOVER 2): default OFF"
- ]
+ "pending": []
 }

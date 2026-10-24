@@ -171,9 +171,8 @@
  "not_covered": "Not Covered",
  "lever_map": {
   "Room type": {
-   "family": null,
+   "family": "room_type",
    "benefit_code": "room_type",
-   "pending_dim": "room_type",
    "value_map": {
     "Shared / Ward": "SHARED",
     "Semi Private": "SEMI_PRIVATE",
@@ -186,9 +185,8 @@
    "benefit_code": "aml"
   },
   "PEC limit": {
-   "family": null,
-   "benefit_code": "pec_cover",
-   "pending_dim": "pec_limit"
+   "family": "pec_limit",
+   "benefit_code": "pec_cover"
   },
   "OP consultation deductible": {
    "family": "ded_consult",
@@ -211,14 +209,12 @@
    "benefit_code": "ip_copay"
   },
   "Medication type": {
-   "family": null,
-   "benefit_code": null,
-   "pending_dim": "medication_type"
+   "family": "medication_type",
+   "benefit_code": null
   },
   "Territory": {
-   "family": null,
+   "family": "territory",
    "benefit_code": "territory",
-   "pending_dim": "territory",
    "value_map": {
     "UAE only": "UAE",
     "Worldwide": "WW"
@@ -247,34 +243,28 @@
    "benefit_code": "mat_ip_limit"
   },
   "Physiotherapy": {
-   "module": null,
-   "benefit_code": "physio_sessions",
-   "pending_dim": "module_physio"
+   "module": "module_physio",
+   "benefit_code": "physio_sessions"
   },
   "OP Psychiatric": {
-   "module": null,
-   "benefit_code": null,
-   "pending_dim": "module_op_psych"
+   "module": "module_op_psych",
+   "benefit_code": null
   },
   "Alternative Medicine": {
-   "module": null,
-   "benefit_code": "alt_medicine_limit",
-   "pending_dim": "module_alt_medicine"
+   "module": "module_alt_medicine",
+   "benefit_code": "alt_medicine_limit"
   },
   "Nursing at Home": {
-   "module": null,
-   "benefit_code": null,
-   "pending_dim": "module_home_nursing"
+   "module": "module_home_nursing",
+   "benefit_code": null
   },
   "Routine Health Check-up": {
-   "module": null,
-   "benefit_code": null,
-   "pending_dim": "module_health_check"
+   "module": "module_health_check",
+   "benefit_code": null
   },
   "Repatriation": {
-   "module": null,
-   "benefit_code": "repatriation",
-   "pending_dim": "module_repatriation"
+   "module": "module_repatriation",
+   "benefit_code": "repatriation"
   }
  },
  "applies_map": {

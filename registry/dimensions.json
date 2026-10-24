@@ -239,6 +239,42 @@
       "cell_key": true
     },
     {
+      "code": "room_type",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "pec_limit",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "medication_type",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "territory",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
       "code": "module_maternity",
       "type": "categorical",
       "values": "dynamic",
@@ -278,6 +314,60 @@
       "family": "module",
       "exposure_source": null,
       "notes": "IPMI",
+      "cell_key": true
+    },
+    {
+      "code": "module_physio",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "module_op_psych",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "module_alt_medicine",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "module_home_nursing",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "module_health_check",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "module_repatriation",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "notes": "CR #13 (owner, 24 Oct 2026): SME intake lever / add-on; not in Merit -> catalogue default option",
       "cell_key": true
     },
     {

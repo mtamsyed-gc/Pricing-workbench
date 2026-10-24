@@ -1,170 +1,346 @@
 {
- "_note": "Age band labels for the UFIC 2027 template. DXB15 / AUH8 / SME8 are PLACEHOLDERS (HANDOVER open item 1, SPEC \u00a78.4): the owner supplies labels (and boundaries) without rates; the generator reads them from this file, so no code change is needed. The reference document shows some AUH Individual labels (00-17, 18-30, 31-40, 60+) inside the 8-band set but not the full set. AUH_BASIC_* and NE_* sets are taken from the reference document's rate-table structure (labels only, no rates).",
+ "_note": "Age band labels and ranges for the UFIC 2027 template, labels only, no rates (SPEC \u00a78.4). Supplied by the owner from the catalogue on 24 Oct 2026 (HANDOVER item 1). Open top bands run to 120 (owner: [71-99] is treated as 71+). *_EMP sets are the Employee / Small Investor sections, which have no under-18 row (principals under 18 are not offered). AUH_BASIC_* and NE_* sets are taken from the reference document's rate-table structure; NE Basic reads 0-64 / 65+ (HANDOVER item 7).",
  "status": {
-  "DXB15": "PLACEHOLDER",
-  "AUH8": "PLACEHOLDER",
-  "SME8": "PLACEHOLDER"
+  "DXB15": "OWNER_CONFIRMED_2026-10-24",
+  "AUH8": "OWNER_CONFIRMED_2026-10-24",
+  "AUH8_EMP": "OWNER_CONFIRMED_2026-10-24",
+  "SME_DXBNE9": "OWNER_CONFIRMED_2026-10-24",
+  "SME_AUH4": "OWNER_CONFIRMED_2026-10-24",
+  "SME_AUH4_EMP": "OWNER_CONFIRMED_2026-10-24"
  },
  "age_band_sets": {
   "DXB15": [
    {
-    "label": "DXB15_B01",
-    "range": null,
-    "placeholder": true
+    "label": "[00-01]",
+    "range": [
+     0,
+     1
+    ]
    },
    {
-    "label": "DXB15_B02",
-    "range": null,
-    "placeholder": true
+    "label": "[02-05]",
+    "range": [
+     2,
+     5
+    ]
    },
    {
-    "label": "DXB15_B03",
-    "range": null,
-    "placeholder": true
+    "label": "[06-15]",
+    "range": [
+     6,
+     15
+    ]
    },
    {
-    "label": "DXB15_B04",
-    "range": null,
-    "placeholder": true
+    "label": "[16-20]",
+    "range": [
+     16,
+     20
+    ]
    },
    {
-    "label": "DXB15_B05",
-    "range": null,
-    "placeholder": true
+    "label": "[21-25]",
+    "range": [
+     21,
+     25
+    ]
    },
    {
-    "label": "DXB15_B06",
-    "range": null,
-    "placeholder": true
+    "label": "[26-30]",
+    "range": [
+     26,
+     30
+    ]
    },
    {
-    "label": "DXB15_B07",
-    "range": null,
-    "placeholder": true
+    "label": "[31-35]",
+    "range": [
+     31,
+     35
+    ]
    },
    {
-    "label": "DXB15_B08",
-    "range": null,
-    "placeholder": true
+    "label": "[36-40]",
+    "range": [
+     36,
+     40
+    ]
    },
    {
-    "label": "DXB15_B09",
-    "range": null,
-    "placeholder": true
+    "label": "[41-45]",
+    "range": [
+     41,
+     45
+    ]
    },
    {
-    "label": "DXB15_B10",
-    "range": null,
-    "placeholder": true
+    "label": "[46-50]",
+    "range": [
+     46,
+     50
+    ]
    },
    {
-    "label": "DXB15_B11",
-    "range": null,
-    "placeholder": true
+    "label": "[51-55]",
+    "range": [
+     51,
+     55
+    ]
    },
    {
-    "label": "DXB15_B12",
-    "range": null,
-    "placeholder": true
+    "label": "[56-60]",
+    "range": [
+     56,
+     60
+    ]
    },
    {
-    "label": "DXB15_B13",
-    "range": null,
-    "placeholder": true
+    "label": "[61-65]",
+    "range": [
+     61,
+     65
+    ]
    },
    {
-    "label": "DXB15_B14",
-    "range": null,
-    "placeholder": true
+    "label": "[66-70]",
+    "range": [
+     66,
+     70
+    ]
    },
    {
-    "label": "DXB15_B15",
-    "range": null,
-    "placeholder": true
+    "label": "[71-99]",
+    "range": [
+     71,
+     120
+    ]
    }
   ],
   "AUH8": [
    {
-    "label": "AUH8_B01",
-    "range": null,
-    "placeholder": true
+    "label": "00-17",
+    "range": [
+     0,
+     17
+    ]
    },
    {
-    "label": "AUH8_B02",
-    "range": null,
-    "placeholder": true
+    "label": "18-30",
+    "range": [
+     18,
+     30
+    ]
    },
    {
-    "label": "AUH8_B03",
-    "range": null,
-    "placeholder": true
+    "label": "31-40",
+    "range": [
+     31,
+     40
+    ]
    },
    {
-    "label": "AUH8_B04",
-    "range": null,
-    "placeholder": true
+    "label": "41-45",
+    "range": [
+     41,
+     45
+    ]
    },
    {
-    "label": "AUH8_B05",
-    "range": null,
-    "placeholder": true
+    "label": "46-50",
+    "range": [
+     46,
+     50
+    ]
    },
    {
-    "label": "AUH8_B06",
-    "range": null,
-    "placeholder": true
+    "label": "51-55",
+    "range": [
+     51,
+     55
+    ]
    },
    {
-    "label": "AUH8_B07",
-    "range": null,
-    "placeholder": true
+    "label": "56-59",
+    "range": [
+     56,
+     59
+    ]
    },
    {
-    "label": "AUH8_B08",
-    "range": null,
-    "placeholder": true
+    "label": "60+",
+    "range": [
+     60,
+     120
+    ]
    }
   ],
-  "SME8": [
+  "AUH8_EMP": [
    {
-    "label": "SME8_B01",
-    "range": null,
-    "placeholder": true
+    "label": "18-30",
+    "range": [
+     18,
+     30
+    ]
    },
    {
-    "label": "SME8_B02",
-    "range": null,
-    "placeholder": true
+    "label": "31-40",
+    "range": [
+     31,
+     40
+    ]
    },
    {
-    "label": "SME8_B03",
-    "range": null,
-    "placeholder": true
+    "label": "41-45",
+    "range": [
+     41,
+     45
+    ]
    },
    {
-    "label": "SME8_B04",
-    "range": null,
-    "placeholder": true
+    "label": "46-50",
+    "range": [
+     46,
+     50
+    ]
    },
    {
-    "label": "SME8_B05",
-    "range": null,
-    "placeholder": true
+    "label": "51-55",
+    "range": [
+     51,
+     55
+    ]
    },
    {
-    "label": "SME8_B06",
-    "range": null,
-    "placeholder": true
+    "label": "56-59",
+    "range": [
+     56,
+     59
+    ]
    },
    {
-    "label": "SME8_B07",
-    "range": null,
-    "placeholder": true
+    "label": "60+",
+    "range": [
+     60,
+     120
+    ]
+   }
+  ],
+  "SME_DXBNE9": [
+   {
+    "label": "0-6",
+    "range": [
+     0,
+     6
+    ]
    },
    {
-    "label": "SME8_B08",
-    "range": null,
-    "placeholder": true
+    "label": "07-17",
+    "range": [
+     7,
+     17
+    ]
+   },
+   {
+    "label": "18-30",
+    "range": [
+     18,
+     30
+    ]
+   },
+   {
+    "label": "31-40",
+    "range": [
+     31,
+     40
+    ]
+   },
+   {
+    "label": "41-50",
+    "range": [
+     41,
+     50
+    ]
+   },
+   {
+    "label": "51-55",
+    "range": [
+     51,
+     55
+    ]
+   },
+   {
+    "label": "56-59",
+    "range": [
+     56,
+     59
+    ]
+   },
+   {
+    "label": "60-65",
+    "range": [
+     60,
+     65
+    ]
+   },
+   {
+    "label": "Above 65",
+    "range": [
+     66,
+     120
+    ]
+   }
+  ],
+  "SME_AUH4": [
+   {
+    "label": "0 - 17",
+    "range": [
+     0,
+     17
+    ]
+   },
+   {
+    "label": "18-40",
+    "range": [
+     18,
+     40
+    ]
+   },
+   {
+    "label": "41-59",
+    "range": [
+     41,
+     59
+    ]
+   },
+   {
+    "label": "60 +",
+    "range": [
+     60,
+     120
+    ]
+   }
+  ],
+  "SME_AUH4_EMP": [
+   {
+    "label": "18-40",
+    "range": [
+     18,
+     40
+    ]
+   },
+   {
+    "label": "41-59",
+    "range": [
+     41,
+     59
+    ]
+   },
+   {
+    "label": "60 +",
+    "range": [
+     60,
+     120
+    ]
    }
   ],
   "AUH_BASIC_ADULT": [

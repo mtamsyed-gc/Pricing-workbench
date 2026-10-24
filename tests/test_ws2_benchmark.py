@@ -53,11 +53,16 @@ def test_intake_adapter_loads_and_passes_v1():
     vals = {(r["key"]["copay_op_diag"], r["key"]["network"]): r["value"] for r in f.rows}
     assert vals[("0%", "ANY")] == 1.035 and vals[("10%", "GN")] == 1.0          # default option = 1 by definition
     st = {(r["plan_id"], r["area"], r["item"]): r["status"] for r in rep}
-    assert st[("MKT-ALPINE-2026", "factors", "Room type")] == "NOT_PRICED"      # pending dimension (CR #13)
+    # CR #13 (approved 24 Oct 2026): room type is a registry dimension, so its factors enter the price
+    rt = next(c for c in a.components if c.component_id == "f_room_type")
+    assert {(r["key"]["room_type"], r["value"]) for r in rt.rows} >= {("Semi Private", 0.955)}
+    assert ("MKT-ALPINE-2026", "levers", "Territory") not in st and ("MKT-ALPINE-2026", "factors", "Room type") not in st
     assert st[("MKT-ALPINE-2026", "addons", "Maternity")] == "PRICED"
-    assert st[("MKT-BIRCH-2026", "addons", "Optical")] == "NOT_PRICED"          # package level not priced
-    assert st[("MKT-CEDAR-2026", "addons", "Dental")] == "NOT_PRICED"
-    assert st[("MKT-ALPINE-2026", "levers", "Territory")] == "BENEFIT_LINE_ONLY"
+    assert st[("MKT-BIRCH-2026", "addons", "Optical")] == "NOT_PRICED"          # no priced limits at all: not bridgeable
+    assert st[("MKT-CEDAR-2026", "addons", "Dental")] == "BRIDGED"              # 2,000 between the file's 1,000 and 5,000
+    dn = next(c for c in cats[2].scopes[0].components if c.component_id == "m_module_dental")
+    assert [r["value"] for r in dn.rows] == [250.0 + (450.0 - 250.0) * (2000 - 1000) / (5000 - 1000)]
+    assert "bridged" in dn.rows[0]["source_ref"]
 
 
 def test_as_sold_price_hand_checked_with_modules():
@@ -92,10 +97,12 @@ def test_married_eligible_module_network_override():
                        "nationality_group": None, "group_size_band": None, "weight": 1.0}])
     gn = plan_price(cat, s, "GN", f, "AED", {}, {})["price"]
     cn = plan_price(cat, s, "CN", f, "AED", {}, {})["price"]
-    assert abs(gn - round(_rate("MKT-CEDAR-2026", "GN", 32, "DEP", "F") + 3300.0, 2)) < 1e-9   # GN-specific row
-    assert abs(cn - round(_rate("MKT-CEDAR-2026", "CN", 32, "DEP", "F") + 2900.0, 2)) < 1e-9   # 'All' row
+    dental = 250.0 + (450.0 - 250.0) * 1000 / 4000                     # bridged 2,000 level, all members
+    assert abs(gn - round(_rate("MKT-CEDAR-2026", "GN", 32, "DEP", "F") + 3300.0 + dental, 2)) < 1e-9   # GN-specific row
+    assert abs(cn - round(_rate("MKT-CEDAR-2026", "CN", 32, "DEP", "F") + 2900.0 + dental, 2)) < 1e-9   # 'All' row
     single = f.assign(marital="SINGLE")
-    assert abs(plan_price(cat, s, "GN", single, "AED", {}, {})["price"] - _rate("MKT-CEDAR-2026", "GN", 32, "DEP", "F")) < 1e-9
+    assert abs(plan_price(cat, s, "GN", single, "AED", {}, {})["price"]
+               - round(_rate("MKT-CEDAR-2026", "GN", 32, "DEP", "F") + dental, 2)) < 1e-9
 
 
 def test_tier_map_rules():
@@ -208,8 +215,10 @@ def test_import_sme_basis_converts_and_flags_placeholder():
     from pw.market_intake import load_layout
     tax = types.SimpleNamespace(TOOL_VERSION="fictional", NETS=LADDER,
                                 REF_LEVER={"Annual Medical Limit": [(1000000, [1, 1, 1, 1, 1, 1]), (500000, [0.9, 0.91, 0.92, 0.93, 0.94, 0.95])],
-                                           "Room type": [("Private", [1, 1, 1, 1, 1, 1])]})
+                                           "Room type": [("Private", [1, 1, 1, 1, 1, 1])],
+                                           "Other adjustment 1": [("x", [1, 1, 1, 1, 1, 1])]})
     d = imp.convert(tax, load_layout())
-    assert d["placeholder"] is True and d["skipped_levers"] == ["Room type"]
-    e = {(x["option"], x["network"]): x["relativity"] for x in d["entries"]}
-    assert e[("500000", "RN")] == 0.92 and e[("1000000", "VN")] == 1.0 and all(x["family"] == "aml" for x in d["entries"])
+    assert d["placeholder"] is True and d["skipped_levers"] == ["Other adjustment 1"]   # room type mapped since CR #13
+    e = {(x["family"], x["option"], x["network"]): x["relativity"] for x in d["entries"]}
+    assert e[("aml", "500000", "RN")] == 0.92 and e[("aml", "1000000", "VN")] == 1.0
+    assert e[("room_type", "Private", "GN")] == 1 and {x["family"] for x in d["entries"]} == {"aml", "room_type"}

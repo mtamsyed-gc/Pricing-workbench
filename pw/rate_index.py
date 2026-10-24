@@ -7,8 +7,10 @@ Both catalogues are priced on the SAME exposure cells with catalogue default opt
                                  index_benefit_adj = sum w * rate_option / ratio(plan) / prem_expiring
 Weights w (standard mix, SPEC §5): latest UWY, lives in force at the snapshot date. Sensitivities: written_ly
 weights, and the UWY-1 mix. REFER / UNMATCHED cells (under either catalogue) are excluded from the index and
-reported with their weight share. The price used is the full rated premium (base x factors + modules + fees);
-see HANDOVER for the open question on excluding add-on modules.
+reported with their weight share. The headline index uses the full rated premium (base x factors + modules + fees);
+the split columns show the base-only change (base x rating factors, cells whose base prices under both) and the rider
+change (additive modules, cells fully priced under both) (owner decision 24 Oct 2026, HANDOVER item 11). The
+TreatyFeed stays on full premium.
 """
 from __future__ import annotations
 
@@ -70,10 +72,12 @@ def rate_factors(expiring: Catalogue, option: Catalogue, option_id: str, cells: 
     opts = {"fill": "default", **(options or {})}
     e, _ = evaluate(expiring, cells, opts)
     o, _ = evaluate(option, cells, opts)
-    m = cells.merge(e[["cell_id", "status", "price", "reason"]].rename(
-        columns={"status": "status_expiring", "price": "rate_expiring", "reason": "reason_expiring"}), on="cell_id")
-    m = m.merge(o[["cell_id", "status", "price", "reason"]].rename(
-        columns={"status": "status_option", "price": "rate_option", "reason": "reason_option"}), on="cell_id")
+    m = cells.merge(e[["cell_id", "status", "price", "reason", "price_base", "price_riders"]].rename(
+        columns={"status": "status_expiring", "price": "rate_expiring", "reason": "reason_expiring",
+                 "price_base": "rate_expiring_base", "price_riders": "rate_expiring_riders"}), on="cell_id")
+    m = m.merge(o[["cell_id", "status", "price", "reason", "price_base", "price_riders"]].rename(
+        columns={"status": "status_option", "price": "rate_option", "reason": "reason_option",
+                 "price_base": "rate_option_base", "price_riders": "rate_option_riders"}), on="cell_id")
     both = (m["status_expiring"] == "PRICED") & (m["status_option"] == "PRICED")
     refer = (m["status_expiring"] == "REFER") | (m["status_option"] == "REFER")
     m["priced_status"] = np.where(both, "PRICED", np.where(refer, "REFER", "UNMATCHED"))
@@ -81,12 +85,16 @@ def rate_factors(expiring: Catalogue, option: Catalogue, option_id: str, cells: 
     m.insert(0, "option_id", option_id)
     keys = [c for c in CELL_KEY_COLS if c in cells.columns]
     cols = ["option_id"] + keys + ["rate_expiring", "rate_option", "factor", "priced_status",
-                                   "w", "status_expiring", "status_option", "reason_expiring", "reason_option"]
+                                   "w", "status_expiring", "status_option", "reason_expiring", "reason_option",
+                                   "rate_expiring_base", "rate_option_base", "rate_expiring_riders", "rate_option_riders"]
     return m[cols].sort_values(keys, kind="stable").reset_index(drop=True)
 
 
-RATE_FACTOR_EXTRAS = ("w", "status_expiring", "status_option", "reason_expiring", "reason_option")
-RATE_INDEX_EXTRAS = ("cut", "lives_unpriced", "lives_refer", "unpriced_share", "weight", "mix_uwy")
+RATE_FACTOR_EXTRAS = ("w", "status_expiring", "status_option", "reason_expiring", "reason_option",
+                      "rate_expiring_base", "rate_option_base", "rate_expiring_riders", "rate_option_riders")
+RATE_INDEX_EXTRAS = ("cut", "lives_unpriced", "lives_refer", "unpriced_share", "weight", "mix_uwy",
+                     "prem_expiring_base", "prem_option_base", "index_base",
+                     "prem_expiring_riders", "prem_option_riders", "index_riders")
 
 
 def rate_index(rf: pd.DataFrame, cuts=None, benefit_ratio: pd.DataFrame | None = None, weight: str = STANDARD_WEIGHT,
@@ -101,6 +109,15 @@ def rate_index(rf: pd.DataFrame, cuts=None, benefit_ratio: pd.DataFrame | None =
     rf["_wl"] = np.where(pr, rf["w"], 0.0)
     rf["_wu"] = np.where(~pr, rf["w"], 0.0)
     rf["_wr"] = np.where(rf["priced_status"] == "REFER", rf["w"], 0.0)
+    if "rate_expiring_base" in rf.columns:
+        pb = rf["rate_expiring_base"].notna() & rf["rate_option_base"].notna()
+        rf["_web"] = np.where(pb, rf["w"] * rf["rate_expiring_base"].fillna(0.0), 0.0)
+        rf["_wob"] = np.where(pb, rf["w"] * rf["rate_option_base"].fillna(0.0), 0.0)
+        rf["_wer"] = np.where(pr, rf["w"] * rf["rate_expiring_riders"].fillna(0.0), 0.0)
+        rf["_wor"] = np.where(pr, rf["w"] * rf["rate_option_riders"].fillna(0.0), 0.0)
+    else:
+        for c in ("_web", "_wob", "_wer", "_wor"):
+            rf[c] = np.nan
     if benefit_ratio is not None and len(benefit_ratio):
         br = benefit_ratio[["option_id", "plan", "ratio"]].drop_duplicates(["option_id", "plan"])
         rf = rf.merge(br, on=["option_id", "plan"], how="left")
@@ -119,7 +136,9 @@ def rate_index(rf: pd.DataFrame, cuts=None, benefit_ratio: pd.DataFrame | None =
         g = rf.groupby(gcols, sort=True, dropna=False).agg(
             lives=("_wl", "sum"), prem_expiring=("_we", "sum"), prem_option=("_wo", "sum"),
             prem_option_adj=("_woa", lambda s: s.sum(min_count=len(s)) if s.notna().all() else np.nan),
-            lives_unpriced=("_wu", "sum"), lives_refer=("_wr", "sum")).reset_index()
+            lives_unpriced=("_wu", "sum"), lives_refer=("_wr", "sum"),
+            prem_expiring_base=("_web", "sum"), prem_option_base=("_wob", "sum"),
+            prem_expiring_riders=("_wer", "sum"), prem_option_riders=("_wor", "sum")).reset_index()
         g["cut"] = "TOTAL" if not cut else "x".join(cut)
         for d in all_dims:
             if d not in cut:
@@ -128,12 +147,16 @@ def rate_index(rf: pd.DataFrame, cuts=None, benefit_ratio: pd.DataFrame | None =
     r = pd.concat(out, ignore_index=True)
     r["index"] = np.where(r["prem_expiring"] > 0, r["prem_option"] / r["prem_expiring"], np.nan)
     r["index_benefit_adj"] = np.where(r["prem_expiring"] > 0, r["prem_option_adj"] / r["prem_expiring"], np.nan)
+    r["index_base"] = np.where(r["prem_expiring_base"] > 0, r["prem_option_base"] / r["prem_expiring_base"], np.nan)
+    r["index_riders"] = np.where(r["prem_expiring_riders"] > 0, r["prem_option_riders"] / r["prem_expiring_riders"], np.nan)
     tot = r["lives"] + r["lives_unpriced"]
     r["unpriced_share"] = np.where(tot > 0, r["lives_unpriced"] / tot, np.nan)
     r["weight"] = weight
     r["mix_uwy"] = mix_uwy
     cols = ["option_id", "cut"] + all_dims + ["lives", "prem_expiring", "prem_option", "index", "index_benefit_adj",
-                                              "lives_unpriced", "lives_refer", "unpriced_share", "weight", "mix_uwy"]
+                                              "lives_unpriced", "lives_refer", "unpriced_share", "weight", "mix_uwy",
+                                              "prem_expiring_base", "prem_option_base", "index_base",
+                                              "prem_expiring_riders", "prem_option_riders", "index_riders"]
     return r[cols]
 
 
@@ -267,7 +290,22 @@ def load_catalogue_any(path):
     return parse_catalogue(Path(path))
 
 
-def run_benefit(cfg: dict, runs_root=None):
+def _standard_mix(cfg: dict, exposure=None) -> pd.DataFrame | None:
+    """Aggregated standard-mix cells (latest UWY, lives in force) for B1 module values; None without exposure config."""
+    ec = cfg.get("exposure") or {}
+    if exposure is None:
+        if not (ec.get("dim_life") and ec.get("maps") and ec.get("snapshot_date")):
+            return None
+        from .exposure import build_exposure
+        exposure = build_exposure(_path(cfg, ec["dim_life"]), _path(cfg, ec["maps"]),
+                                  _path(cfg, ec["manifest"]) if ec.get("manifest") else None,
+                                  contract_version=ec.get("contract_version"), snapshot_date=ec["snapshot_date"],
+                                  strict=False)
+    mix, _ = select_mix(exposure.cells)
+    return aggregate_cells(mix, STANDARD_WEIGHT)
+
+
+def run_benefit(cfg: dict, runs_root=None, exposure=None):
     from .benefit_value import BENEFIT_DIFF_EXTRAS, BENEFIT_FACTORS_EXTRAS, benefit_diff
     from .outputs import run_dir, update_manifest, write_table
     from .template.ingest import registered_options
@@ -277,9 +315,11 @@ def run_benefit(cfg: dict, runs_root=None):
     if not opts:
         raise ProposalRequired(f"run {cfg['run_id']}: no options registered (t ingest first)")
     ov = {(o["family"], str(o["option"])): o["relativity"] for o in cfg.get("benefit_overrides", [])}
+    mix = _standard_mix(cfg, exposure)
+    eopts = {**(cfg.get("eval_options") or {}), **({"duckdb": cfg["duckdb"]} if cfg.get("duckdb") else {})}
     bds, bfs = [], []
-    for oid, cat in opts.items():
-        bd, bf = benefit_diff(expiring, cat, oid, ov)
+    for oid, cat in sorted(opts.items()):
+        bd, bf = benefit_diff(expiring, cat, oid, ov, mix=mix, eval_options=eopts)
         bds.append(bd)
         bfs.append(bf)
     bd, bf = pd.concat(bds, ignore_index=True), pd.concat(bfs, ignore_index=True)
@@ -313,7 +353,7 @@ def run_b2(cfg: dict, runs_root=None) -> dict:
                         contract_version=ec.get("contract_version"), snapshot_date=ec["snapshot_date"], strict=False)
     eopts = {**(cfg.get("eval_options") or {}), **({"duckdb": cfg["duckdb"]} if cfg.get("duckdb") else {})}
     cov = coverage_report(expiring, ex, eopts)
-    bd, bf = run_benefit(cfg, runs_root)
+    bd, bf = run_benefit(cfg, runs_root, exposure=ex)
     rf, ri = run_index(expiring, opts, ex.cells, cfg.get("cuts"), plan_ratio(bf), eopts)
     out = rd / "out"
     keys = [c for c in CELL_KEY_COLS if c in rf.columns]
