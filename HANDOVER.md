@@ -32,7 +32,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS4 | Integration, release | Blocked | — |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Blocked on WS0 RateFactors schema | — |
 
-## Open with the owner
+## Open with the owner (owner will answer items 1–2 later; WS0 proceeds with placeholders)
 1. UFIC age band labels: DXB Individual (15 bands), AUH Individual (8), SME (8) — not in the reference document (SPEC §8.4).
 2. AUH Individual blocks: keep the catalogue's Married-F column and Employee/SI vs Dependant sections, or collapse to M/F per the
    template principle (SPEC §8.0)?

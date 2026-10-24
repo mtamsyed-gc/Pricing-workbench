@@ -181,6 +181,19 @@ Rules:
 
 ---
 
+### 5.1 Merit contract compatibility (Merit changes independently)
+
+- The workbench depends on Merit **only through its output contract**: no Merit code or logic is copied.
+- `contracts/merit_model_contract_<version>.json` is a pinned copy of `side_tools/merit/config/model_contract.json`.
+- `contracts/merit_field_map.json` maps the canonical exposure fields to Merit column names. A Merit column rename is a one-line config change, not a code change.
+- **Gate V0 (contract check)** runs before every exposure build. It reads the contract version and columns of the Merit run being loaded and compares them with the pinned contract and field map:
+  - same version: proceed;
+  - new version with all required fields present: proceed with a warning and the column diff;
+  - required field missing or renamed without a map entry: stop, listing the fields.
+- When Merit publishes a new contract version, update the pinned copy and field map through a change request. Exposure-builder tests run against both contract versions until the old one is retired.
+- Required fields: the `dim_life` columns used in §5 (Policy Type / PolicyTypeUsed, TPA, Region Group, Network, Plan / Category, Relation, Gender, Gender Group, Marital Status, Nationality Group, AgeAtInception, UWY, NewRenewal, Distribution, GroupSize, WrittenLY_Net / _Gross, WrittenPrem_Net / _Gross, EarnedLY_Net, EarnedPrem_Net). `fact_claims` is optional (B1 level 2).
+- The treaty tool is treated the same way: `TreatyFeed` targets the treatymodel version recorded in `contracts/treatymodel_version.txt`.
+
 ## 6. Evaluator and validation gates
 
 `evaluate(catalogue, cells, options) → price, trace` (DuckDB-backed; vectorised by scope).

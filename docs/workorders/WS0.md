@@ -30,7 +30,7 @@ and the work orders for WS1–WS3, WS4 and WS6.
    - coverage report (priced / refer / unmatched, with lives and premium);
    - gate at 95% of premium matched;
    - Merit contract IP4-8 pinned in `contracts/`.
-6. **Gates**:
+6. **Gates** (plus V0 contract check, SPEC §5.1, with `contracts/merit_field_map.json` and tests against a second, synthetic contract version with one renamed column):
    - V1 source reproduction, V2 block consistency (planted errors found), V3 premium reconciliation (implied factor by cut), V4 template round trip;
    - V5 is stubbed; WS1 completes it.
 7. **Template generator core** (SPEC §8.0–§8.3):
@@ -63,6 +63,7 @@ and the work orders for WS1–WS3, WS4 and WS6.
 - Power BI (WS6).
 - Claims re-adjudication.
 
-## Open questions (ask; do not assume)
-- UFIC age-band boundaries (HANDOVER open item 1).
-- AUH Individual extra splits (HANDOVER open item 2).
+## Owner inputs pending (do not block on them)
+- UFIC age-band labels (HANDOVER open item 1): build `examples/ufic_2027/` with clearly marked placeholder bands. The generator takes bands from the file, so real labels drop in without code changes.
+- AUH Individual layout (HANDOVER open item 2): implement both options (`marital` / `member_section` splits on or off per block). Default the UFIC example to **off** (age × network × gender, per SPEC §8.0) and record it as pending.
+- The UFIC-example acceptance item passes on structure with placeholders and is re-run when the owner answers. Everything else in this work order is independent of these inputs.
