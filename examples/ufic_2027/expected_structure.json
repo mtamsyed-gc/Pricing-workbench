@@ -1,5 +1,5 @@
 {
- "_note": "Acceptance structure for the generated UFIC template (SPEC \u00a78.4 table, v0.4). Used by tests/test_cedant_example.py.",
+ "_note": "Acceptance structure for the generated UFIC template (SPEC §8.4 table, v0.4). Used by tests/test_cedant_example.py.",
  "sheets": {
   "Ind Rates - DXB-NE": {
    "blocks": {
@@ -165,5 +165,164 @@
   "0.9450",
   "0.9800",
   "1.0486"
- ]
+ ],
+ "cedant": {
+  "_note": "WS5 cedant rate workbook (SPEC §8.5): TPA groups, factor tables, riders, plan-default families per sheet (labels only). Used by tests/test_ws5_ufic.py.",
+  "sheets": {
+   "Ind Rates - DXB-NE": {
+    "groups": {
+     "NEXTCARE, NAS, MEDNET": {
+      "factor_tables": [
+       "f_copay_op_diag",
+       "f_ded_consult",
+       "f_copay_pharmacy",
+       "f_network_option",
+       "f_nationality",
+       "f_tpa"
+      ],
+      "riders": [],
+      "plan_defaults": [
+       "copay_op_diag",
+       "ded_consult",
+       "copay_pharmacy",
+       "network_option"
+      ],
+      "plans": 7
+     },
+     "AAFIYA": {
+      "factor_tables": [
+       "f_aafiya_copay"
+      ],
+      "riders": [],
+      "plan_defaults": [
+       "copay_op_diag"
+      ],
+      "plans": 3
+     }
+    },
+    "factor_rows": 37,
+    "rider_rows": 0,
+    "benefit_codes": 37
+   },
+   "Ind Rates - AUH": {
+    "groups": {
+     "ALL": {
+      "factor_tables": [
+       "f_copay_ip"
+      ],
+      "riders": [],
+      "plan_defaults": [
+       "copay_ip"
+      ],
+      "plans": 6
+     }
+    },
+    "factor_rows": 12,
+    "rider_rows": 0,
+    "benefit_codes": 25
+   },
+   "SME Rates - DXB-NE": {
+    "groups": {
+     "ALL": {
+      "factor_tables": [
+       "f_copay_op_diag",
+       "f_copay_ip",
+       "f_ded_consult",
+       "f_pharmacy_limit",
+       "f_copay_pharmacy",
+       "f_aml",
+       "f_network_option",
+       "f_nationality",
+       "f_tpa"
+      ],
+      "riders": [
+       "m_dental",
+       "m_optical",
+       "m_maternity"
+      ],
+      "plan_defaults": [
+       "copay_op_diag",
+       "copay_ip",
+       "ded_consult",
+       "pharmacy_limit",
+       "copay_pharmacy",
+       "aml",
+       "network_option",
+       "module_dental",
+       "module_optical",
+       "module_maternity"
+      ],
+      "plans": 6
+     }
+    },
+    "factor_rows": 75,
+    "rider_rows": 114,
+    "benefit_codes": 21
+   },
+   "SME Rates - AUH": {
+    "groups": {
+     "ALL": {
+      "factor_tables": [
+       "f_copay_op_diag",
+       "f_copay_ip",
+       "f_ded_consult",
+       "f_pharmacy_limit",
+       "f_copay_pharmacy",
+       "f_aml",
+       "f_nationality",
+       "f_tpa"
+      ],
+      "riders": [
+       "m_dental",
+       "m_optical",
+       "m_maternity"
+      ],
+      "plan_defaults": [
+       "copay_op_diag",
+       "copay_ip",
+       "ded_consult",
+       "pharmacy_limit",
+       "copay_pharmacy",
+       "aml",
+       "module_dental",
+       "module_optical",
+       "module_maternity"
+      ],
+      "plans": 6
+     }
+    },
+    "factor_rows": 71,
+    "rider_rows": 114,
+    "benefit_codes": 21
+   },
+   "AUH Basic Rates": {
+    "groups": {
+     "ALL": {
+      "factor_tables": [],
+      "riders": [],
+      "plan_defaults": [],
+      "plans": 1
+     }
+    },
+    "factor_rows": 0,
+    "rider_rows": 0,
+    "benefit_codes": 11
+   },
+   "NE Rates": {
+    "groups": {
+     "ALL": {
+      "factor_tables": [],
+      "riders": [],
+      "plan_defaults": [],
+      "plans": 3
+     }
+    },
+    "factor_rows": 0,
+    "rider_rows": 0,
+    "benefit_codes": 28
+   }
+  },
+  "rate_cells": 1925,
+  "refer_cells": 2
+ }
 }

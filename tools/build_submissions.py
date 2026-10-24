@@ -1,5 +1,7 @@
 """Build SUB_X and SUB_Y (SPEC §10): two synthetic reinsurer submissions generated through T from CAT_ALPHA and
 filled with perturbed CAT_ALPHA base rates (seeded), then parsed back to SUBMISSION catalogues.
+Also C_ALPHA (WS5, SPEC §8.5): the cedant rate workbook authored from CAT_ALPHA's structure, filled from CAT_ALPHA's
+values (scripted) and read back into the EXPIRING catalogue (all fictional).
 
     py tools\\build_submissions.py [--out <dir>]
 """
@@ -20,7 +22,8 @@ from pw.evaluator import lookup_component  # noqa: E402
 from pw.spec_parser import parse_catalogue  # noqa: E402
 from pw.template.generator import generate_template  # noqa: E402
 from pw.template.parser import fill_template, parse_submission, to_catalogue  # noqa: E402
-from pw.template.spec import spec_from_catalogue  # noqa: E402
+from pw.template.cedant import fill_from_catalogue, generate_cedant_workbook, read_cedant_workbook  # noqa: E402
+from pw.template.spec import cedant_spec_from_catalogue, spec_from_catalogue  # noqa: E402
 
 TENDER = {"cedant": "FICTIONAL_CEDANT_A", "tender_id": "T_ALPHA_2027", "deadline": "2026-11-05",
           "contact": "synthetic contact", "issue_date": "2026-10-24", "effective_date": "2027-01-01"}
@@ -61,6 +64,19 @@ def main(argv=None):
         cat = to_catalogue(parsed, spec, catalogue_id=name, owner=p["reinsurer"], expiring=alpha)
         cat.write(d / "catalogue.json")
         print(f"{name}: {len(parsed.values)} values, hash_ok={parsed.hash_ok}, structure {gen.structure_hash[:12]}")
+    build_c_alpha(out, alpha)
+
+
+def build_c_alpha(out: Path, alpha):
+    d = out / "C_ALPHA"
+    d.mkdir(parents=True, exist_ok=True)
+    spec = cedant_spec_from_catalogue(alpha, TENDER)
+    (d / "template_spec.json").write_text(json.dumps(spec, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    g = generate_cedant_workbook(spec, d / "cedant_workbook.xlsx")
+    fill_from_catalogue(d / "cedant_workbook.xlsx", d / "filled.xlsx", alpha)
+    cat = read_cedant_workbook(d / "filled.xlsx", spec)
+    cat.write(d / "expiring.json")
+    print(f"C_ALPHA: {g.n_inputs} inputs, structure {g.structure_hash[:12]}; read back {cat.catalogue_id} ({len(cat.scopes)} scope)")
 
 
 if __name__ == "__main__":

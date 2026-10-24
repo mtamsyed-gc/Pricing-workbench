@@ -12,6 +12,9 @@
   t generate --from-catalogue <catalogue|spec> --tender <tender.json> [--select s1,s2] --out-spec <json> --out <xlsx>
   t parse <submission.xlsx> --spec <template_spec.json> [--expiring <catalogue|spec>] [--id ID] [--owner NAME] --out <catalogue.json>
   t ingest <submission.xlsx> --spec <template_spec.json> --issued <template.xlsx> --run <run_config.json> --id ID --owner NAME
+  t cedant <template_spec.json> --out <xlsx>                     cedant rate workbook (SPEC §8.5): GC fills current rates
+  t cedant-read <filled.xlsx> --spec <template_spec.json> --out runs\\<RunID>\\expiring.json [--id ID] [--owner NAME]
+                                                                 read back into the EXPIRING catalogue (gated; report beside --out)
   index <run_config.json>          B1 + B2: RateFactors, RateIndex (+ sensitivities), TreatyFeed, OptionTerms
   benefit <run_config.json>        B1 level 1 only: BenefitDiff, BenefitFactors
   benchmark <run_config.json>      A market benchmark: ValueMap, GapRegister, TaxonomyReconciliation
@@ -172,6 +175,31 @@ def cmd_t(a):
         e = r["entry"]
         print(f"ingested {a.id}: V5 {e['v5_status']} {e['v5_counts']}; excluded {e['excluded_cells']} of "
               f"{e['rate_cells']} rate cells; registered in run {cfg['run_id']}")
+    elif a.action == "cedant":
+        from pw.template.cedant import generate_cedant_workbook
+        g = generate_cedant_workbook(load_template_spec(Path(a.spec)), _out(a.out, "cedant_workbook.xlsx"))
+        c = g.counts
+        print(f"{g.path}: {c['RATE']} rate cells, {g.n_refer} refer cells, {c['Factors']} factor rows, {c['Riders']} rider rows, "
+              f"{c['Plan defaults']} plan defaults, {c['Benefits']} benefit rows; structure hash {g.structure_hash}")
+    elif a.action == "cedant-read":
+        from pw.template.cedant import read_cedant
+        spec = load_template_spec(Path(a.spec_file))
+        out = _out(a.out, "expiring.json")
+        cat, rep = read_cedant(Path(a.spec), spec, catalogue_id=a.id, owner=a.owner)
+        rp = out.with_name(out.stem + "_read_report.csv")
+        rep.to_frame().to_csv(rp, index=False, lineterminator="\n")
+        print(rep.summary())
+        for p in rep.problems[:40]:
+            print(f"  {p['sheet']}!{p['cell']}  [{p['check']}] {p['message']}" + (f"  (value: {p['value']})" if p["value"] else ""))
+        if len(rep.problems) > 40:
+            print(f"  ... {len(rep.problems) - 40} more: see {rp}")
+        print(f"report: {rp}")
+        if cat is None:
+            if out.exists():
+                out.unlink()                           # never leave a stale catalogue beside a failed read
+            raise SystemExit(2)
+        cat.write(out)
+        print(f"{cat.catalogue_id} ({cat.kind}): {len(cat.scopes)} scope(s) -> {out}")
     elif a.action == "parse":
         from pw.template.parser import parse_submission, to_catalogue
         spec = load_template_spec(Path(a.spec_file))
@@ -272,7 +300,7 @@ def main(argv=None):
     p.add_argument("--workdir")
     p.set_defaults(fn=cmd_gates)
     p = sub.add_parser("t")
-    p.add_argument("action", choices=["generate", "parse", "ingest"])
+    p.add_argument("action", choices=["generate", "parse", "ingest", "cedant", "cedant-read"])
     p.add_argument("spec", nargs="?")
     p.add_argument("--out")
     p.add_argument("--expiring")
