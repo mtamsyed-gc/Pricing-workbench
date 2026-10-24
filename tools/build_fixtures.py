@@ -709,6 +709,11 @@ def build_run_syn(out: Path):
         w.writerow(["treaty_book", "earned_prem", "ultimate_claims"])
         w.writerow(["BOOK_IND_GREEN", "1250000.00", "962500.00"])
         w.writerow(["BOOK_IND_OTHER", "2680000.00", "1983200.00"])
+    with (d / "terms_scores.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["option_id", "commission_pct", "profit_share_pct", "corridor_pts", "cap_pct", "share_pct"])
+        w.writerow(["SUB_X", "17.5", "20", "5", "120", "50"])
+        w.writerow(["SUB_Y", "15.0", "25", "0", "110", "30"])
     _dump({"run_id": "RUN_SYN", "expiring": "../CAT_ALPHA/spec.json",
            "exposure": {"dim_life": "../EXPO_SYN/dim_life.csv", "maps": "../EXPO_SYN/maps",
                         "manifest": "../EXPO_SYN/run_manifest.csv", "snapshot_date": "2025-07-01"},
@@ -716,6 +721,10 @@ def build_run_syn(out: Path):
                       "lapse": {"BOOK_IND_GREEN": 0.06, "BOOK_IND_OTHER": 0.04}},
            "v5": {"outlier_band": [0.7, 1.3]},
            "benefit_overrides": [],
+           "scorecard": {"weights_file": "../../examples/scorecard_weights.json", "terms_scores": "terms_scores.csv",
+                         "panels": [{"panel_id": "PANEL_XY", "lead": "SUB_X", "members": {"SUB_X": 0.6, "SUB_Y": 0.4}}],
+                         "grid_step": 0.1, "show_reinsurer_names": False, "market_facing": False,
+                         "incumbent_names": []},
            "duckdb": {"memory_limit": "2GB", "threads": 2}}, d / "run_config.json")
 
 

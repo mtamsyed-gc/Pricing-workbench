@@ -30,9 +30,19 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Merged to main (PR #1, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 777c8e8 (Win 11, Py 3.14); GC work laptop (pinned Py 3.12) run outstanding | Run the check on the GC work laptop when available; answer open items below |
 | WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | WS3 + WS6 next (WS2 in parallel); answer WS1 open items 11–14 |
 | WS2 | A market benchmark | Ready after WS0 merge (needs WS1 BenefitFactors for richness) | — | docs/workorders/WS2.md |
-| WS3 | D scorecard | Ready (WS1 merged) | — | docs/workorders/WS3.md |
+| WS3 | D scorecard | Built on `ws3-scorecard`, tests green in sandbox, PR open | **pending** | Owner: laptop check on the PR head; set real weights; answer WS3 open items 15–17 |
 | WS4 | Integration, release | Blocked on WS1–WS3 | — | docs/workorders/WS4.md |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
+
+### WS3 notes for the next sessions
+- `pw/scorecard.py`: ScoreInputs (SPEC §7) from RateIndex / options.json / `terms_scores.csv`; lead-only panels;
+  min-max 0-100; `score` -> Scorecard + Ranking (competition ranks, UNRANKED with reason); weight sensitivity:
+  exact one-at-a-time leader intervals and flip weights (scores are linear in the weight), simplex grid win shares.
+- Recommendation pack `out/Recommendation_Pack_<RunID>.xlsx` (Summary, Scorecard, Inputs, Sensitivity). Options are
+  shown by option_id unless `show_reinsurer_names`; with `market_facing` the `incumbent_names` must not appear (else the
+  pack is refused and removed).
+- Run config `scorecard` section: weights / weights_file, terms_scores, panels, directions (overrides), grid_step.
+  Example: `fixtures/RUN_SYN/run_config.json` + `examples/scorecard_weights.json` (fictional weights).
 
 ### WS1 notes for the next sessions
 - `pw/template/ingest.py`: `t ingest` = parse + V5 + SUBMISSION catalogue + registration in `runs/<RunID>/options.json`.
@@ -86,6 +96,12 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 13. (WS1) SPEC §4.3 "plus module values as % of base" needs a base definition (which cell / mix); modules are left out
     of level-1 richness and module option changes are MANUAL_REVIEW until defined.
 14. (WS1) V5 outlier band default 0.7–1.3 (run config `v5.outlier_band`); confirm the band for UFIC.
+15. (WS3) Default directions: CORRIDOR lower is better (cedant retains fewer LR points), CAP higher is better
+    (reinsurer liability capped higher). Confirm, or override per tender in the run config `scorecard.directions`.
+16. (WS3) Panels enter the min-max range alongside single options; a panel's share-weighted spread can be lower than
+    either member's, which moves the ROBUSTNESS range. Acceptable, or normalise on single options only?
+17. (WS3) One-at-a-time sensitivity rescales the other weights proportionally; if a criterion currently has weight 1,
+    the others are taken as equal-weighted. Confirm.
 10. (WS0) xlsxwriter cannot lock workbook structure (sheet order/insertion); sheets are protected individually and
     `_KEYS` tolerates moves. Acceptable?
 

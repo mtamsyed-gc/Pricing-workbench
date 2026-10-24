@@ -1,0 +1,15 @@
+{
+ "_note": "Fictional example weights for the scorecard (WS3). Owner sets the real weights per tender; they must sum to 1.",
+ "weights": {
+  "PRICE": 0.35,
+  "PRICE_BENEFIT_ADJ": 0.15,
+  "ROBUSTNESS_SPREAD": 0.10,
+  "UNPRICED_SHARE": 0.05,
+  "V5_FLAG_SHARE": 0.05,
+  "COMMISSION": 0.15,
+  "PROFIT_SHARE": 0.05,
+  "CORRIDOR": 0.05,
+  "CAP": 0.0,
+  "SHARE": 0.05
+ }
+}

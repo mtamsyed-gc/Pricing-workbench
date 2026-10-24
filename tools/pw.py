@@ -14,6 +14,7 @@
   t ingest <submission.xlsx> --spec <template_spec.json> --issued <template.xlsx> --run <run_config.json> --id ID --owner NAME
   index <run_config.json>          B1 + B2: RateFactors, RateIndex (+ sensitivities), TreatyFeed, OptionTerms
   benefit <run_config.json>        B1 level 1 only: BenefitDiff, BenefitFactors
+  score <run_config.json>          D scorecard: ScoreInputs, Scorecard, Ranking, weight sensitivity, recommendation pack
   fixtures build
 
 Paths are resolved from this script's location for repo resources; arguments are taken as given (or relative to
@@ -202,6 +203,17 @@ def cmd_benefit(a):
     print(bf.groupby("option_id")["ratio"].agg(["min", "max", "count"]).to_string())
 
 
+def cmd_score(a):
+    from pw.rate_index import load_run_config
+    from pw.scorecard import run_scorecard
+    r = run_scorecard(load_run_config(a.run_config), Path(a.runs_root) if a.runs_root else None)
+    print(r["Ranking"].to_string(index=False))
+    if len(r["Flips"]):
+        print("nearest ranking flips:")
+        print(r["Flips"].head(5).to_string(index=False))
+    print(f"recommendation pack: {r['pack']}")
+
+
 def cmd_fixtures(a):
     import subprocess
     for s in ("build_fixtures.py", "build_submissions.py"):
@@ -269,6 +281,10 @@ def main(argv=None):
     p.add_argument("run_config")
     p.add_argument("--runs-root")
     p.set_defaults(fn=cmd_benefit)
+    p = sub.add_parser("score")
+    p.add_argument("run_config")
+    p.add_argument("--runs-root")
+    p.set_defaults(fn=cmd_score)
     p = sub.add_parser("fixtures")
     p.add_argument("action", choices=["build"])
     p.set_defaults(fn=cmd_fixtures)
