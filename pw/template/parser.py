@@ -196,24 +196,37 @@ def fill_template(template_path: Path, out_path: Path, seed: int = 4, value_fn=N
 # ---------------------------------------------------------------------------------------------- to catalogue
 _BLOCK_DIMS = ("product_type", "regulator", "rating_region", "tpa")
 
+# TPA factor basis of submitted per-TPA block values (HANDOVER open item 4; owner decision 24 Oct 2026, provisional).
+#   "PRE"  (option A): block value = base before the catalogue's TPA factor; the issued TPA factor still applies.
+#   "POST" (option B): block value = the TPA's final base; TPA factor tables (family "tpa") are neutralised to 1.0.
+# Switching to POST needs the owner's confirmation and a change request (SPEC §8.0 wording, Existing Rates, Cover).
+TPA_FACTOR_BASIS = "PRE"
+TPA_FAMILY = "tpa"
+
 
 def _safe_id(s: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.|-]+", "_", s)
 
 
 def to_catalogue(parsed: ParsedSubmission, template_spec: dict, catalogue_id: str, owner: str,
-                 expiring: Catalogue | None = None, version: str = "1") -> Catalogue:
+                 expiring: Catalogue | None = None, version: str = "1", exclude: set | None = None,
+                 tpa_basis: str | None = None) -> Catalogue:
     """SUBMISSION catalogue: one scope per template block (product x region x TPA) with the submitted BASE_TABLE.
     With an expiring catalogue, the issued factor tables / modules / fees / loadings / formula of the matching
     expiring scope are attached (proposed multipliers replace issued ones when the template allowed them and
     values were supplied). The submitted per-TPA base is read on the same basis as the expiring base table."""
     ns = normalise(template_spec)
     allow_prop = ns["options"]["allow_proposed_multipliers"]
+    exclude = set(exclude or ())
+    tpa_basis = tpa_basis or TPA_FACTOR_BASIS
+    if tpa_basis not in ("PRE", "POST"):
+        raise SpecError(f"tpa_basis must be PRE or POST, got {tpa_basis!r}")
     cat = Catalogue(catalogue_id=catalogue_id, owner=owner, kind="SUBMISSION", version=version,
                     effective_date=ns.get("effective_date"), currency=ns["currency"], premium_basis=ns["premium_basis"],
                     source_file=parsed.path.name, spec_id=ns["tender_id"], terms=parsed.terms(),
                     meta={"structure_hash": parsed.meta.get("structure_hash"), "hash_ok": parsed.hash_ok,
-                          "warnings": parsed.warnings[:200]})
+                          "warnings": parsed.warnings[:200], "tpa_factor_basis": tpa_basis,
+                          "excluded_cells": sorted(exclude)})
     by_block = {}
     lay = compute_layout(ns)
     for c in lay.cells:
@@ -243,7 +256,7 @@ def to_catalogue(parsed: ParsedSubmission, template_spec: dict, catalogue_id: st
             rows = []
             for c in by_block.get(b["block_id"], []):
                 v = None if c.refer else parsed.values.get(c.cell_key)
-                if not c.refer and v is None:
+                if not c.refer and (v is None or c.cell_key in exclude):
                     continue
                 if not c.refer and not isinstance(v, float):
                     raise ProposalRequired(f"{c.cell_key}: non-numeric submitted value {v!r}")
@@ -275,6 +288,10 @@ def to_catalogue(parsed: ParsedSubmission, template_spec: dict, catalogue_id: st
                     c2.block_check = {}
                     if comp.type == "FACTOR_TABLE" and allow_prop:
                         _apply(c2, proposed, "multiplier", exp_scope.scope_id)
+                    if comp.type == "FACTOR_TABLE" and comp.family == TPA_FAMILY and tpa_basis == "POST":
+                        for r in c2.rows:
+                            r["value"] = 1.0
+                            r["source_ref"] = "TPA factor neutralised (submitted block is post-TPA-factor)"
                     if comp.type == "MODULE":
                         _apply(c2, addons, "addon", exp_scope.scope_id)
                     scope.components.append(c2)

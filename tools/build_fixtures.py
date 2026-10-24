@@ -694,6 +694,31 @@ def build_expo(out: Path, alpha_spec_path: Path, contract_path: Path):
                    "unmapped; some age-72 P7 parents hit REFER cells.", "seed": SEED, "rows": n}, d / "README.json")
 
 
+# =============================================================================================== RUN_SYN (WS1)
+def build_run_syn(out: Path):
+    """Synthetic run inputs for B1/B2/TreatyFeed on CAT_ALPHA x EXPO_SYN x SUB_X/SUB_Y (all fictional)."""
+    d = out / "RUN_SYN"
+    d.mkdir(parents=True, exist_ok=True)
+    with (d / "treaty_book_map.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["product_type", "rating_region", "tpa", "treaty_book"])
+        w.writerow(["INDIVIDUAL", "RGN_A", "TPA_GREEN", "BOOK_IND_GREEN"])
+        w.writerow(["INDIVIDUAL", "RGN_A", "ANY", "BOOK_IND_OTHER"])
+    with (d / "experience.csv").open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["treaty_book", "earned_prem", "ultimate_claims"])
+        w.writerow(["BOOK_IND_GREEN", "1250000.00", "962500.00"])
+        w.writerow(["BOOK_IND_OTHER", "2680000.00", "1983200.00"])
+    _dump({"run_id": "RUN_SYN", "expiring": "../CAT_ALPHA/spec.json",
+           "exposure": {"dim_life": "../EXPO_SYN/dim_life.csv", "maps": "../EXPO_SYN/maps",
+                        "manifest": "../EXPO_SYN/run_manifest.csv", "snapshot_date": "2025-07-01"},
+           "treaty": {"book_map": "treaty_book_map.csv", "experience": "experience.csv",
+                      "lapse": {"BOOK_IND_GREEN": 0.06, "BOOK_IND_OTHER": 0.04}},
+           "v5": {"outlier_band": [0.7, 1.3]},
+           "benefit_overrides": [],
+           "duckdb": {"memory_limit": "2GB", "threads": 2}}, d / "run_config.json")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=str(REPO / "fixtures"))
@@ -706,6 +731,7 @@ def main(argv=None):
     build_retiree(out)
     build_ipmi(out)
     build_expo(out, out / "CAT_ALPHA" / "spec.json", REPO / "contracts" / "merit_model_contract_IP4-8.json")
+    build_run_syn(out)
     print(f"fixtures written to {out}")
 
 

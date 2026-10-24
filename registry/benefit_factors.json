@@ -1,6 +1,14 @@
 {
   "registry": "benefit_factors",
-  "version": "0.0",
-  "notes": "SPEC \u00a74.3 market factor library (versioned). Empty scaffold; WS1/WS2 populate. Each entry: benefit_code, scope (dims, ANY allowed), option, relativity, reference_option, source, as_of.",
-  "entries": []
+  "version": "0.1",
+  "notes": "SPEC \u00a74.3 market factor library (versioned). 'family_map' links a benefit_code (registry/benefits.json) to the pricing factor family whose relativities value it (owner decision 24 Oct 2026, WS1). 'entries': market relativities used when the expiring catalogue's own factor table has no row for an option: {family, scope (dims, ANY allowed), option, relativity, reference_option, source, as_of}. Empty until WS2 / owner.",
+  "entries": [],
+  "family_map": {
+    "op_diag_copay": "copay_op_diag",
+    "consult_deductible": "ded_consult",
+    "pharmacy_copay": "copay_pharmacy",
+    "ip_copay": "copay_ip",
+    "pharmacy_limit": "pharmacy_limit",
+    "aml": "aml"
+  }
 }
