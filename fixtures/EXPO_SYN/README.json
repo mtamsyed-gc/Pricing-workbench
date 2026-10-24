@@ -1,0 +1,5 @@
+{
+ "note": "Synthetic exposure for CAT_ALPHA. Written premium = CAT_ALPHA price at the drawn OP diagnostic co-pay x life-years x lognormal(0, 0.04) noise x 1.02 for TPA_BLUE. Plan label 'Plan 9 Legacy' is deliberately unmapped; some age-72 P7 parents hit REFER cells.",
+ "seed": 20261024,
+ "rows": 2400
+}

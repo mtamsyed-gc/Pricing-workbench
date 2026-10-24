@@ -1,0 +1,300 @@
+{
+ "spec_id": "CAT_GAMMA_SPEC",
+ "spec_version": "1",
+ "catalogue": {
+  "catalogue_id": "CAT_GAMMA",
+  "owner": "FICTIONAL_CEDANT_C",
+  "kind": "MARKET",
+  "version": "1",
+  "effective_date": "2026-01-01",
+  "currency": "AED",
+  "premium_basis": "NET"
+ },
+ "source_file": "source.xlsx",
+ "maps": {
+  "gender": {
+   "Male": "M",
+   "Female": "F"
+  },
+  "module_dental": {
+   "D1500": "D1500",
+   "D3000": "D3000",
+   "D6000": "D6000"
+  },
+  "module_optical": {
+   "O400": "O400",
+   "O900": "O900"
+  },
+  "module_maternity": {
+   "M12": "M12",
+   "M24": "M24"
+  }
+ },
+ "band_maps": {
+  "gamma8": {
+   "parse": [
+    "0-17",
+    "18-29",
+    "30-39",
+    "40-49",
+    "50-54",
+    "55-59",
+    "60-64",
+    "65+"
+   ]
+  }
+ },
+ "scopes": [
+  {
+   "scope_id": "GAMMA_SME_B",
+   "product_type": "SME",
+   "regulator": "DHA",
+   "rating_region": "RGN_B",
+   "tpa_set": [
+    "TPA_RED",
+    "TPA_BLUE"
+   ],
+   "plans": [
+    {
+     "plan_id": "G1",
+     "label": "Option 1",
+     "tier_rank": 1,
+     "network_by_tpa": {
+      "TPA_RED": "G_NET1",
+      "TPA_BLUE": "G_NET1"
+     }
+    },
+    {
+     "plan_id": "G2",
+     "label": "Option 2",
+     "tier_rank": 2,
+     "network_by_tpa": {
+      "TPA_RED": "G_NET2",
+      "TPA_BLUE": "G_NET2"
+     }
+    },
+    {
+     "plan_id": "G3",
+     "label": "Option 3",
+     "tier_rank": 3,
+     "network_by_tpa": {
+      "TPA_RED": "G_NET3",
+      "TPA_BLUE": "G_NET3"
+     }
+    },
+    {
+     "plan_id": "G4",
+     "label": "Option 4",
+     "tier_rank": 4,
+     "network_by_tpa": {
+      "TPA_RED": "G_NET4",
+      "TPA_BLUE": "G_NET4"
+     }
+    }
+   ],
+   "components": [
+    {
+     "component_id": "base",
+     "type": "BASE_TABLE",
+     "sources": [
+      {
+       "sheet": "SME Base",
+       "anchor": "A3",
+       "row_dims": [
+        {
+         "dim": "age",
+         "band_map": "gamma8"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "plan",
+         "map": "@plans"
+        },
+        {
+         "dim": "gender",
+         "map": "gender"
+        }
+       ],
+       "n_rows": 8,
+       "n_cols": 8
+      }
+     ]
+    },
+    {
+     "component_id": "f_size",
+     "type": "FACTOR_TABLE",
+     "family": "group_size",
+     "keys": [
+      "group_size_band"
+     ],
+     "reference_level": "10-49",
+     "rows": [
+      {
+       "key": {
+        "group_size_band": [
+         3,
+         9
+        ]
+       },
+       "value": 1.085,
+       "labels": {
+        "group_size_band": "3-9"
+       }
+      },
+      {
+       "key": {
+        "group_size_band": [
+         10,
+         49
+        ]
+       },
+       "value": 1.0,
+       "labels": {
+        "group_size_band": "10-49"
+       }
+      },
+      {
+       "key": {
+        "group_size_band": [
+         50,
+         200
+        ]
+       },
+       "value": 0.962,
+       "labels": {
+        "group_size_band": "50-200"
+       }
+      }
+     ]
+    },
+    {
+     "component_id": "m_dental",
+     "type": "MODULE",
+     "family": "module_dental",
+     "unit": "PER_MEMBER",
+     "keys": [
+      "plan",
+      "module_dental"
+     ],
+     "default_option": "NONE",
+     "sources": [
+      {
+       "sheet": "Add-ons",
+       "anchor": "A2",
+       "row_dims": [
+        {
+         "dim": "module_dental",
+         "map": "module_dental"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "plan",
+         "map": "@plans"
+        }
+       ],
+       "n_rows": 3,
+       "n_cols": 4
+      }
+     ]
+    },
+    {
+     "component_id": "m_optical",
+     "type": "MODULE",
+     "family": "module_optical",
+     "unit": "PER_MEMBER",
+     "keys": [
+      "plan",
+      "module_optical"
+     ],
+     "default_option": "NONE",
+     "sources": [
+      {
+       "sheet": "Add-ons",
+       "anchor": "A9",
+       "row_dims": [
+        {
+         "dim": "module_optical",
+         "map": "module_optical"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "plan",
+         "map": "@plans"
+        }
+       ],
+       "n_rows": 2,
+       "n_cols": 4
+      }
+     ]
+    },
+    {
+     "component_id": "m_mat",
+     "type": "MODULE",
+     "family": "module_maternity",
+     "unit": "PER_ELIGIBLE_FEMALE",
+     "keys": [
+      "plan",
+      "module_maternity"
+     ],
+     "default_option": "NONE",
+     "sources": [
+      {
+       "sheet": "Add-ons",
+       "anchor": "A15",
+       "row_dims": [
+        {
+         "dim": "module_maternity",
+         "map": "module_maternity"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "plan",
+         "map": "@plans"
+        }
+       ],
+       "n_rows": 2,
+       "n_cols": 4
+      }
+     ]
+    },
+    {
+     "component_id": "loading",
+     "type": "LOADING",
+     "cap": 0.25
+    }
+   ],
+   "formula": {
+    "rounding": 2
+   }
+  }
+ ],
+ "rules": [
+  {
+   "rule_id": "G_R1",
+   "scope": {
+    "product_type": "SME"
+   },
+   "type": "ELIGIBILITY",
+   "parameters": {
+    "group_size_min": 3,
+    "group_size_max": 200
+   },
+   "text": "Group size 3 to 200"
+  },
+  {
+   "rule_id": "G_R2",
+   "scope": {
+    "product_type": "SME"
+   },
+   "type": "RENEWAL",
+   "parameters": {
+    "nlr_auto_renew_max": 0.7
+   },
+   "text": "NLR up to 70% renews automatically; above is referred"
+  }
+ ]
+}

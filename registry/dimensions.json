@@ -1,0 +1,332 @@
+{
+  "registry": "dimensions",
+  "version": "0.1",
+  "wildcard": "ANY",
+  "notes": "SPEC \u00a72. Dimension order below is the canonical key order. 'dynamic' values are catalogue data (SPEC \u00a73.3). numeric-range dimensions carry a single integer on cells and [lo, hi] ranges on table rows. Dimensions with cell_key=false are catalogue/scope attributes, never cell keys. FACTOR_TABLE families name a table; their 'keys' are dimensions (e.g. family 'tpa' keys on tpa).",
+  "dimensions": [
+    {
+      "code": "product_type",
+      "type": "categorical",
+      "values": [
+        "INDIVIDUAL",
+        "SME",
+        "GROUP",
+        "BASIC",
+        "NE_COMPULSORY",
+        "RETIREE",
+        "IPMI"
+      ],
+      "exposure_source": "PolicyTypeUsed + segment_map",
+      "notes": "Extensible",
+      "cell_key": true
+    },
+    {
+      "code": "regulator",
+      "type": "categorical",
+      "values": [
+        "DHA",
+        "DOH",
+        "MOH_NE",
+        "NONE"
+      ],
+      "exposure_source": "Region Group + segment_map",
+      "notes": "DOH = HAAD; NONE for IPMI",
+      "cell_key": true
+    },
+    {
+      "code": "rating_region",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": "derived from regulator + catalogue scope (segment_map)",
+      "notes": "e.g. DXB_NE, AUH, NE, IPMI residence groups",
+      "cell_key": true
+    },
+    {
+      "code": "tpa",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": "TPA",
+      "notes": "Tables may scope a set of TPAs",
+      "cell_key": true
+    },
+    {
+      "code": "plan",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": "Plan / Category + plan_map",
+      "cell_key": true
+    },
+    {
+      "code": "network",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": "plan.network_by_tpa (Network + network_map used as a consistency check)",
+      "notes": "Attribute of plan x TPA, also a factor key",
+      "cell_key": true
+    },
+    {
+      "code": "network_option",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": null,
+      "notes": "Not in Merit: catalogue default option",
+      "cell_key": true
+    },
+    {
+      "code": "age",
+      "type": "numeric-range",
+      "range": [
+        0,
+        120
+      ],
+      "exposure_source": "AgeAtInception",
+      "notes": "Single year canonical; source bands map to [lo, hi]",
+      "cell_key": true
+    },
+    {
+      "code": "entry_age",
+      "type": "numeric-range",
+      "range": [
+        0,
+        120
+      ],
+      "exposure_source": null,
+      "notes": "Used for lookups when the scope's rating_basis_age = ENTRY_AGE (Retiree)",
+      "cell_key": true
+    },
+    {
+      "code": "gender",
+      "type": "categorical",
+      "values": [
+        "M",
+        "F"
+      ],
+      "exposure_source": "Gender + value_map",
+      "cell_key": true
+    },
+    {
+      "code": "marital",
+      "type": "categorical",
+      "values": [
+        "SINGLE",
+        "MARRIED"
+      ],
+      "exposure_source": "Marital Status + value_map",
+      "cell_key": true
+    },
+    {
+      "code": "member_category",
+      "type": "categorical",
+      "values": [
+        "EMPLOYEE",
+        "SMALL_INVESTOR",
+        "PARTNER_INVESTOR",
+        "DEP_OF_EMPLOYEE",
+        "DEP_OF_INDIVIDUAL",
+        "SPOUSE",
+        "CHILD",
+        "PARENT",
+        "DOMESTIC_NONUAE_SPONSOR",
+        "DOMESTIC_UAE_SPONSOR"
+      ],
+      "hierarchy": {
+        "EMPLOYEE": "PRINCIPAL",
+        "SMALL_INVESTOR": "PRINCIPAL",
+        "PARTNER_INVESTOR": "PRINCIPAL",
+        "DEP_OF_EMPLOYEE": "DEPENDANT",
+        "DEP_OF_INDIVIDUAL": "DEPENDANT",
+        "SPOUSE": "DEPENDANT",
+        "CHILD": "DEPENDANT",
+        "PARENT": "DEPENDANT",
+        "DOMESTIC_NONUAE_SPONSOR": "DOMESTIC",
+        "DOMESTIC_UAE_SPONSOR": "DOMESTIC"
+      },
+      "parents": [
+        "PRINCIPAL",
+        "DEPENDANT",
+        "DOMESTIC"
+      ],
+      "exposure_source": "Relation + member_category_map",
+      "notes": "Table rows may key a parent group",
+      "cell_key": true
+    },
+    {
+      "code": "maternity_eligible",
+      "type": "categorical",
+      "values": [
+        "Y",
+        "N"
+      ],
+      "exposure_source": "Gender Group + value_map",
+      "notes": "Drives PER_ELIGIBLE_FEMALE modules",
+      "cell_key": true
+    },
+    {
+      "code": "nationality_group",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": "Nationality Group + nationality_map",
+      "cell_key": true
+    },
+    {
+      "code": "salary_band",
+      "type": "categorical",
+      "values": [
+        "LOW",
+        "STANDARD"
+      ],
+      "exposure_source": null,
+      "notes": "Assumption input",
+      "cell_key": true
+    },
+    {
+      "code": "group_size_band",
+      "type": "numeric-range",
+      "range": [
+        1,
+        1000000
+      ],
+      "exposure_source": "GroupSize",
+      "notes": "Cells carry the integer group size; table rows carry [lo, hi] bands",
+      "cell_key": true
+    },
+    {
+      "code": "copay_op_diag",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "ded_consult",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "copay_pharmacy",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "copay_ip",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "pharmacy_limit",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "aml",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "copay",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "module_maternity",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "module_dental",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "module_optical",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "module_op",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "notes": "IPMI",
+      "cell_key": true
+    },
+    {
+      "code": "module_evac",
+      "type": "categorical",
+      "values": "dynamic",
+      "family": "module",
+      "exposure_source": null,
+      "notes": "IPMI",
+      "cell_key": true
+    },
+    {
+      "code": "area_of_cover",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": null,
+      "notes": "IPMI, e.g. WW_INC_USA, WW_EXC_USA, REGIONAL",
+      "cell_key": true
+    },
+    {
+      "code": "deductible",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": null,
+      "notes": "IPMI excess options",
+      "cell_key": true
+    },
+    {
+      "code": "currency",
+      "type": "categorical",
+      "values": "dynamic",
+      "exposure_source": null,
+      "notes": "Catalogue attribute; FX in run config",
+      "cell_key": false
+    },
+    {
+      "code": "payment_frequency",
+      "type": "categorical",
+      "values": [
+        "ANNUAL",
+        "SEMI",
+        "QUARTERLY",
+        "MONTHLY"
+      ],
+      "exposure_source": null,
+      "cell_key": true
+    },
+    {
+      "code": "rating_basis_age",
+      "type": "categorical",
+      "values": [
+        "INCEPTION_AGE",
+        "ATTAINED_AGE",
+        "ENTRY_AGE"
+      ],
+      "exposure_source": null,
+      "notes": "Scope attribute, not a cell key",
+      "cell_key": false
+    }
+  ]
+}

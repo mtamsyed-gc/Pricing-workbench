@@ -1,0 +1,130 @@
+{
+ "spec_id": "CAT_DELTA_SPEC",
+ "spec_version": "1",
+ "catalogue": {
+  "catalogue_id": "CAT_DELTA",
+  "owner": "FICTIONAL_CEDANT_D",
+  "kind": "EXPIRING",
+  "version": "1",
+  "effective_date": "2026-01-01",
+  "currency": "AED",
+  "premium_basis": "GROSS"
+ },
+ "source_file": "source.xlsx",
+ "maps": {
+  "cat": {
+   "Worker": "EMPLOYEE",
+   "Self Sponsor": "SMALL_INVESTOR",
+   "Family Member": "DEPENDANT",
+   "Household Staff": "DOMESTIC"
+  }
+ },
+ "band_maps": {
+  "delta": {
+   "parse": [
+    "0-17",
+    "18-44",
+    "45-64",
+    "65+"
+   ]
+  }
+ },
+ "text_values": {
+  "Refer": "REFER"
+ },
+ "scopes": [
+  {
+   "scope_id": "DELTA_BASIC_C",
+   "product_type": "BASIC",
+   "regulator": "DOH",
+   "rating_region": "RGN_C",
+   "tpa_set": [
+    "DIRECT"
+   ],
+   "plans": [
+    {
+     "plan_id": "BASIC",
+     "label": "Basic",
+     "tier_rank": 1,
+     "network_by_tpa": {
+      "DIRECT": "D_NET"
+     }
+    }
+   ],
+   "components": [
+    {
+     "component_id": "base",
+     "type": "BASE_TABLE",
+     "sources": [
+      {
+       "sheet": "Basic",
+       "anchor": "A3",
+       "row_dims": [
+        {
+         "dim": "member_category",
+         "map": "cat"
+        },
+        {
+         "dim": "age",
+         "band_map": "delta"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "premium_column",
+         "labels": {
+          "Gross premium": {}
+         }
+        }
+       ],
+       "n_rows": 12,
+       "n_cols": 1,
+       "fixed": {
+        "plan": "BASIC"
+       }
+      }
+     ]
+    },
+    {
+     "component_id": "policy_fee",
+     "type": "FEE",
+     "amount": 18.0,
+     "premium_basis": "GROSS"
+    },
+    {
+     "component_id": "loading",
+     "type": "LOADING",
+     "cap": 0.22
+    }
+   ],
+   "formula": {
+    "rounding": 2,
+    "min_premium": 400.0
+   }
+  }
+ ],
+ "rules": [
+  {
+   "rule_id": "D_R1",
+   "scope": {
+    "product_type": "BASIC"
+   },
+   "type": "ELIGIBILITY",
+   "parameters": {
+    "salary_max": 4500,
+    "group_lives_min": 120,
+    "group_lives_max": 450
+   },
+   "text": "Salary up to AED 4.5k; groups of 120-450 lives"
+  },
+  {
+   "rule_id": "D_R2",
+   "scope": {},
+   "type": "REFERRAL",
+   "parameters": {
+    "age_gt": 64
+   },
+   "text": "Above 64: refer to the lead reinsurer"
+  }
+ ]
+}

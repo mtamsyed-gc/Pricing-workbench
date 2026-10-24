@@ -1,0 +1,523 @@
+{
+ "spec_id": "CAT_ALPHA_SPEC",
+ "spec_version": "1",
+ "catalogue": {
+  "catalogue_id": "CAT_ALPHA",
+  "owner": "FICTIONAL_CEDANT_A",
+  "kind": "EXPIRING",
+  "version": "1",
+  "effective_date": "2026-01-01",
+  "currency": "AED",
+  "premium_basis": "NET"
+ },
+ "source_file": "source.xlsx",
+ "maps": {
+  "gender": {
+   "Male": "M",
+   "Female": "F"
+  },
+  "net_codes": {
+   "N_PLAT": "N_PLAT",
+   "N_GOLD": "N_GOLD",
+   "N_SILV": "N_SILV",
+   "N_BRNZ": "N_BRNZ",
+   "N_STD": "N_STD",
+   "N_CLIN": "N_CLIN",
+   "N_BASIC": "N_BASIC"
+  },
+  "aml_opts": {
+   "300000": "300000",
+   "750000": "750000",
+   "1250000": "1250000",
+   "2000000": "2000000"
+  },
+  "mat_opts": {
+   "M10": "M10",
+   "M20": "M20",
+   "MAML": "MAML"
+  }
+ },
+ "band_maps": {
+  "alpha15": {
+   "parse": [
+    "0-4",
+    "5-9",
+    "10-14",
+    "15-19",
+    "20-24",
+    "25-29",
+    "30-34",
+    "35-39",
+    "40-44",
+    "45-49",
+    "50-54",
+    "55-59",
+    "60-64",
+    "65-69",
+    "70+"
+   ]
+  }
+ },
+ "text_values": {
+  "Refer": "REFER"
+ },
+ "scopes": [
+  {
+   "scope_id": "ALPHA_IND_A",
+   "product_type": "INDIVIDUAL",
+   "regulator": "DHA",
+   "rating_region": "RGN_A",
+   "tpa_set": [
+    "TPA_RED",
+    "TPA_BLUE",
+    "TPA_GREEN"
+   ],
+   "plans": [
+    {
+     "plan_id": "P1",
+     "label": "Plan 1",
+     "tier_rank": 1,
+     "network_by_tpa": {
+      "TPA_RED": "N_PLAT",
+      "TPA_BLUE": "N_PLAT",
+      "TPA_GREEN": "N_PLAT"
+     },
+     "attributes": {
+      "clinic_restricted": false,
+      "gp_referral": false,
+      "split_ip_op": false
+     },
+     "defaults": {
+      "copay_op_diag": "10%",
+      "ded_consult": "D30",
+      "copay_pharmacy": "0%",
+      "aml": "2000000",
+      "network_option": "OPT1",
+      "module_maternity": "M10"
+     }
+    },
+    {
+     "plan_id": "P2",
+     "label": "Plan 2",
+     "tier_rank": 2,
+     "network_by_tpa": {
+      "TPA_RED": "N_GOLD",
+      "TPA_BLUE": "N_GOLD",
+      "TPA_GREEN": "N_GOLD"
+     },
+     "attributes": {
+      "clinic_restricted": false,
+      "gp_referral": false,
+      "split_ip_op": true
+     },
+     "defaults": {
+      "copay_op_diag": "10%",
+      "ded_consult": "D30",
+      "copay_pharmacy": "0%",
+      "aml": "1250000",
+      "network_option": "OPT1",
+      "module_maternity": "M10"
+     }
+    },
+    {
+     "plan_id": "P3",
+     "label": "Plan 3",
+     "tier_rank": 3,
+     "network_by_tpa": {
+      "TPA_RED": "N_SILV",
+      "TPA_BLUE": "N_SILV",
+      "TPA_GREEN": "N_SILV"
+     },
+     "attributes": {
+      "clinic_restricted": false,
+      "gp_referral": false,
+      "split_ip_op": true
+     },
+     "defaults": {
+      "copay_op_diag": "10%",
+      "ded_consult": "D30",
+      "copay_pharmacy": "0%",
+      "aml": "1250000",
+      "network_option": "OPT1",
+      "module_maternity": "M10"
+     }
+    },
+    {
+     "plan_id": "P4",
+     "label": "Plan 4",
+     "tier_rank": 4,
+     "network_by_tpa": {
+      "TPA_RED": "N_BRNZ",
+      "TPA_BLUE": "N_BRNZ",
+      "TPA_GREEN": "N_BRNZ"
+     },
+     "attributes": {
+      "clinic_restricted": false,
+      "gp_referral": false,
+      "split_ip_op": false
+     },
+     "defaults": {
+      "copay_op_diag": "10%",
+      "ded_consult": "D30",
+      "copay_pharmacy": "0%",
+      "aml": "750000",
+      "network_option": "OPT1",
+      "module_maternity": "M10"
+     }
+    },
+    {
+     "plan_id": "P5",
+     "label": "Plan 5",
+     "tier_rank": 5,
+     "network_by_tpa": {
+      "TPA_RED": "N_STD",
+      "TPA_BLUE": "N_STD",
+      "TPA_GREEN": "N_STD"
+     },
+     "attributes": {
+      "clinic_restricted": false,
+      "gp_referral": false,
+      "split_ip_op": false
+     },
+     "defaults": {
+      "copay_op_diag": "10%",
+      "ded_consult": "D30",
+      "copay_pharmacy": "0%",
+      "aml": "750000",
+      "network_option": "OPT1",
+      "module_maternity": "M10"
+     }
+    },
+    {
+     "plan_id": "P6",
+     "label": "Plan 6",
+     "tier_rank": 6,
+     "network_by_tpa": {
+      "TPA_RED": "N_CLIN",
+      "TPA_BLUE": "N_CLIN",
+      "TPA_GREEN": "N_CLIN"
+     },
+     "attributes": {
+      "clinic_restricted": true,
+      "gp_referral": false,
+      "split_ip_op": false
+     },
+     "defaults": {
+      "copay_op_diag": "10%",
+      "ded_consult": "D30",
+      "copay_pharmacy": "0%",
+      "aml": "750000",
+      "network_option": "OPT1",
+      "module_maternity": "M10"
+     }
+    },
+    {
+     "plan_id": "P7",
+     "label": "Plan 7",
+     "tier_rank": 7,
+     "network_by_tpa": {
+      "TPA_RED": "N_BASIC",
+      "TPA_BLUE": "N_BASIC",
+      "TPA_GREEN": "N_BASIC"
+     },
+     "attributes": {
+      "clinic_restricted": true,
+      "gp_referral": true,
+      "split_ip_op": false
+     },
+     "defaults": {
+      "copay_op_diag": "10%",
+      "ded_consult": "D30",
+      "copay_pharmacy": "0%",
+      "aml": "300000",
+      "network_option": "OPT1",
+      "module_maternity": "M10"
+     }
+    }
+   ],
+   "components": [
+    {
+     "component_id": "base",
+     "type": "BASE_TABLE",
+     "sources": [
+      {
+       "sheet": "Base Rates",
+       "anchor": "A3",
+       "row_dims": [
+        {
+         "dim": "age",
+         "band_map": "alpha15"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "plan",
+         "map": "@plans"
+        },
+        {
+         "dim": "gender",
+         "map": "gender"
+        }
+       ],
+       "n_rows": 15,
+       "n_cols": 14
+      }
+     ]
+    },
+    {
+     "component_id": "f_opdiag",
+     "type": "FACTOR_TABLE",
+     "family": "copay_op_diag",
+     "reference_level": "0%",
+     "values": {
+      "0%": 1.0,
+      "10%": 0.955,
+      "20%": 0.915,
+      "AED25": 0.988
+     }
+    },
+    {
+     "component_id": "f_consult",
+     "type": "FACTOR_TABLE",
+     "family": "ded_consult",
+     "reference_level": "D30",
+     "values": {
+      "NIL": 1.064,
+      "D30": 1.0,
+      "D60": 0.972,
+      "P15_C40": 0.991
+     }
+    },
+    {
+     "component_id": "f_pharm",
+     "type": "FACTOR_TABLE",
+     "family": "copay_pharmacy",
+     "reference_level": "0%",
+     "values": {
+      "0%": 1.0,
+      "15%": 0.972,
+      "25%": 0.951
+     }
+    },
+    {
+     "component_id": "f_aml",
+     "type": "FACTOR_TABLE",
+     "family": "aml",
+     "keys": [
+      "aml",
+      "network"
+     ],
+     "reference_level_by": "network",
+     "reference_level_by_key": {
+      "N_PLAT": "2000000",
+      "N_GOLD": "1250000",
+      "N_SILV": "1250000",
+      "N_BRNZ": "750000",
+      "N_STD": "750000",
+      "N_CLIN": "750000",
+      "N_BASIC": "300000"
+     },
+     "sources": [
+      {
+       "sheet": "Factors",
+       "anchor": "A3",
+       "row_dims": [
+        {
+         "dim": "aml",
+         "map": "aml_opts"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "network",
+         "map": "net_codes"
+        }
+       ],
+       "n_rows": 4,
+       "n_cols": 7
+      }
+     ]
+    },
+    {
+     "component_id": "f_netopt",
+     "type": "FACTOR_TABLE",
+     "family": "network_option",
+     "reference_level": "OPT1",
+     "keys": [
+      "plan",
+      "network_option"
+     ],
+     "rows": [
+      {
+       "key": {
+        "plan": "ANY",
+        "network_option": "OPT1"
+       },
+       "value": 1.0
+      },
+      {
+       "key": {
+        "plan": "P2",
+        "network_option": "OPT2"
+       },
+       "value": 0.88
+      },
+      {
+       "key": {
+        "plan": "P3",
+        "network_option": "OPT2"
+       },
+       "value": 0.905
+      }
+     ]
+    },
+    {
+     "component_id": "f_tpa",
+     "type": "FACTOR_TABLE",
+     "family": "tpa",
+     "keys": [
+      "tpa"
+     ],
+     "reference_level": "TPA_RED",
+     "values": {
+      "TPA_RED": 1.0,
+      "TPA_BLUE": 1.0,
+      "TPA_GREEN": 0.93
+     }
+    },
+    {
+     "component_id": "f_nat",
+     "type": "FACTOR_TABLE",
+     "family": "nationality",
+     "keys": [
+      "nationality_group"
+     ],
+     "reference_level": "OTHER",
+     "values": {
+      "GRP_SOUTH": 0.915,
+      "GRP_EAST": 0.94,
+      "GRP_WEST": 1.12,
+      "OTHER": 1.0
+     }
+    },
+    {
+     "component_id": "m_mat",
+     "type": "MODULE",
+     "family": "module_maternity",
+     "unit": "PER_ELIGIBLE_FEMALE",
+     "keys": [
+      "network",
+      "module_maternity"
+     ],
+     "sources": [
+      {
+       "sheet": "Add-ons",
+       "anchor": "A3",
+       "row_dims": [
+        {
+         "dim": "module_maternity",
+         "map": "mat_opts"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "network",
+         "map": "net_codes"
+        }
+       ],
+       "n_rows": 3,
+       "n_cols": 7
+      }
+     ]
+    },
+    {
+     "component_id": "loading",
+     "type": "LOADING",
+     "cap": 0.3
+    }
+   ],
+   "formula": {
+    "order": [
+     "BASE",
+     "FACTORS",
+     "MODULES"
+    ],
+    "rounding": 2
+   },
+   "benefits": {
+    "P1": [
+     {
+      "benefit_code": "aml",
+      "value": 2000000,
+      "condition_text": "AED 2m per member per year"
+     },
+     {
+      "benefit_code": "room_type",
+      "value": "PRIVATE"
+     },
+     {
+      "benefit_code": "op_diag_copay",
+      "structure": {
+       "type": "PCT",
+       "pct": 0.1
+      },
+      "value": 0.1,
+      "condition_text": "10% co-pay (catalogue default)"
+     }
+    ],
+    "P7": [
+     {
+      "benefit_code": "aml",
+      "value": 300000
+     },
+     {
+      "benefit_code": "room_type",
+      "value": "SEMI_PRIVATE"
+     },
+     {
+      "benefit_code": "gp_referral",
+      "value": true
+     },
+     {
+      "benefit_code": "alt_medicine_limit",
+      "value": null,
+      "condition_text": "as per regulator list"
+     }
+    ]
+   }
+  }
+ ],
+ "rules": [
+  {
+   "rule_id": "A_R1",
+   "scope": {
+    "product_type": "INDIVIDUAL"
+   },
+   "type": "REFERRAL",
+   "parameters": {
+    "claim_amount_gt": 20000
+   },
+   "text": "Claims above AED 20k referred to the lead reinsurer"
+  },
+  {
+   "rule_id": "A_R2",
+   "scope": {
+    "tpa": "TPA_GREEN"
+   },
+   "type": "LOADING_CAP",
+   "parameters": {
+    "max_loading": 0.3
+   },
+   "text": "Maximum loading 30%"
+  },
+  {
+   "rule_id": "A_R3",
+   "scope": {},
+   "type": "REVIEW",
+   "parameters": {
+    "frequency": "QUARTERLY"
+   },
+   "text": "Rates reviewed quarterly"
+  }
+ ]
+}

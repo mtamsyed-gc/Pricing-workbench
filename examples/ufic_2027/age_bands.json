@@ -1,0 +1,284 @@
+{
+ "_note": "Age band labels for the UFIC 2027 template. DXB15 / AUH8 / SME8 are PLACEHOLDERS (HANDOVER open item 1, SPEC \u00a78.4): the owner supplies labels (and boundaries) without rates; the generator reads them from this file, so no code change is needed. The reference document shows some AUH Individual labels (00-17, 18-30, 31-40, 60+) inside the 8-band set but not the full set. AUH_BASIC_* and NE_* sets are taken from the reference document's rate-table structure (labels only, no rates).",
+ "status": {
+  "DXB15": "PLACEHOLDER",
+  "AUH8": "PLACEHOLDER",
+  "SME8": "PLACEHOLDER"
+ },
+ "age_band_sets": {
+  "DXB15": [
+   {
+    "label": "DXB15_B01",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B02",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B03",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B04",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B05",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B06",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B07",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B08",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B09",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B10",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B11",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B12",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B13",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B14",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "DXB15_B15",
+    "range": null,
+    "placeholder": true
+   }
+  ],
+  "AUH8": [
+   {
+    "label": "AUH8_B01",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "AUH8_B02",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "AUH8_B03",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "AUH8_B04",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "AUH8_B05",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "AUH8_B06",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "AUH8_B07",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "AUH8_B08",
+    "range": null,
+    "placeholder": true
+   }
+  ],
+  "SME8": [
+   {
+    "label": "SME8_B01",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "SME8_B02",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "SME8_B03",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "SME8_B04",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "SME8_B05",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "SME8_B06",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "SME8_B07",
+    "range": null,
+    "placeholder": true
+   },
+   {
+    "label": "SME8_B08",
+    "range": null,
+    "placeholder": true
+   }
+  ],
+  "AUH_BASIC_ADULT": [
+   {
+    "label": "18-40",
+    "range": [
+     18,
+     40
+    ]
+   },
+   {
+    "label": "41-59",
+    "range": [
+     41,
+     59
+    ]
+   },
+   {
+    "label": "60+",
+    "range": [
+     60,
+     120
+    ]
+   }
+  ],
+  "AUH_BASIC_DEP": [
+   {
+    "label": "0-17",
+    "range": [
+     0,
+     17
+    ]
+   },
+   {
+    "label": "18-40",
+    "range": [
+     18,
+     40
+    ]
+   },
+   {
+    "label": "41-59",
+    "range": [
+     41,
+     59
+    ]
+   },
+   {
+    "label": "60+",
+    "range": [
+     60,
+     120
+    ]
+   }
+  ],
+  "NE_ENH1": [
+   {
+    "label": "0-17",
+    "range": [
+     0,
+     17
+    ]
+   },
+   {
+    "label": "18-45",
+    "range": [
+     18,
+     45
+    ]
+   },
+   {
+    "label": "46-59",
+    "range": [
+     46,
+     59
+    ]
+   },
+   {
+    "label": "60-64",
+    "range": [
+     60,
+     64
+    ]
+   },
+   {
+    "label": "Above 64",
+    "range": [
+     65,
+     120
+    ]
+   }
+  ],
+  "NE_ENH2": [
+   {
+    "label": "00-64",
+    "range": [
+     0,
+     64
+    ]
+   },
+   {
+    "label": "65-74",
+    "range": [
+     65,
+     74
+    ]
+   },
+   {
+    "label": "75-90",
+    "range": [
+     75,
+     90
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,58 @@
+{
+ "planted": [
+  {
+   "section": "PRINCIPAL",
+   "level": "20%",
+   "band": "61+",
+   "plan": "P2",
+   "column": "Female Married",
+   "source_value": 7181.37,
+   "expected_value": 5785.52,
+   "nil_value": 6316.07
+  },
+  {
+   "section": "PRINCIPAL",
+   "level": "20%",
+   "band": "61+",
+   "plan": "P5",
+   "column": "Male Single",
+   "source_value": 4084.53,
+   "expected_value": 3089.54,
+   "nil_value": 3372.86
+  },
+  {
+   "section": "DEPENDANT",
+   "level": "20%",
+   "band": "0-17",
+   "plan": "P5",
+   "column": "Female Single",
+   "source_value": 572.25,
+   "expected_value": 528.4,
+   "nil_value": 576.86
+  },
+  {
+   "section": "DEPENDANT",
+   "level": "20%",
+   "band": "18-25",
+   "plan": "P6",
+   "column": "Female Married",
+   "source_value": 886.35,
+   "expected_value": 774.71,
+   "nil_value": 845.75
+  },
+  {
+   "section": "DEPENDANT",
+   "level": "20%",
+   "band": "31-35",
+   "plan": "P6",
+   "column": "Male Married",
+   "source_value": 1326.98,
+   "expected_value": 932.14,
+   "nil_value": 1017.62
+  }
+ ],
+ "multipliers": {
+  "10%": 0.952,
+  "20%": 0.916
+ }
+}

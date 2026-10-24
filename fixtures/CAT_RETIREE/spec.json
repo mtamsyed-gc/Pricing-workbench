@@ -1,0 +1,180 @@
+{
+ "spec_id": "CAT_RETIREE_SPEC",
+ "spec_version": "1",
+ "catalogue": {
+  "catalogue_id": "CAT_RETIREE",
+  "owner": "FICTIONAL_CEDANT_E",
+  "kind": "MARKET",
+  "version": "1",
+  "effective_date": "2026-01-01",
+  "currency": "AED",
+  "premium_basis": "NET"
+ },
+ "source_file": "source.xlsx",
+ "maps": {
+  "gender": {
+   "Male": "M",
+   "Female": "F"
+  }
+ },
+ "band_maps": {
+  "single": {
+   "parse": [
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "60",
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "66",
+    "67",
+    "68",
+    "69",
+    "70",
+    "71",
+    "72",
+    "73",
+    "74",
+    "75",
+    "76",
+    "77",
+    "78",
+    "79",
+    "80",
+    "81",
+    "82",
+    "83",
+    "84",
+    "85",
+    "86",
+    "87",
+    "88",
+    "89",
+    "90",
+    "91",
+    "92",
+    "93",
+    "94",
+    "95",
+    "96",
+    "97",
+    "98",
+    "99"
+   ]
+  }
+ },
+ "scopes": [
+  {
+   "scope_id": "RET_A",
+   "product_type": "RETIREE",
+   "regulator": "DHA",
+   "rating_region": "RGN_A",
+   "tpa_set": [
+    "TPA_RED"
+   ],
+   "rating_basis_age": "ENTRY_AGE",
+   "plans": [
+    {
+     "plan_id": "R1",
+     "label": "Retiree 1",
+     "tier_rank": 1,
+     "network_by_tpa": {
+      "TPA_RED": "R_NET"
+     },
+     "defaults": {
+      "payment_frequency": "ANNUAL"
+     }
+    },
+    {
+     "plan_id": "R2",
+     "label": "Retiree 2",
+     "tier_rank": 2,
+     "network_by_tpa": {
+      "TPA_RED": "R_NET"
+     },
+     "defaults": {
+      "payment_frequency": "ANNUAL"
+     }
+    }
+   ],
+   "components": [
+    {
+     "component_id": "base",
+     "type": "BASE_TABLE",
+     "sources": [
+      {
+       "sheet": "Retiree",
+       "anchor": "A3",
+       "row_dims": [
+        {
+         "dim": "age",
+         "band_map": "single"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "plan",
+         "map": "@plans"
+        },
+        {
+         "dim": "gender",
+         "map": "gender"
+        }
+       ],
+       "n_rows": 45,
+       "n_cols": 4
+      }
+     ]
+    },
+    {
+     "component_id": "max_entry",
+     "type": "REFER",
+     "rows": [
+      {
+       "key": {
+        "age": [
+         76,
+         120
+        ]
+       }
+      }
+     ],
+     "notes": "entry age above 75 is referred (rule RT_R1)"
+    },
+    {
+     "component_id": "f_freq",
+     "type": "FACTOR_TABLE",
+     "family": "payment_frequency",
+     "reference_level": "ANNUAL",
+     "values": {
+      "ANNUAL": 1.0,
+      "SEMI": 1.018,
+      "QUARTERLY": 1.027,
+      "MONTHLY": 1.041
+     }
+    }
+   ],
+   "formula": {
+    "rounding": 2
+   }
+  }
+ ],
+ "rules": [
+  {
+   "rule_id": "RT_R1",
+   "scope": {
+    "product_type": "RETIREE"
+   },
+   "type": "ELIGIBILITY",
+   "parameters": {
+    "max_entry_age": 75
+   },
+   "text": "Maximum entry age 75"
+  }
+ ]
+}

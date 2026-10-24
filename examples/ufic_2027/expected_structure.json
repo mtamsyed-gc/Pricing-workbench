@@ -1,0 +1,164 @@
+{
+ "_note": "Acceptance structure for the generated UFIC template (SPEC \u00a78.4 table). Used by tests/test_ufic_example.py.",
+ "sheets": {
+  "Ind Rates - DXB-NE": {
+   "blocks": {
+    "NEXTCARE": [
+     7,
+     15,
+     2
+    ],
+    "NAS": [
+     7,
+     15,
+     2
+    ],
+    "MEDNET": [
+     7,
+     15,
+     2
+    ],
+    "AAFIYA": [
+     3,
+     15,
+     2
+    ]
+   }
+  },
+  "Ind Rates - AUH": {
+   "blocks": {
+    "NEXTCARE": [
+     6,
+     8,
+     2
+    ],
+    "MEDNET": [
+     6,
+     8,
+     2
+    ],
+    "NAS": [
+     6,
+     8,
+     2
+    ],
+    "AAFIYA": [
+     2,
+     8,
+     2
+    ]
+   }
+  },
+  "SME Rates - DXB-NE": {
+   "blocks": {
+    "NAS": [
+     6,
+     8,
+     2
+    ],
+    "NEXTCARE": [
+     6,
+     8,
+     2
+    ],
+    "MEDNET": [
+     6,
+     8,
+     2
+    ]
+   }
+  },
+  "SME Rates - AUH": {
+   "blocks": {
+    "NAS": [
+     6,
+     8,
+     2
+    ],
+    "NEXTCARE": [
+     6,
+     8,
+     2
+    ],
+    "MEDNET": [
+     6,
+     8,
+     2
+    ]
+   }
+  },
+  "AUH Basic Rates": {
+   "blocks": {
+    "DIRECT": [
+     1,
+     20,
+     1
+    ]
+   },
+   "member_categories": 6,
+   "max_bands_per_category": 4
+  },
+  "NE Rates": {
+   "blocks_by_plan": {
+    "NE_BASIC": [
+     1,
+     3,
+     1
+    ],
+    "NE_ENH1": [
+     1,
+     5,
+     1
+    ],
+    "NE_ENH2": [
+     1,
+     3,
+     1
+    ]
+   },
+   "refer_cells": 2
+  }
+ },
+ "splits_on": {
+  "Ind Rates - AUH": {
+   "NEXTCARE": [
+    6,
+    16,
+    2
+   ],
+   "MEDNET": [
+    6,
+    16,
+    2
+   ],
+   "NAS": [
+    6,
+    16,
+    2
+   ]
+  }
+ },
+ "forbidden_tokens": [
+  "UFIC",
+  "Optio",
+  "Nextcare",
+  "NEXTCARE",
+  "Mednet",
+  "MEDNET",
+  "Aafiya",
+  "AAFIYA",
+  "Silk Road",
+  "PCP-RN3",
+  "PCP-AUH",
+  "Emerald",
+  "Fidelity",
+  "0.9734",
+  "0.9537",
+  "1852.60",
+  "13,769.99",
+  "13769.99",
+  "0.9450",
+  "0.9800",
+  "1.0486"
+ ]
+}

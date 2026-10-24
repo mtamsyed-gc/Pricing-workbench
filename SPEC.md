@@ -1,6 +1,6 @@
 # Pricing Workbench — Specification: Canonical Model, Contracts, Template Generator
 
-Version 0.2 · 24 Oct 2026 (v0.2: owner's tender-template principle, §8.0; UFIC structure derived from the reference document, §8.4) · Owner: Etam (GC L&H IMEA)
+Version 0.3 · 24 Oct 2026 (v0.2: owner's tender-template principle, §8.0; UFIC structure derived from the reference document, §8.4; v0.3: laptop acceptance after every change, §13, CR #1) · Owner: Etam (GC L&H IMEA)
 Status: design baseline for WS0. WS1–WS6 build against this document; changes only via `docs/CHANGE_REQUESTS.md`.
 First applied case: UFIC medical QS 2027 tender. The model is cedant-agnostic: no cedant, TPA or catalogue logic in code.
 
@@ -363,6 +363,8 @@ Acceptance check: the generated UFIC template has exactly the blocks, plans, ban
 | WS4 | Integration, release zip, treaty tool feed | End-to-end synthetic run |
 | WS6 | Merit Annex option slicer + as-if page reading `RateFactors` (ete-dashboard repo) | As-if equals workbench numbers on fixtures |
 
+Every work order is also subject to the laptop acceptance check (§13).
+
 ---
 
 ## 12. UFIC source flags (to confirm with UFIC before the template is final)
@@ -379,3 +381,25 @@ Acceptance check: the generated UFIC template has exactly the blocks, plans, ban
 | F8 | Incumbent references | "Refer to Optio Re" appears in tables and rules | Template and outputs say "refer to the lead reinsurer"; no incumbent name in market-facing files |
 
 Note for the rate index: because every co-pay adjustment is a flat multiplier fixed by UFIC, the cell-level rate ratio (option ÷ expiring) does not depend on members' co-pay options. Missing co-pay fields in Merit therefore matter only for V3 (premium reconciliation) and B1, not for B2, unless a reinsurer proposes different multipliers.
+
+---
+
+## 13. Laptop acceptance after every change (owner, 24 Oct 2026; CR #1)
+
+Every change to the workbench (every work order, every PR, every change request applied) is tested on the owner's
+laptop before it counts as done. Sandbox tests are necessary but not sufficient: the target runtime is the laptop
+(CPython 3.12 64-bit, Windows, Artifactory pins, `py` launcher, 260-character paths).
+
+- **Tool:** `py tools\laptop_check.py` (from any folder). It checks the environment (Python version and bitness,
+  Windows, every pin in `requirements-native.txt`), runs the full test suite, runs every CLI tool end to end on the
+  synthetic fixtures from a working directory that is not the repo, opens the generated workbooks, and checks path
+  lengths. It writes `runs/laptop_check/<UTC stamp>/laptop_check_report.md` (+ `.json`); exit code 0 = all PASS.
+- **Coverage rule:** a work order that adds or changes a tool or CLI command adds its end-to-end check to
+  `TOOL_CHECKS` in `tools/laptop_check.py` in the same PR. A tool without a laptop check is not complete.
+- **Definition of done:** the PR description carries a "Laptop check" line, `PENDING` when opened. The owner runs the
+  check on the PR branch and returns the report's summary line (or the report). The work order is done, and the PR
+  may be merged, only when that line reads `LAPTOP CHECK PASS` for the PR's head commit. A FAIL goes back to the
+  session that owns the work order, with the report.
+- HANDOVER.md records the laptop-check status per work stream (`pending` / `PASS <commit>` / `FAIL`).
+- Reports stay in `runs/` (never committed); they contain synthetic data only.
+
