@@ -1,0 +1,13 @@
+# Native runtime: CPython 3.12 (64-bit, Windows) on the owner's laptop, installed from GC Artifactory.
+# Pinned to the versions installed and verified on 2026-10-06 (probe_pack/native, check 1 + block 4).
+duckdb==1.5.6
+pyarrow==25.0.1
+pandas==3.0.6
+numpy==2.5.3
+openpyxl==3.1.5
+xlsxwriter==3.2.9
+pyxlsb==1.0.10
+python-dateutil==2.9.0.post0
+tzdata==2026.5
+six==1.17.0
+et-xmlfile==2.0.0
