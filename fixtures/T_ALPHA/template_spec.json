@@ -1,0 +1,395 @@
+{
+ "template_spec_version": "1",
+ "cedant": "FICTIONAL_CEDANT_A",
+ "tender_id": "T_ALPHA_2027",
+ "deadline": "2026-11-05",
+ "contact": "synthetic contact",
+ "issue_date": "2026-10-24",
+ "effective_date": "2027-01-01",
+ "currency": "AED",
+ "premium_basis": "NET",
+ "column_sets": {
+  "CS_bb9f27b3": [
+   {
+    "label": "Male",
+    "keys": [
+     {
+      "gender": "M"
+     }
+    ]
+   },
+   {
+    "label": "Female",
+    "keys": [
+     {
+      "gender": "F"
+     }
+    ]
+   }
+  ]
+ },
+ "age_band_sets": {
+  "B_d5678cca": [
+   {
+    "label": "0-4",
+    "range": [
+     0,
+     4
+    ]
+   },
+   {
+    "label": "5-9",
+    "range": [
+     5,
+     9
+    ]
+   },
+   {
+    "label": "10-14",
+    "range": [
+     10,
+     14
+    ]
+   },
+   {
+    "label": "15-19",
+    "range": [
+     15,
+     19
+    ]
+   },
+   {
+    "label": "20-24",
+    "range": [
+     20,
+     24
+    ]
+   },
+   {
+    "label": "25-29",
+    "range": [
+     25,
+     29
+    ]
+   },
+   {
+    "label": "30-34",
+    "range": [
+     30,
+     34
+    ]
+   },
+   {
+    "label": "35-39",
+    "range": [
+     35,
+     39
+    ]
+   },
+   {
+    "label": "40-44",
+    "range": [
+     40,
+     44
+    ]
+   },
+   {
+    "label": "45-49",
+    "range": [
+     45,
+     49
+    ]
+   },
+   {
+    "label": "50-54",
+    "range": [
+     50,
+     54
+    ]
+   },
+   {
+    "label": "55-59",
+    "range": [
+     55,
+     59
+    ]
+   },
+   {
+    "label": "60-64",
+    "range": [
+     60,
+     64
+    ]
+   },
+   {
+    "label": "65-69",
+    "range": [
+     65,
+     69
+    ]
+   },
+   {
+    "label": "70+",
+    "range": [
+     70,
+     120
+    ]
+   }
+  ]
+ },
+ "sheets": [
+  {
+   "sheet_name": "INDIVIDUAL RGN_A",
+   "title": "INDIVIDUAL - RGN_A",
+   "product_type": "INDIVIDUAL",
+   "regulator": "DHA",
+   "rating_region": "RGN_A",
+   "mandatory": true,
+   "blocks": [
+    {
+     "block_id": "ALPHA_IND_A|TPA_RED",
+     "tpa": "TPA_RED",
+     "label": "TPA_RED",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "N_PLAT"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "N_GOLD"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "N_SILV"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "N_BRNZ"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "N_STD"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "N_CLIN"
+      },
+      {
+       "plan_id": "P7",
+       "label": "Plan 7",
+       "network": "N_BASIC"
+      }
+     ],
+     "column_set": "CS_bb9f27b3",
+     "refer_cells": [
+      {
+       "plan": "P6",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "F"
+      },
+      {
+       "plan": "P7",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "F"
+      },
+      {
+       "plan": "P6",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "M"
+      },
+      {
+       "plan": "P7",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "M"
+      }
+     ],
+     "age_bands": "B_d5678cca"
+    },
+    {
+     "block_id": "ALPHA_IND_A|TPA_BLUE",
+     "tpa": "TPA_BLUE",
+     "label": "TPA_BLUE",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "N_PLAT"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "N_GOLD"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "N_SILV"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "N_BRNZ"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "N_STD"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "N_CLIN"
+      },
+      {
+       "plan_id": "P7",
+       "label": "Plan 7",
+       "network": "N_BASIC"
+      }
+     ],
+     "column_set": "CS_bb9f27b3",
+     "refer_cells": [
+      {
+       "plan": "P6",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "F"
+      },
+      {
+       "plan": "P7",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "F"
+      },
+      {
+       "plan": "P6",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "M"
+      },
+      {
+       "plan": "P7",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "M"
+      }
+     ],
+     "age_bands": "B_d5678cca"
+    },
+    {
+     "block_id": "ALPHA_IND_A|TPA_GREEN",
+     "tpa": "TPA_GREEN",
+     "label": "TPA_GREEN",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "N_PLAT"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "N_GOLD"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "N_SILV"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "N_BRNZ"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "N_STD"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "N_CLIN"
+      },
+      {
+       "plan_id": "P7",
+       "label": "Plan 7",
+       "network": "N_BASIC"
+      }
+     ],
+     "column_set": "CS_bb9f27b3",
+     "refer_cells": [
+      {
+       "plan": "P6",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "F"
+      },
+      {
+       "plan": "P7",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "F"
+      },
+      {
+       "plan": "P6",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "M"
+      },
+      {
+       "plan": "P7",
+       "age": [
+        70,
+        120
+       ],
+       "gender": "M"
+      }
+     ],
+     "age_bands": "B_d5678cca"
+    }
+   ],
+   "copay_basis": {
+    "copay_op_diag": "0%",
+    "ded_consult": "D30",
+    "copay_pharmacy": "0%",
+    "network_option": "OPT1",
+    "tpa": "TPA_RED",
+    "nationality": "OTHER"
+   }
+  }
+ ],
+ "source_catalogue": "CAT_ALPHA"
+}

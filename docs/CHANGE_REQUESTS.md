@@ -2,3 +2,7 @@
 
 | # | Date | Raised by (WS) | Contract / file | Change | Reason | Owner decision | Applied by / commit |
 |---|---|---|---|---|---|---|---|
+| 1 | 2026-10-24 | Owner (in WS0 thread) | SPEC.md §13 (new), CLAUDE.md working method, tools/laptop_check.py | Every change must be tested on the owner's laptop to confirm full functionality of the tool and the change; laptop check tool + definition of done | Laptop is the target runtime; sandbox tests are not sufficient | Approved (owner instruction, 24 Oct 2026 18:58) | WS0 / ws0-core |
+| 2 | 2026-10-24 | WS0 | SPEC §2 / §5 mapping tables | Add `segment_map.csv` (policy type x Region Group -> product_type, regulator, rating_region), `tpa_map.csv` (Merit TPA label -> catalogue TPA, optional) and `value_map.csv` (gender, marital, maternity_eligible from Gender Group) beside the four maps SPEC names | SPEC derives these dims from Merit but names no table for them; implemented as run inputs, no defaults | Pending | — |
+| 3 | 2026-10-24 | WS0 | SPEC §2 `group_size_band` | Treat as numeric-range: cells carry the integer GroupSize, table rows carry [lo, hi] | Avoids a second band map in the run config; catalogue declares its own bands | Pending | — |
+| 4 | 2026-10-24 | WS0 | SPEC §5.1 V0 | Merit `run_manifest` has no contract-version key: V0 reads `contract_version` from the manifest if present, else a CLI/run-config value, else checks against the latest field map with a warning | Contract version of a run is not otherwise discoverable | Pending (Merit side may add the key) | — |

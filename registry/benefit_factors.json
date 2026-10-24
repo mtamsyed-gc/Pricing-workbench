@@ -1,0 +1,6 @@
+{
+  "registry": "benefit_factors",
+  "version": "0.0",
+  "notes": "SPEC \u00a74.3 market factor library (versioned). Empty scaffold; WS1/WS2 populate. Each entry: benefit_code, scope (dims, ANY allowed), option, relativity, reference_option, source, as_of.",
+  "entries": []
+}

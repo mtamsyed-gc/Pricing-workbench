@@ -1,0 +1,408 @@
+{
+  "registry": "benefits",
+  "version": "0.1",
+  "notes": "SPEC \u00a74.1 taxonomy. v0.1: SPEC list plus generic lines needed to hold a typical UAE ToB structure; no cedant labels or values. comparison_rule drives B1 direction.",
+  "groups": [
+    "GENERAL",
+    "INPATIENT",
+    "OUTPATIENT",
+    "MATERNITY",
+    "DENTAL_OPTICAL",
+    "OTHER"
+  ],
+  "copay_structure": {
+    "type": [
+      "PCT",
+      "FIXED",
+      "PCT_CAPPED",
+      "DEDUCTIBLE"
+    ],
+    "fields": [
+      "type",
+      "pct",
+      "amount",
+      "cap_per_visit",
+      "cap_annual",
+      "follow_up_exempt_days"
+    ]
+  },
+  "value_status": [
+    "PARSED",
+    "MANUAL_REVIEW",
+    "NOT_COVERED"
+  ],
+  "lines": [
+    {
+      "code": "aml",
+      "group": "GENERAL",
+      "value_type": "money",
+      "unit": "per_member_per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "territory",
+      "group": "GENERAL",
+      "value_type": "ladder",
+      "unit": null,
+      "comparison_rule": "categorical-ladder",
+      "ladder": [
+        "NE_ONLY",
+        "UAE",
+        "WW_EMERG",
+        "WW"
+      ]
+    },
+    {
+      "code": "days_abroad",
+      "group": "GENERAL",
+      "value_type": "int",
+      "unit": "days_per_trip",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "pec_cover",
+      "group": "GENERAL",
+      "value_type": "money_or_ladder",
+      "unit": "per_member_per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "pec_waiting",
+      "group": "GENERAL",
+      "value_type": "int",
+      "unit": "months",
+      "comparison_rule": "lower-is-richer"
+    },
+    {
+      "code": "room_type",
+      "group": "GENERAL",
+      "value_type": "ladder",
+      "unit": null,
+      "comparison_rule": "categorical-ladder",
+      "ladder": [
+        "WARD",
+        "SHARED",
+        "SEMI_PRIVATE",
+        "PRIVATE"
+      ]
+    },
+    {
+      "code": "network",
+      "group": "GENERAL",
+      "value_type": "tier_rank",
+      "unit": null,
+      "comparison_rule": "lower-is-richer",
+      "notes": "tier_rank 1 = richest"
+    },
+    {
+      "code": "gp_referral",
+      "group": "GENERAL",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "false-is-richer"
+    },
+    {
+      "code": "reimb_out_network",
+      "group": "GENERAL",
+      "value_type": "pct",
+      "unit": "pct_of_ucr",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "emergency_ambulance",
+      "group": "GENERAL",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "emergency_vision_hearing",
+      "group": "GENERAL",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "ip_copay",
+      "group": "INPATIENT",
+      "value_type": "copay_structure",
+      "unit": null,
+      "comparison_rule": "structure-lower-is-richer"
+    },
+    {
+      "code": "ip_sublimit",
+      "group": "INPATIENT",
+      "value_type": "money",
+      "unit": "per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "ip_per_admission_limit",
+      "group": "INPATIENT",
+      "value_type": "money",
+      "unit": "per_admission",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "day_care",
+      "group": "INPATIENT",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "companion_accom",
+      "group": "INPATIENT",
+      "value_type": "money",
+      "unit": "per_day",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "parent_accom",
+      "group": "INPATIENT",
+      "value_type": "money",
+      "unit": "per_day",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "organ_transplant",
+      "group": "INPATIENT",
+      "value_type": "money",
+      "unit": "per_member_per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "prosthesis",
+      "group": "INPATIENT",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "consult_deductible",
+      "group": "OUTPATIENT",
+      "value_type": "copay_structure",
+      "unit": null,
+      "comparison_rule": "structure-lower-is-richer"
+    },
+    {
+      "code": "op_diag_copay",
+      "group": "OUTPATIENT",
+      "value_type": "copay_structure",
+      "unit": null,
+      "comparison_rule": "structure-lower-is-richer"
+    },
+    {
+      "code": "op_sublimit",
+      "group": "OUTPATIENT",
+      "value_type": "money",
+      "unit": "per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "physio_sessions",
+      "group": "OUTPATIENT",
+      "value_type": "int",
+      "unit": "sessions_per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "physio_copay",
+      "group": "OUTPATIENT",
+      "value_type": "copay_structure",
+      "unit": null,
+      "comparison_rule": "structure-lower-is-richer"
+    },
+    {
+      "code": "pharmacy_limit",
+      "group": "OUTPATIENT",
+      "value_type": "money",
+      "unit": "per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "pharmacy_copay",
+      "group": "OUTPATIENT",
+      "value_type": "copay_structure",
+      "unit": null,
+      "comparison_rule": "structure-lower-is-richer"
+    },
+    {
+      "code": "pharmacy_formulary",
+      "group": "OUTPATIENT",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "false-is-richer",
+      "notes": "true = formulary-only restriction"
+    },
+    {
+      "code": "telehealth",
+      "group": "OUTPATIENT",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "alt_medicine_limit",
+      "group": "OUTPATIENT",
+      "value_type": "money",
+      "unit": "per_member_per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "specialist_direct_access",
+      "group": "OUTPATIENT",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "mat_ip_limit",
+      "group": "MATERNITY",
+      "value_type": "money",
+      "unit": "per_pregnancy",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "mat_ip_coins",
+      "group": "MATERNITY",
+      "value_type": "pct",
+      "unit": "pct",
+      "comparison_rule": "lower-is-richer"
+    },
+    {
+      "code": "mat_op_visits",
+      "group": "MATERNITY",
+      "value_type": "int",
+      "unit": "visits",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "mat_scans",
+      "group": "MATERNITY",
+      "value_type": "int",
+      "unit": "scans",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "newborn_days",
+      "group": "MATERNITY",
+      "value_type": "int",
+      "unit": "days",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "mat_waiting",
+      "group": "MATERNITY",
+      "value_type": "int",
+      "unit": "months",
+      "comparison_rule": "lower-is-richer"
+    },
+    {
+      "code": "dental_limit",
+      "group": "DENTAL_OPTICAL",
+      "value_type": "money",
+      "unit": "per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "dental_copay",
+      "group": "DENTAL_OPTICAL",
+      "value_type": "copay_structure",
+      "unit": null,
+      "comparison_rule": "structure-lower-is-richer"
+    },
+    {
+      "code": "optical_limit",
+      "group": "DENTAL_OPTICAL",
+      "value_type": "money",
+      "unit": "per_year",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "optical_copay",
+      "group": "DENTAL_OPTICAL",
+      "value_type": "copay_structure",
+      "unit": null,
+      "comparison_rule": "structure-lower-is-richer"
+    },
+    {
+      "code": "emergency_dental",
+      "group": "DENTAL_OPTICAL",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "repatriation",
+      "group": "OTHER",
+      "value_type": "money",
+      "unit": "per_event",
+      "comparison_rule": "higher-is-richer"
+    },
+    {
+      "code": "intl_assistance",
+      "group": "OTHER",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "vaccinations",
+      "group": "OTHER",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "preventive",
+      "group": "OTHER",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "cancer_psp",
+      "group": "OTHER",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "hepatitis",
+      "group": "OTHER",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "hiv",
+      "group": "OTHER",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "work_injury",
+      "group": "OTHER",
+      "value_type": "bool",
+      "unit": null,
+      "comparison_rule": "presence"
+    },
+    {
+      "code": "evacuation",
+      "group": "OTHER",
+      "value_type": "money_or_bool",
+      "unit": null,
+      "comparison_rule": "higher-is-richer",
+      "notes": "IPMI"
+    },
+    {
+      "code": "chronic_limit",
+      "group": "OTHER",
+      "value_type": "money",
+      "unit": "per_year",
+      "comparison_rule": "higher-is-richer"
+    }
+  ]
+}

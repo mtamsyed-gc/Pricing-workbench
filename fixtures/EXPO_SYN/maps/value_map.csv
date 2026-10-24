@@ -1,0 +1,8 @@
+dim,source_value,value
+gender,Male,M
+gender,Female,F
+marital,SINGLE,SINGLE
+marital,MARRIED,MARRIED
+maternity_eligible,Male,N
+maternity_eligible,Female,N
+maternity_eligible,Maternity Eligible Female,Y

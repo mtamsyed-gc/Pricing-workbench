@@ -1,0 +1,2 @@
+treatymodel 2.0
+source: github.com/mtamsyed-gc/PBM, treatymodel/ (branch claude/inspiring-rubin-7ncppi, commit a07c945, 2026-10-14)

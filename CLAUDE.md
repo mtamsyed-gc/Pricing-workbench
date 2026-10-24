@@ -41,5 +41,9 @@ everything source-specific lives in catalogue specs, template specs, registries 
 ## Working method
 - One work order per session; work on its branch (e.g. ws0-core). Start by restating its acceptance criteria and plan.
 - End by running the full test suite, then summarise: what was built, deviations from SPEC (with reason), open questions.
+- Laptop acceptance (SPEC §13): every change is tested on the owner's laptop with `py tools\laptop_check.py`. A new or
+  changed tool / CLI command gets its end-to-end check in `tools/laptop_check.py` in the same PR. Open the PR with
+  "Laptop check: PENDING" and the exact command; the work order is done only when the owner returns
+  `LAPTOP CHECK PASS` for the head commit.
 - Update your section of HANDOVER.md (status and next step) before committing. Commit as "WS<n>: <summary>".
 - Merge to main via pull request with tests green; WS4 (integration) resolves cross-stream conflicts.

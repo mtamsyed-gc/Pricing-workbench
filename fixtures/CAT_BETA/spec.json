@@ -1,0 +1,344 @@
+{
+ "spec_id": "CAT_BETA_SPEC",
+ "spec_version": "1",
+ "catalogue": {
+  "catalogue_id": "CAT_BETA",
+  "owner": "FICTIONAL_CEDANT_B",
+  "kind": "EXPIRING",
+  "version": "1",
+  "effective_date": "2026-01-01",
+  "currency": "AED",
+  "premium_basis": "NET"
+ },
+ "source_file": "source.xlsx",
+ "maps": {
+  "gm": {
+   "Male Single": {
+    "gender": "M",
+    "marital": "SINGLE"
+   },
+   "Male Married": {
+    "gender": "M",
+    "marital": "MARRIED"
+   },
+   "Female Single": {
+    "gender": "F",
+    "marital": "SINGLE"
+   },
+   "Female Married": {
+    "gender": "F",
+    "marital": "MARRIED"
+   }
+  }
+ },
+ "band_maps": {
+  "beta8": {
+   "parse": [
+    "0-17",
+    "18-25",
+    "26-30",
+    "31-35",
+    "36-40",
+    "41-50",
+    "51-60",
+    "61+"
+   ]
+  }
+ },
+ "scopes": [
+  {
+   "scope_id": "BETA_IND_A",
+   "product_type": "INDIVIDUAL",
+   "regulator": "DOH",
+   "rating_region": "RGN_A",
+   "tpa_set": [
+    "TPA_RED",
+    "TPA_BLUE"
+   ],
+   "plans": [
+    {
+     "plan_id": "P1",
+     "label": "Tier 1",
+     "tier_rank": 1,
+     "network_by_tpa": {
+      "TPA_RED": "B_NET1",
+      "TPA_BLUE": "B_NET1"
+     },
+     "defaults": {
+      "copay_op_diag": "NIL"
+     }
+    },
+    {
+     "plan_id": "P2",
+     "label": "Tier 2",
+     "tier_rank": 2,
+     "network_by_tpa": {
+      "TPA_RED": "B_NET2",
+      "TPA_BLUE": "B_NET2"
+     },
+     "defaults": {
+      "copay_op_diag": "NIL"
+     }
+    },
+    {
+     "plan_id": "P3",
+     "label": "Tier 3",
+     "tier_rank": 3,
+     "network_by_tpa": {
+      "TPA_RED": "B_NET3",
+      "TPA_BLUE": "B_NET3"
+     },
+     "defaults": {
+      "copay_op_diag": "NIL"
+     }
+    },
+    {
+     "plan_id": "P4",
+     "label": "Tier 4",
+     "tier_rank": 4,
+     "network_by_tpa": {
+      "TPA_RED": "B_NET4",
+      "TPA_BLUE": "B_NET4"
+     },
+     "defaults": {
+      "copay_op_diag": "NIL"
+     }
+    },
+    {
+     "plan_id": "P5",
+     "label": "Tier 5",
+     "tier_rank": 5,
+     "network_by_tpa": {
+      "TPA_RED": "B_NET5",
+      "TPA_BLUE": "B_NET5"
+     },
+     "defaults": {
+      "copay_op_diag": "NIL"
+     }
+    },
+    {
+     "plan_id": "P6",
+     "label": "Tier 6",
+     "tier_rank": 6,
+     "network_by_tpa": {
+      "TPA_RED": "B_NET6",
+      "TPA_BLUE": "B_NET6"
+     },
+     "defaults": {
+      "copay_op_diag": "NIL"
+     }
+    }
+   ],
+   "components": [
+    {
+     "component_id": "blocks",
+     "type": "BLOCK_SET",
+     "family": "copay_op_diag",
+     "reference_level": "NIL",
+     "tolerance_abs": 0.01,
+     "resolution": "DERIVED",
+     "multiplier_decimals": 4,
+     "blocks": [
+      {
+       "level": "NIL",
+       "sources": [
+        {
+         "sheet": "Rates",
+         "anchor": "A5",
+         "row_dims": [
+          {
+           "dim": "age",
+           "band_map": "beta8"
+          }
+         ],
+         "col_dims": [
+          {
+           "dim": "plan",
+           "map": "@plans"
+          },
+          {
+           "dims": [
+            "gender",
+            "marital"
+           ],
+           "map": "gm"
+          }
+         ],
+         "n_rows": 8,
+         "n_cols": 24,
+         "fixed": {
+          "member_category": "PRINCIPAL"
+         }
+        },
+        {
+         "sheet": "Rates",
+         "anchor": "A19",
+         "row_dims": [
+          {
+           "dim": "age",
+           "band_map": "beta8"
+          }
+         ],
+         "col_dims": [
+          {
+           "dim": "plan",
+           "map": "@plans"
+          },
+          {
+           "dims": [
+            "gender",
+            "marital"
+           ],
+           "map": "gm"
+          }
+         ],
+         "n_rows": 8,
+         "n_cols": 24,
+         "fixed": {
+          "member_category": "DEPENDANT"
+         }
+        }
+       ]
+      },
+      {
+       "level": "10%",
+       "sources": [
+        {
+         "sheet": "Rates",
+         "anchor": "AA5",
+         "row_dims": [
+          {
+           "dim": "age",
+           "band_map": "beta8"
+          }
+         ],
+         "col_dims": [
+          {
+           "dim": "plan",
+           "map": "@plans"
+          },
+          {
+           "dims": [
+            "gender",
+            "marital"
+           ],
+           "map": "gm"
+          }
+         ],
+         "n_rows": 8,
+         "n_cols": 24,
+         "fixed": {
+          "member_category": "PRINCIPAL"
+         }
+        },
+        {
+         "sheet": "Rates",
+         "anchor": "AA19",
+         "row_dims": [
+          {
+           "dim": "age",
+           "band_map": "beta8"
+          }
+         ],
+         "col_dims": [
+          {
+           "dim": "plan",
+           "map": "@plans"
+          },
+          {
+           "dims": [
+            "gender",
+            "marital"
+           ],
+           "map": "gm"
+          }
+         ],
+         "n_rows": 8,
+         "n_cols": 24,
+         "fixed": {
+          "member_category": "DEPENDANT"
+         }
+        }
+       ]
+      },
+      {
+       "level": "20%",
+       "sources": [
+        {
+         "sheet": "Rates",
+         "anchor": "BA5",
+         "row_dims": [
+          {
+           "dim": "age",
+           "band_map": "beta8"
+          }
+         ],
+         "col_dims": [
+          {
+           "dim": "plan",
+           "map": "@plans"
+          },
+          {
+           "dims": [
+            "gender",
+            "marital"
+           ],
+           "map": "gm"
+          }
+         ],
+         "n_rows": 8,
+         "n_cols": 24,
+         "fixed": {
+          "member_category": "PRINCIPAL"
+         }
+        },
+        {
+         "sheet": "Rates",
+         "anchor": "BA19",
+         "row_dims": [
+          {
+           "dim": "age",
+           "band_map": "beta8"
+          }
+         ],
+         "col_dims": [
+          {
+           "dim": "plan",
+           "map": "@plans"
+          },
+          {
+           "dims": [
+            "gender",
+            "marital"
+           ],
+           "map": "gm"
+          }
+         ],
+         "n_rows": 8,
+         "n_cols": 24,
+         "fixed": {
+          "member_category": "DEPENDANT"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "formula": {
+    "rounding": 2
+   }
+  }
+ ],
+ "rules": [
+  {
+   "rule_id": "B_R1",
+   "scope": {},
+   "type": "UW",
+   "parameters": {
+    "medical_declaration": "ALL_MEMBERS"
+   },
+   "text": "Declaration form for all members"
+  }
+ ]
+}

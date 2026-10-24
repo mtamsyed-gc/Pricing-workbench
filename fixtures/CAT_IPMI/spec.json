@@ -1,0 +1,263 @@
+{
+ "spec_id": "CAT_IPMI_SPEC",
+ "spec_version": "1",
+ "catalogue": {
+  "catalogue_id": "CAT_IPMI",
+  "owner": "FICTIONAL_CARRIER_F",
+  "kind": "MARKET",
+  "version": "1",
+  "effective_date": "2026-01-01",
+  "currency": "USD",
+  "premium_basis": "NET"
+ },
+ "source_file": "source.xlsx",
+ "maps": {
+  "gender": {
+   "Male": "M",
+   "Female": "F"
+  },
+  "areas": {
+   "WW_INC_USA": "WW_INC_USA",
+   "WW_EXC_USA": "WW_EXC_USA",
+   "REGIONAL": "REGIONAL"
+  },
+  "deds": {
+   "D0": "D0",
+   "D500": "D500",
+   "D1500": "D1500",
+   "D5000": "D5000"
+  },
+  "plans": {
+   "Core": "CORE",
+   "Plus": "PLUS"
+  }
+ },
+ "band_maps": {
+  "ipmi5": {
+   "parse": [
+    "0-4",
+    "5-9",
+    "10-14",
+    "15-19",
+    "20-24",
+    "25-29",
+    "30-34",
+    "35-39",
+    "40-44",
+    "45-49",
+    "50-54",
+    "55-59",
+    "60-64",
+    "65-69",
+    "70-74",
+    "75-79",
+    "80+"
+   ]
+  }
+ },
+ "scopes": [
+  {
+   "scope_id": "IPMI_GLOBAL",
+   "product_type": "IPMI",
+   "regulator": "NONE",
+   "rating_region": "IPMI_GLOBAL",
+   "tpa_set": [
+    "TPA_INTL"
+   ],
+   "plans": [
+    {
+     "plan_id": "CORE",
+     "label": "Core",
+     "tier_rank": 1,
+     "network_by_tpa": {
+      "TPA_INTL": "I_NET"
+     },
+     "defaults": {
+      "area_of_cover": "WW_EXC_USA",
+      "deductible": "D0",
+      "payment_frequency": "ANNUAL",
+      "module_op": "NONE",
+      "module_evac": "EVAC",
+      "module_maternity": "NONE"
+     }
+    },
+    {
+     "plan_id": "PLUS",
+     "label": "Plus",
+     "tier_rank": 2,
+     "network_by_tpa": {
+      "TPA_INTL": "I_NET"
+     },
+     "defaults": {
+      "area_of_cover": "WW_EXC_USA",
+      "deductible": "D0",
+      "payment_frequency": "ANNUAL",
+      "module_op": "OP_FULL",
+      "module_evac": "EVAC",
+      "module_maternity": "NONE"
+     }
+    }
+   ],
+   "components": [
+    {
+     "component_id": "base",
+     "type": "BASE_TABLE",
+     "sources": [
+      {
+       "sheet": "IPMI Base",
+       "anchor": "A3",
+       "row_dims": [
+        {
+         "dim": "age",
+         "band_map": "ipmi5"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "plan",
+         "map": "plans"
+        },
+        {
+         "dim": "gender",
+         "map": "gender"
+        }
+       ],
+       "n_rows": 17,
+       "n_cols": 4
+      }
+     ]
+    },
+    {
+     "component_id": "f_area",
+     "type": "FACTOR_TABLE",
+     "family": "area_of_cover",
+     "reference_level": "WW_EXC_USA",
+     "values": {
+      "WW_INC_USA": 1.72,
+      "WW_EXC_USA": 1.0,
+      "REGIONAL": 0.81
+     }
+    },
+    {
+     "component_id": "f_ded",
+     "type": "FACTOR_TABLE",
+     "family": "deductible",
+     "keys": [
+      "deductible",
+      "area_of_cover"
+     ],
+     "reference_level": "D0",
+     "sources": [
+      {
+       "sheet": "Deductibles",
+       "anchor": "A2",
+       "row_dims": [
+        {
+         "dim": "deductible",
+         "map": "deds"
+        }
+       ],
+       "col_dims": [
+        {
+         "dim": "area_of_cover",
+         "map": "areas"
+        }
+       ],
+       "n_rows": 4,
+       "n_cols": 3
+      }
+     ]
+    },
+    {
+     "component_id": "f_freq",
+     "type": "FACTOR_TABLE",
+     "family": "payment_frequency",
+     "reference_level": "ANNUAL",
+     "values": {
+      "ANNUAL": 1.0,
+      "QUARTERLY": 1.03,
+      "MONTHLY": 1.05
+     }
+    },
+    {
+     "component_id": "m_op",
+     "type": "MODULE",
+     "family": "module_op",
+     "unit": "PER_MEMBER",
+     "keys": [
+      "plan",
+      "module_op"
+     ],
+     "rows": [
+      {
+       "key": {
+        "plan": "CORE",
+        "module_op": "OP_FULL"
+       },
+       "value": 610.0
+      },
+      {
+       "key": {
+        "plan": "PLUS",
+        "module_op": "OP_FULL"
+       },
+       "value": 790.0
+      }
+     ]
+    },
+    {
+     "component_id": "m_evac",
+     "type": "MODULE",
+     "family": "module_evac",
+     "unit": "PER_MEMBER",
+     "keys": [
+      "module_evac"
+     ],
+     "values": {
+      "EVAC": 95.0
+     }
+    },
+    {
+     "component_id": "m_mat",
+     "type": "MODULE",
+     "family": "module_maternity",
+     "unit": "PER_ELIGIBLE_FEMALE",
+     "keys": [
+      "plan",
+      "module_maternity"
+     ],
+     "rows": [
+      {
+       "key": {
+        "plan": "CORE",
+        "module_maternity": "MAT"
+       },
+       "value": 1350.0
+      },
+      {
+       "key": {
+        "plan": "PLUS",
+        "module_maternity": "MAT"
+       },
+       "value": 1720.0
+      }
+     ]
+    }
+   ],
+   "formula": {
+    "rounding": 2
+   }
+  }
+ ],
+ "rules": [
+  {
+   "rule_id": "I_R1",
+   "scope": {},
+   "type": "UW",
+   "parameters": {
+    "medical_underwriting": "FULL"
+   },
+   "text": "Full medical underwriting"
+  }
+ ]
+}

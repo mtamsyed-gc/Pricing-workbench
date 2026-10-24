@@ -1,0 +1,5 @@
+product_type,relation,member_category
+ANY,EMPLOYEE,EMPLOYEE
+ANY,SPOUSE,SPOUSE
+ANY,CHILD,CHILD
+ANY,PARENT,PARENT

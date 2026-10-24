@@ -1,0 +1,997 @@
+{
+ "_pin": {
+  "source": "github.com/mtamsyed-gc/ete-dashboard side_tools/merit/config/model_contract.json",
+  "source_commit": "b83de157162b3a6ee50ef0ad2b09a69021b22f06",
+  "pinned_on": "2026-10-24",
+  "source_sha256": "e6652d91ed77af143568fb82a49d248fd35d9cb1bafcc31c1887bd3217be7af6",
+  "redactions": "4 'describe' strings that named a cedant, payer, TPA or reinsurer were reworded (dim_life: Payer Name, MasterCedantName; fact_claims: Claimed, RI Name). Columns, types, keys and the version are verbatim."
+ },
+ "_note": "Output contract of the interim pipeline (Stage B) = input contract of the Power BI model (IP4). Premium tables are written by the IP2 workflow; claims tables are the IP3 target. Main tables: <name>.csv or <name>.parquet in one folder; recon_*, exceptions*, run_manifest* always CSV. Dates yyyy-mm-dd; numbers '.' decimal, no thousands separator.",
+ "version": "IP4-8",
+ "tables": {
+  "dim_life": {
+   "grain": "life-period: Payer|TPA|policy|member x UWY",
+   "key": [
+    "LifeKey",
+    "UWY"
+   ],
+   "source": "IP2",
+   "columns": [
+    [
+     "LifeID",
+     "int"
+    ],
+    [
+     "LifeKey",
+     "text"
+    ],
+    [
+     "Payer Name",
+     "text"
+    ],
+    [
+     "Risk Carrier",
+     "text"
+    ],
+    [
+     "MasterCedantName",
+     "text"
+    ],
+    [
+     "TPA",
+     "text"
+    ],
+    [
+     "PolKey",
+     "text"
+    ],
+    [
+     "MemKey",
+     "text"
+    ],
+    [
+     "UWY",
+     "int"
+    ],
+    [
+     "PolicyStart",
+     "date"
+    ],
+    [
+     "PolicyEndAdj",
+     "date"
+    ],
+    [
+     "AnnualBasisDays",
+     "int"
+    ],
+    [
+     "CovStart",
+     "date"
+    ],
+    [
+     "CovEnd",
+     "date"
+    ],
+    [
+     "Periods",
+     "int"
+    ],
+    [
+     "CovDays",
+     "int"
+    ],
+    [
+     "EarnedDays",
+     "int"
+    ],
+    [
+     "ZP_Gross",
+     "int"
+    ],
+    [
+     "ZP_Net",
+     "int"
+    ],
+    [
+     "WrittenLY_Gross",
+     "double"
+    ],
+    [
+     "WrittenLY_Net",
+     "double"
+    ],
+    [
+     "EarnedLY_Gross",
+     "double"
+    ],
+    [
+     "EarnedLY_Net",
+     "double"
+    ],
+    [
+     "WrittenPrem_Gross",
+     "double"
+    ],
+    [
+     "WrittenPrem_Net",
+     "double"
+    ],
+    [
+     "EarnedPrem_Gross",
+     "double"
+    ],
+    [
+     "EarnedPrem_Net",
+     "double"
+    ],
+    [
+     "RI Name",
+     "text"
+    ],
+    [
+     "Policy Type",
+     "text"
+    ],
+    [
+     "PolicyTypeUsed",
+     "text"
+    ],
+    [
+     "PolicyTypeSource",
+     "text"
+    ],
+    [
+     "Master Contract ID",
+     "text"
+    ],
+    [
+     "Contract Name",
+     "text"
+    ],
+    [
+     "Relation",
+     "text"
+    ],
+    [
+     "Gender",
+     "text"
+    ],
+    [
+     "Marital Status",
+     "text"
+    ],
+    [
+     "Nationality",
+     "text"
+    ],
+    [
+     "Region",
+     "text"
+    ],
+    [
+     "Network",
+     "text"
+    ],
+    [
+     "Plan / Category",
+     "text"
+    ],
+    [
+     "Member DOB",
+     "date"
+    ],
+    [
+     "AgeAtInception",
+     "int"
+    ],
+    [
+     "AgeBand",
+     "text"
+    ],
+    [
+     "GroupSize",
+     "int"
+    ],
+    [
+     "GroupSizeBand",
+     "text"
+    ],
+    [
+     "NewRenewal",
+     "text"
+    ],
+    [
+     "NewRenewalSource",
+     "text"
+    ],
+    [
+     "Joiner",
+     "int"
+    ],
+    [
+     "Leaver",
+     "int"
+    ],
+    [
+     "Tenure",
+     "int"
+    ],
+    [
+     "Currency",
+     "text"
+    ],
+    [
+     "Country",
+     "text"
+    ],
+    [
+     "EndoGroup",
+     "text"
+    ],
+    [
+     "EndoPath",
+     "text"
+    ],
+    [
+     "VoidPeriods",
+     "int"
+    ],
+    [
+     "OverlapVoidPeriods",
+     "int"
+    ],
+    [
+     "ReinstatedPeriods",
+     "int"
+    ],
+    [
+     "MemberReactPeriods",
+     "int"
+    ],
+    [
+     "Region Group",
+     "text"
+    ],
+    [
+     "Nationality Group",
+     "text"
+    ],
+    [
+     "Gender Group",
+     "text"
+    ],
+    [
+     "Distribution",
+     "text"
+    ]
+   ],
+   "describe": {
+    "LifeID": "v7.2.0: whole-number key of the life-period (1..n over LifeKey, UWY; numbered afresh each run): the key the dashboard joins Member Month and Claims on",
+    "LifeKey": "Payer|TPA|policy key|member key (keys normalised: upper case, trimmed, '_' '-' '/' removed; member key also '.' and spaces)",
+    "Payer Name": "Payer: the booking entity of the file (file register) [example redacted for the data boundary]",
+    "Risk Carrier": "Risk carrier from the collated file",
+    "MasterCedantName": "Master cedant (user input in every Alteryx workflow) [run value redacted for the data boundary]",
+    "TPA": "TPA (upper case)",
+    "PolKey": "Normalised policy key",
+    "MemKey": "Normalised member key",
+    "UWY": "Underwriting year = year of policy coverage start",
+    "PolicyStart": "Policy coverage start",
+    "PolicyEndAdj": "Policy end after the TPA expiry convention (last covered day)",
+    "AnnualBasisDays": "Days in the policy year from inception (365/366): life-year denominator",
+    "CovStart": "First covered day of the life-period",
+    "CovEnd": "Last covered day of the life-period",
+    "Periods": "Coverage periods of the member in the term (after supersedes)",
+    "CovDays": "Covered days, all periods",
+    "EarnedDays": "Covered days up to the valuation date",
+    "ZP_Gross": "1 if the life-period's gross premium is non-zero (else no exposure counted, SPEC 3.7)",
+    "ZP_Net": "1 if the life-period's net premium is non-zero",
+    "WrittenLY_Gross": "Written life-years = CovDays / AnnualBasisDays x ZP_Gross",
+    "WrittenLY_Net": "Same on the net basis",
+    "EarnedLY_Gross": "Earned life-years = EarnedDays / AnnualBasisDays x ZP_Gross",
+    "EarnedLY_Net": "Same on the net basis",
+    "WrittenPrem_Gross": "Sum of the life-period's gross premium rows (additions, refunds, corrections)",
+    "WrittenPrem_Net": "Same on the net basis",
+    "EarnedPrem_Gross": "Gross premium earned to the valuation date (each row daily pro-rata over its own period)",
+    "EarnedPrem_Net": "Same on the net basis",
+    "RI Name": "Reinsurer: standard value from the inputs workbook, else the raw value upper-cased",
+    "Policy Type": "Policy type: standard value from the inputs workbook, else the raw value upper-cased",
+    "PolicyTypeUsed": "Policy type used: supplied, else SME if group size <= 250",
+    "PolicyTypeSource": "raw / derived (lives)",
+    "Master Contract ID": "Master contract (links renewals)",
+    "Contract Name": "Contract name",
+    "Relation": "Relation: standard value, else the raw value upper-cased",
+    "Gender": "Gender as supplied",
+    "Marital Status": "Marital status: standard value, else the raw value upper-cased",
+    "Nationality": "Nationality as supplied",
+    "Region": "Region / health authority as supplied",
+    "Network": "Network: standard value from the inputs workbook, else the raw value upper-cased",
+    "Plan / Category": "Plan or category",
+    "Member DOB": "Date of birth",
+    "AgeAtInception": "Completed years at cover start",
+    "AgeBand": "Age band (config/run.json)",
+    "GroupSize": "Distinct members on the policy term",
+    "GroupSizeBand": "Group-size band",
+    "NewRenewal": "New / Renewal (v6.4 evidence rule; Unknown before v6.4)",
+    "NewRenewalSource": "master contract link / member continuity / inception date / no link to the prior UW year; first UW year: inception date / raw column / endorsement type / first UW year, no evidence",
+    "Joiner": "1 if cover starts after the policy start",
+    "Leaver": "1 if cover ends before the policy end",
+    "Tenure": "UWY - first UWY of the master contract in the data",
+    "Currency": "Currency",
+    "Country": "Country",
+    "EndoGroup": "Endorsement-logic grouping, one per life-period, first match in this order: No coverage period, Void ab initio (every period void), Reinstated (policy reactivation), Member reactivation, Closing row without opening, Re-opened (overlap), Cancelled, Deleted, Addition in force, Initial/Renewal in force",
+    "EndoPath": "Periods in order as Opening>Closing, ' | ' between periods; '(void)' = closed on or before its start; Closing: open, Deletion, Cancellation, Overlap",
+    "VoidPeriods": "Periods void ab initio (closure on or before the start, incl. overlap closures, R1)",
+    "OverlapVoidPeriods": "Periods voided by an overlap closure on their own start day (R1)",
+    "ReinstatedPeriods": "Periods reopened by a policy reactivation (R2: only members closed by the cancellation)",
+    "MemberReactPeriods": "Periods opened by a member reactivation",
+    "Region Group": "Health authority from the inputs workbook (e.g. HAAD / DHA / MOH); no rule = the raw value, upper-cased; empty = Not Available",
+    "Nationality Group": "Nationality group from the inputs workbook (GCC Arab / Other Arab / Indian-Subcontinent / Asian / Western Expat / Other; tab Nationality groups); a spelling with no rule = Other; empty = Not Available",
+    "Gender Group": "Male / Female / Maternity Eligible Female (female aged 18-45 at inception); no rule = the raw value, upper-cased; empty = Not Available",
+    "Distribution": "Distribution channel as supplied (owner 2026-10-08)"
+   }
+  },
+  "fact_member_month": {
+   "grain": "life-period x calendar month",
+   "key": [
+    "LifeKey",
+    "UWY",
+    "MonthStart"
+   ],
+   "source": "IP2",
+   "columns": [
+    [
+     "LifeID",
+     "int"
+    ],
+    [
+     "LifeKey",
+     "text"
+    ],
+    [
+     "UWY",
+     "int"
+    ],
+    [
+     "Payer Name",
+     "text"
+    ],
+    [
+     "TPA",
+     "text"
+    ],
+    [
+     "MonthStart",
+     "date"
+    ],
+    [
+     "EarnedDays",
+     "int"
+    ],
+    [
+     "EarnedLY_Gross",
+     "double"
+    ],
+    [
+     "EarnedLY_Net",
+     "double"
+    ],
+    [
+     "EarnedPrem_Gross",
+     "double"
+    ],
+    [
+     "EarnedPrem_Net",
+     "double"
+    ],
+    [
+     "WrittenPrem_Gross",
+     "double"
+    ],
+    [
+     "WrittenPrem_Net",
+     "double"
+    ],
+    [
+     "WrittenLY_Gross",
+     "double"
+    ],
+    [
+     "WrittenLY_Net",
+     "double"
+    ]
+   ],
+   "describe": {
+    "LifeID": "v7.2.0: LifeID of the life-period (dim_life)",
+    "LifeKey": "Life key (dim_life)",
+    "UWY": "Underwriting year",
+    "Payer Name": "Payer",
+    "TPA": "TPA",
+    "MonthStart": "Calendar month (first day)",
+    "EarnedDays": "Covered days in the month, up to the valuation date",
+    "EarnedLY_Gross": "Earned life-years in the month (gross zero-premium rule)",
+    "EarnedLY_Net": "Same, net rule",
+    "EarnedPrem_Gross": "Gross premium earned in the month",
+    "EarnedPrem_Net": "Net premium earned in the month",
+    "WrittenPrem_Gross": "Gross premium booked in the month (member-start month; refunds in the refund month)",
+    "WrittenPrem_Net": "Same on the net basis",
+    "WrittenLY_Gross": "Written life-years booked in the period-start month",
+    "WrittenLY_Net": "Same, net rule"
+   }
+  },
+  "fact_claims": {
+   "grain": "claim line (reversals netted within ClaimID upstream or kept as lines; sums are additive)",
+   "key": [
+    "ClaimKey"
+   ],
+   "source": "IP3",
+   "optional": true,
+   "columns": [
+    [
+     "ClaimKey",
+     "text"
+    ],
+    [
+     "Payer Name",
+     "text"
+    ],
+    [
+     "TPA",
+     "text"
+    ],
+    [
+     "UWY",
+     "int"
+    ],
+    [
+     "LifeKey",
+     "text"
+    ],
+    [
+     "LifeID",
+     "int"
+    ],
+    [
+     "PolKey",
+     "text"
+    ],
+    [
+     "MemKey",
+     "text"
+    ],
+    [
+     "ClaimID",
+     "text"
+    ],
+    [
+     "ClaimantKey",
+     "text"
+    ],
+    [
+     "MatchTier",
+     "text"
+    ],
+    [
+     "MatchStatus",
+     "text"
+    ],
+    [
+     "InCover",
+     "int"
+    ],
+    [
+     "InExperience",
+     "int"
+    ],
+    [
+     "StatusClass",
+     "text"
+    ],
+    [
+     "Claim Type",
+     "text"
+    ],
+    [
+     "FOB",
+     "text"
+    ],
+    [
+     "FOC",
+     "text"
+    ],
+    [
+     "ICD Code",
+     "text"
+    ],
+    [
+     "ICD Description",
+     "text"
+    ],
+    [
+     "ICD Chapter",
+     "text"
+    ],
+    [
+     "Provider Name",
+     "text"
+    ],
+    [
+     "Provider Type",
+     "text"
+    ],
+    [
+     "Provider Region",
+     "text"
+    ],
+    [
+     "TreatmentDate",
+     "date"
+    ],
+    [
+     "IncurredMonth",
+     "date"
+    ],
+    [
+     "ReportedMonth",
+     "date"
+    ],
+    [
+     "PaidMonth",
+     "date"
+    ],
+    [
+     "RepLag",
+     "int"
+    ],
+    [
+     "PaidLag",
+     "int"
+    ],
+    [
+     "Claimed",
+     "double"
+    ],
+    [
+     "Declined",
+     "double"
+    ],
+    [
+     "Discounts",
+     "double"
+    ],
+    [
+     "Approved",
+     "double"
+    ],
+    [
+     "BeneficiaryShare",
+     "double"
+    ],
+    [
+     "PayerShare",
+     "double"
+    ],
+    [
+     "Paid",
+     "double"
+    ],
+    [
+     "OS",
+     "double"
+    ],
+    [
+     "CountFlag",
+     "int"
+    ],
+    [
+     "LargeFlag",
+     "int"
+    ],
+    [
+     "SrcOrder",
+     "int"
+    ],
+    [
+     "MasterCedantName",
+     "text"
+    ],
+    [
+     "RI Name",
+     "text"
+    ],
+    [
+     "DevLag",
+     "int"
+    ],
+    [
+     "CF_Basis",
+     "text"
+    ],
+    [
+     "CF_Amount",
+     "double"
+    ],
+    [
+     "CF_Count",
+     "double"
+    ],
+    [
+     "UltimateAmount",
+     "double"
+    ],
+    [
+     "UltimateCount",
+     "double"
+    ],
+    [
+     "Provider Region Group",
+     "text"
+    ],
+    [
+     "CF_Basis_IBNP",
+     "text"
+    ],
+    [
+     "CF_Amount_IBNP",
+     "double"
+    ],
+    [
+     "CF_Count_IBNP",
+     "double"
+    ],
+    [
+     "UltimateAmount_IBNP",
+     "double"
+    ],
+    [
+     "UltimateCount_IBNP",
+     "double"
+    ]
+   ],
+   "describe": {
+    "ClaimKey": "Unique claim line key",
+    "Payer Name": "Payer",
+    "TPA": "TPA",
+    "UWY": "UWY of the matched life-period; else of the policy term holding the treatment date; else the claims file UWY; else the treatment year (Q-C1)",
+    "LifeKey": "Matched life (blank = unmatched)",
+    "LifeID": "v7.2.0: LifeID of the linked life-period (dim_life); blank = not linked (Ambiguous)",
+    "PolKey": "Normalised policy key",
+    "MemKey": "Normalised member key",
+    "ClaimID": "Claim identifier (Q-C5): TPA|policy|member|treatment date|provider|ICD|payer share#n (n = running number of identical lines)",
+    "ClaimantKey": "Claimant (life key, else raw keys)",
+    "MatchTier": "T1 policy + member, in cover / T1 policy + member, out of cover / T2 member + treatment date / Ambiguous / Unmatched",
+    "MatchStatus": "Matched / Matched-OutOfCover / Ambiguous / Unmatched (SPEC P4)",
+    "InCover": "1 if treatment date within a coverage period",
+    "InExperience": "1 if treated on or before the valuation date (Q-V1); 0 = in recon only",
+    "StatusClass": "Paid / Outstanding (claim status of the source sheet, claims_map.json)",
+    "Claim Type": "As supplied (claims status / approval decision column); a pivot only, nothing excluded (Q-C7)",
+    "FOB": "Benefit class (field of benefit), standard value from the Value maps tab (Out-Patient / In-Patient / Maternity / Dental / Optical / Psychiatry / ...)",
+    "FOC": "Sub-class (field of cover), standard value from the Value maps tab",
+    "ICD Code": "Diagnosis code split from the supplied value (ICD-10 with the dot after the 3rd character, or ICD-9); Not Available when the value holds no code (NAS gives chapters)",
+    "ICD Description": "Description of the code from the ICD codes tab of the inputs workbook (CDC ICD-10-CM), else the text supplied after the code",
+    "ICD Chapter": "ICD-10-CM chapter of the code (ICD codes tab), else the supplied chapter by the 'ICD Chapter' rules (NAS)",
+    "Provider Name": "Provider",
+    "Provider Type": "Standard value from the Value maps tab (Hospital / Clinic / Medical Center / Pharmacy / Diagnostic Center ...)",
+    "Provider Region": "Provider region as supplied",
+    "TreatmentDate": "Date of treatment",
+    "IncurredMonth": "Treatment month",
+    "ReportedMonth": "Reporting date, else processed date, else payment date, else (outstanding) the claims extract month",
+    "PaidMonth": "Payment date, else processed date (paid lines; blank if unpaid)",
+    "RepLag": "Months from treatment to report",
+    "PaidLag": "Months from treatment to payment",
+    "Claimed": "Amount claimed (blank: not in the source claims files) [cedant name redacted]",
+    "Declined": "Amount declined",
+    "Discounts": "Provider discounts",
+    "Approved": "Claimed - Declined - Discounts",
+    "BeneficiaryShare": "Member co-pay",
+    "PayerShare": "Payer share as supplied (reported amount)",
+    "Paid": "Payer share of the paid sheets",
+    "OS": "Payer share of the outstanding (OS) sheets",
+    "CountFlag": "1 on the first line of a visit (TPA, policy, member, provider, treatment date) whose payer share totals > 0 (O7)",
+    "LargeFlag": "1 if the visit's payer share >= run.json large_claim_threshold (O8: AED 100k)",
+    "SrcOrder": "Source position x 1,000,000 + Excel row",
+    "MasterCedantName": "Master cedant (user input in every Alteryx workflow)",
+    "RI Name": "Reinsurer from the claims file [TPA/reinsurer example redacted]",
+    "DevLag": "Months from the incurred month to the claims extract month",
+    "CF_Basis": "IBNR basis (factor applied to paid + pending): IBNR, or No factor (CF = 1) when the TPA has no IBNR factors. never the text None, which pandas and other readers turn into a blank",
+    "CF_Amount": "IBNR amount completion factor of the TPA and lag (inputs workbook; 1 if none or beyond the last lag)",
+    "CF_Count": "IBNR count completion factor likewise (1 if no count factors are supplied)",
+    "UltimateAmount": "Claim-level ultimate, IBNR basis: (paid + pending) / CF_Amount",
+    "UltimateCount": "Claim-level ultimate count, IBNR basis: CountFlag / CF_Count",
+    "Provider Region Group": "Provider region mapped by the Region rules of the inputs workbook (DXB / AUH / NE / Not Mapped)",
+    "CF_Basis_IBNP": "IBNP basis (factor applied to paid): IBNP, or No factor (CF = 1) when the TPA has no IBNP factors (v5.15)",
+    "CF_Amount_IBNP": "IBNP amount completion factor of the TPA and lag (1 if none or beyond the last lag)",
+    "CF_Count_IBNP": "IBNP count completion factor likewise (1 if none)",
+    "UltimateAmount_IBNP": "Claim-level ultimate, IBNP basis: paid / CF_Amount_IBNP",
+    "UltimateCount_IBNP": "Claim-level ultimate count, IBNP basis: CountFlag on claims with a payment / CF_Count_IBNP"
+   }
+  },
+  "cf_selected": {
+   "grain": "TPA x Basis (Reported/Paid) x Measure (Amount/Count) x Lag 0-12",
+   "key": [
+    "TPA",
+    "Basis",
+    "Measure",
+    "Lag"
+   ],
+   "source": "IP3",
+   "optional": true,
+   "columns": [
+    [
+     "TPA",
+     "text"
+    ],
+    [
+     "Basis",
+     "text"
+    ],
+    [
+     "Measure",
+     "text"
+    ],
+    [
+     "Lag",
+     "int"
+    ],
+    [
+     "CF_Derived",
+     "double"
+    ],
+    [
+     "CF_Override",
+     "double"
+    ],
+    [
+     "CF_Used",
+     "double"
+    ],
+    [
+     "Source",
+     "text"
+    ],
+    [
+     "Credible",
+     "int"
+    ],
+    [
+     "Cohorts",
+     "int"
+    ],
+    [
+     "Claims",
+     "int"
+    ]
+   ],
+   "describe": {
+    "TPA": "TPA",
+    "Basis": "IBNR (applied to paid + pending) or IBNP (applied to paid)",
+    "Measure": "Amount or Count (separate factors)",
+    "Lag": "Months from incurred month to claims extract month",
+    "CF_Derived": "Blank (factors are inputs, owner 2026-10-08)",
+    "CF_Override": "Blank",
+    "CF_Used": "Completion factor from the inputs workbook",
+    "Source": "Inputs workbook (placeholder / synthetic placeholder when the Note says so)",
+    "Credible": "1 (input factors)",
+    "Cohorts": "Blank",
+    "Claims": "Blank"
+   }
+  },
+  "ultimates": {
+   "grain": "Payer x TPA x incurred month x UWY (reported claims keep their UWY; IBNR allocated to UWY by earned premium of the month, SPEC P5.7)",
+   "key": [
+    "Payer Name",
+    "TPA",
+    "IncurredMonth",
+    "UWY"
+   ],
+   "source": "IP3",
+   "optional": true,
+   "columns": [
+    [
+     "Payer Name",
+     "text"
+    ],
+    [
+     "TPA",
+     "text"
+    ],
+    [
+     "IncurredMonth",
+     "date"
+    ],
+    [
+     "UWY",
+     "int"
+    ],
+    [
+     "Lag",
+     "int"
+    ],
+    [
+     "CF_Used",
+     "double"
+    ],
+    [
+     "CF_Count_Used",
+     "double"
+    ],
+    [
+     "Reported",
+     "double"
+    ],
+    [
+     "Paid",
+     "double"
+    ],
+    [
+     "OS",
+     "double"
+    ],
+    [
+     "IBNR",
+     "double"
+    ],
+    [
+     "Ultimate",
+     "double"
+    ],
+    [
+     "ReportedCount",
+     "double"
+    ],
+    [
+     "UltimateCount",
+     "double"
+    ],
+    [
+     "Method",
+     "text"
+    ],
+    [
+     "PaidCount",
+     "double"
+    ],
+    [
+     "CF_Basis",
+     "text"
+    ],
+    [
+     "CF_Used_IBNP",
+     "double"
+    ],
+    [
+     "CF_Count_Used_IBNP",
+     "double"
+    ],
+    [
+     "IBNP",
+     "double"
+    ],
+    [
+     "Ultimate_IBNP",
+     "double"
+    ],
+    [
+     "UltimateCount_IBNP",
+     "double"
+    ],
+    [
+     "CF_Basis_IBNP",
+     "text"
+    ]
+   ],
+   "describe": {
+    "Payer Name": "Payer",
+    "TPA": "TPA",
+    "IncurredMonth": "Incurred month",
+    "UWY": "Underwriting year",
+    "Lag": "Months from the incurred month to the claims extract month",
+    "CF_Used": "Amount completion factor at the lag (1 if none)",
+    "CF_Count_Used": "Count completion factor (1 if none)",
+    "Reported": "Reported payer share (paid + outstanding), in experience",
+    "Paid": "Paid payer share",
+    "OS": "Outstanding payer share",
+    "IBNR": "Ultimate - Reported",
+    "Ultimate": "Sum of the claim-level ultimates (fact_claims UltimateAmount) of the cell",
+    "ReportedCount": "Reported claim count (CountFlag)",
+    "UltimateCount": "Sum of the claim-level ultimate counts of the cell",
+    "Method": "IBNR factor basis used",
+    "PaidCount": "Claims paid (CountFlag on claims with a payment)",
+    "CF_Basis": "IBNR / No factor (see fact_claims)",
+    "CF_Used_IBNP": "IBNP amount completion factor at the lag (1 if none)",
+    "CF_Count_Used_IBNP": "IBNP count completion factor (1 if none)",
+    "IBNP": "Ultimate_IBNP - Paid",
+    "Ultimate_IBNP": "Sum of the claim-level IBNP-basis ultimates (fact_claims UltimateAmount_IBNP) of the cell",
+    "UltimateCount_IBNP": "Sum of the claim-level IBNP-basis ultimate counts of the cell",
+    "CF_Basis_IBNP": "IBNP / No factor (see fact_claims)"
+   }
+  },
+  "recon": {
+   "files": "recon_*.csv",
+   "shape": "one row per TPA, one column per measure (IP2 recon_premium.csv); unpivoted on load",
+   "source": "IP2/IP3",
+   "describe": {
+    "TPA": "TPA",
+    "<measure>": "One column per control total; unpivoted to Measure / Value"
+   }
+  },
+  "exceptions": {
+   "files": "exceptions*.csv",
+   "columns": [
+    [
+     "Code",
+     "text"
+    ],
+    [
+     "Severity",
+     "text"
+    ],
+    [
+     "TPA",
+     "text"
+    ],
+    [
+     "PolKey",
+     "text"
+    ],
+    [
+     "MemKey",
+     "text"
+    ],
+    [
+     "SrcOrder",
+     "int"
+    ],
+    [
+     "Message",
+     "text"
+    ]
+   ],
+   "source": "IP2/IP3",
+   "describe": {
+    "Code": "Finding code (E- stop, W- flag, I- info)",
+    "Severity": "Stop / Flag / Info",
+    "TPA": "TPA",
+    "PolKey": "Policy key",
+    "MemKey": "Member key",
+    "SrcOrder": "Source row",
+    "Message": "Plain-language finding"
+   }
+  },
+  "run_manifest": {
+   "files": "run_manifest*.csv",
+   "columns": [
+    [
+     "Key",
+     "text"
+    ],
+    [
+     "Value",
+     "text"
+    ]
+   ],
+   "source": "IP2/IP3",
+   "keys": [
+    "valuation_date",
+    "claims_extract_date",
+    "premium_extract_date",
+    "workflow",
+    "workflow_version",
+    "default_premium_basis",
+    "currency",
+    "large_claim_threshold",
+    "has_member_dob",
+    "has_claim_dob",
+    "has_paid_date",
+    "has_reported_date",
+    "has_icd",
+    "has_provider",
+    "has_fob"
+   ],
+   "describe": {
+    "Key": "Setting name",
+    "Value": "Setting value (text)"
+   }
+  }
+ }
+}

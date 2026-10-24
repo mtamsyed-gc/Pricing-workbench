@@ -55,6 +55,7 @@ and the work orders for WS1–WS3, WS4 and WS6.
 - The generated UFIC template has exactly the blocks, plans, bands and columns of SPEC §8.4: one block per TPA, no shared tables, dynamic network counts.
 - No UFIC labels or values appear outside `examples/ufic_2027/` and `reference/`. `tools/package.py` excludes reference/.
 - HANDOVER.md updated; branch `ws0-core` pushed; PR opened.
+- Laptop check (SPEC §13, CR #1): `py tools\laptop_check.py` returns `LAPTOP CHECK PASS` on the owner's laptop for the PR head commit.
 
 ## Out of scope
 - Rate index and benefit-value engines (WS1).

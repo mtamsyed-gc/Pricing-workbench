@@ -1,0 +1,861 @@
+{
+ "_note": "UFIC 2027 tender template STRUCTURE ONLY (SPEC §8.4): no rates or factor values. Derived from reference/ufic/. Age bands from age_bands.json (DXB15/AUH8/SME8 placeholders). Market-facing text says 'lead reinsurer' (F8).",
+ "template_spec_version": "1",
+ "cedant": "UFIC",
+ "tender_id": "UFIC_MED_QS_2027",
+ "currency": "AED",
+ "premium_basis": "NET",
+ "deadline": "2026-11-05",
+ "contact": "Guy Carpenter L&H IMEA (Dubai)",
+ "issue_date": "2026-10-24",
+ "age_bands_file": "age_bands.json",
+ "column_sets": {
+  "MSF_MF": [
+   {
+    "label": "M/SF",
+    "keys": [
+     {
+      "gender": "M"
+     },
+     {
+      "gender": "F",
+      "marital": "SINGLE"
+     }
+    ]
+   },
+   {
+    "label": "Married-F",
+    "keys": [
+     {
+      "gender": "F",
+      "marital": "MARRIED"
+     }
+    ]
+   }
+  ]
+ },
+ "sheets": [
+  {
+   "sheet_name": "Ind Rates - DXB-NE",
+   "title": "Individual - Dubai & Northern Emirates (DHA) - base rates at 0% co-pay",
+   "product_type": "INDIVIDUAL",
+   "regulator": "DHA",
+   "rating_region": "DXB_NE",
+   "mandatory": true,
+   "age_bands": "DXB15",
+   "column_set": "MF",
+   "copay_basis": {
+    "copay_op_diag": "0%",
+    "ded_consult": "20% up to AED 50 (standard)",
+    "copay_pharmacy": "0%",
+    "aml": "per Factor Tables (reference per network tier, F5)",
+    "network_option": "Option 1"
+   },
+   "blocks": [
+    {
+     "block_id": "IND_DXBNE_NEXTCARE",
+     "tpa": "NEXTCARE",
+     "label": "NEXTCARE",
+     "comment": "F1 (SPEC §12): plan -> network labels per TPA as in the reference; rows A-C look shifted for NC/NAS - confirm with UFIC before issue",
+     "plans": [
+      {
+       "plan_id": "A",
+       "label": "Plan A",
+       "network": "CN"
+      },
+      {
+       "plan_id": "B",
+       "label": "Plan B",
+       "network": "GN"
+      },
+      {
+       "plan_id": "C",
+       "label": "Plan C",
+       "network": "RN"
+      },
+      {
+       "plan_id": "D",
+       "label": "Plan D",
+       "network": "RN2"
+      },
+      {
+       "plan_id": "E",
+       "label": "Plan E",
+       "network": "RN3"
+      },
+      {
+       "plan_id": "F",
+       "label": "Plan F",
+       "network": "PCP-RN3"
+      },
+      {
+       "plan_id": "G",
+       "label": "Plan G",
+       "network": "PCP-C"
+      }
+     ]
+    },
+    {
+     "block_id": "IND_DXBNE_NAS",
+     "tpa": "NAS",
+     "label": "NAS",
+     "comment": "F1 (SPEC §12): plan -> network labels per TPA as in the reference; rows A-C look shifted for NC/NAS - confirm with UFIC before issue",
+     "plans": [
+      {
+       "plan_id": "A",
+       "label": "Plan A",
+       "network": "GN+"
+      },
+      {
+       "plan_id": "B",
+       "label": "Plan B",
+       "network": "CN"
+      },
+      {
+       "plan_id": "C",
+       "label": "Plan C",
+       "network": "GN"
+      },
+      {
+       "plan_id": "D",
+       "label": "Plan D",
+       "network": "RN"
+      },
+      {
+       "plan_id": "E",
+       "label": "Plan E",
+       "network": "SRN"
+      },
+      {
+       "plan_id": "F",
+       "label": "Plan F",
+       "network": "WN"
+      },
+      {
+       "plan_id": "G",
+       "label": "Plan G",
+       "network": "VN/VL"
+      }
+     ]
+    },
+    {
+     "block_id": "IND_DXBNE_MEDNET",
+     "tpa": "MEDNET",
+     "label": "MEDNET",
+     "comment": "F1 (SPEC §12): plan -> network labels per TPA as in the reference; rows A-C look shifted for NC/NAS - confirm with UFIC before issue",
+     "plans": [
+      {
+       "plan_id": "A",
+       "label": "Plan A",
+       "network": "Gold Mednet"
+      },
+      {
+       "plan_id": "B",
+       "label": "Plan B",
+       "network": "Silver Premium"
+      },
+      {
+       "plan_id": "C",
+       "label": "Plan C",
+       "network": "Silver Classic"
+      },
+      {
+       "plan_id": "D",
+       "label": "Plan D",
+       "network": "Green"
+      },
+      {
+       "plan_id": "E",
+       "label": "Plan E",
+       "network": "Emerald (clinic-restricted)"
+      },
+      {
+       "plan_id": "F",
+       "label": "Plan F",
+       "network": "Pearl (clinic-restricted)"
+      },
+      {
+       "plan_id": "G",
+       "label": "Plan G",
+       "network": "Silk Road (clinic-restricted)"
+      }
+     ]
+    },
+    {
+     "block_id": "IND_DXBNE_AAFIYA",
+     "tpa": "AAFIYA",
+     "label": "AAFIYA",
+     "comment": "F3 (SPEC §12): confirm which co-pay multipliers apply to this block",
+     "plans": [
+      {
+       "plan_id": "APN_PLUS",
+       "label": "APN Plus",
+       "network": "APN Plus"
+      },
+      {
+       "plan_id": "ESSENTIAL",
+       "label": "Essential",
+       "network": "Essential"
+      },
+      {
+       "plan_id": "APN",
+       "label": "APN",
+       "network": "APN"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sheet_name": "Ind Rates - AUH",
+   "title": "Individual - Abu Dhabi (DOH) - base rates at Nil co-pay",
+   "product_type": "INDIVIDUAL",
+   "regulator": "DOH",
+   "rating_region": "AUH",
+   "mandatory": true,
+   "age_bands": "AUH8",
+   "column_set": "MF",
+   "split_options": {
+    "marital": {
+     "column_set": "MSF_MF"
+    },
+    "member_section": {
+     "sections": [
+      {
+       "label": "Employee/SI",
+       "key": {
+        "member_category": "PRINCIPAL"
+       },
+       "age_bands": "AUH8"
+      },
+      {
+       "label": "Dependant",
+       "key": {
+        "member_category": "DEPENDANT"
+       },
+       "age_bands": "AUH8"
+      }
+     ]
+    }
+   },
+   "copay_basis": {
+    "copay_ip": "Nil"
+   },
+   "blocks": [
+    {
+     "block_id": "IND_AUH_NEXTCARE",
+     "tpa": "NEXTCARE",
+     "label": "NEXTCARE",
+     "comment": "HANDOVER open item 2: marital / member-section splits available, OFF by default (SPEC §8.0) pending the owner; F2 (SPEC §12): co-pay block labels to confirm",
+     "splits": {
+      "marital": false,
+      "member_section": false
+     },
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "GN+"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "GN"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "RN"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "RN2"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "RN3"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "PCP-AUH"
+      }
+     ]
+    },
+    {
+     "block_id": "IND_AUH_MEDNET",
+     "tpa": "MEDNET",
+     "label": "MEDNET",
+     "comment": "HANDOVER open item 2: marital / member-section splits available, OFF by default (SPEC §8.0) pending the owner; F2 (SPEC §12): co-pay block labels to confirm",
+     "splits": {
+      "marital": false,
+      "member_section": false
+     },
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "Gold"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "Silver Premium"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "Silver Classic"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "Green"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "Emerald"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "Silk Road"
+      }
+     ]
+    },
+    {
+     "block_id": "IND_AUH_NAS",
+     "tpa": "NAS",
+     "label": "NAS",
+     "comment": "HANDOVER open item 2: marital / member-section splits available, OFF by default (SPEC §8.0) pending the owner; F2 (SPEC §12): co-pay block labels to confirm",
+     "splits": {
+      "marital": false,
+      "member_section": false
+     },
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "GN+ (Gold)"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "GN"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "RN"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "SRN"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "WN (Emerald)"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "VN (Silk Road)"
+      }
+     ]
+    },
+    {
+     "block_id": "IND_AUH_AAFIYA",
+     "tpa": "AAFIYA",
+     "label": "AAFIYA",
+     "plans": [
+      {
+       "plan_id": "APN_PLUS",
+       "label": "APN Plus",
+       "network": "APN Plus"
+      },
+      {
+       "plan_id": "ESSENTIAL",
+       "label": "Essential",
+       "network": "Essential"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sheet_name": "SME Rates - DXB-NE",
+   "title": "SME - Dubai & Northern Emirates (DHA) - base rates at 0% co-pay",
+   "product_type": "SME",
+   "regulator": "DHA",
+   "rating_region": "DXB_NE",
+   "mandatory": true,
+   "age_bands": "SME8",
+   "column_set": "MF",
+   "copay_basis": {
+    "copay_op_diag": "0%",
+    "copay_ip": "Nil",
+    "pharmacy_limit": "AML (unlimited)",
+    "copay_pharmacy": "0%"
+   },
+   "blocks": [
+    {
+     "block_id": "SME_DXB_NE_NAS",
+     "tpa": "NAS",
+     "label": "NAS",
+     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "GN+"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "GN"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "RNE"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "RN"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "RN2"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "RN3/PCP"
+      }
+     ]
+    },
+    {
+     "block_id": "SME_DXB_NE_NEXTCARE",
+     "tpa": "NEXTCARE",
+     "label": "NEXTCARE",
+     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "GN+"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "GN"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "RNE"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "RN"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "RN2"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "RN3/PCP"
+      }
+     ]
+    },
+    {
+     "block_id": "SME_DXB_NE_MEDNET",
+     "tpa": "MEDNET",
+     "label": "MEDNET",
+     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "GN+"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "GN"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "RNE"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "RN"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "RN2"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "RN3/PCP"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sheet_name": "SME Rates - AUH",
+   "title": "SME - Abu Dhabi (DOH) - base rates at 0% co-pay",
+   "product_type": "SME",
+   "regulator": "DOH",
+   "rating_region": "AUH",
+   "mandatory": true,
+   "age_bands": "SME8",
+   "column_set": "MF",
+   "copay_basis": {
+    "copay_op_diag": "0%",
+    "copay_ip": "Nil",
+    "pharmacy_limit": "AML (unlimited)",
+    "copay_pharmacy": "0%"
+   },
+   "blocks": [
+    {
+     "block_id": "SME_AUH_NAS",
+     "tpa": "NAS",
+     "label": "NAS",
+     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "GN+"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "GN"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "RNE"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "RN"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "RN2"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "RN3/PCP"
+      }
+     ]
+    },
+    {
+     "block_id": "SME_AUH_NEXTCARE",
+     "tpa": "NEXTCARE",
+     "label": "NEXTCARE",
+     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "GN+"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "GN"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "RNE"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "RN"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "RN2"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "RN3/PCP"
+      }
+     ]
+    },
+    {
+     "block_id": "SME_AUH_MEDNET",
+     "tpa": "MEDNET",
+     "label": "MEDNET",
+     "comment": "network labels from the reference add-on tables; per-TPA labels to confirm",
+     "plans": [
+      {
+       "plan_id": "P1",
+       "label": "Plan 1",
+       "network": "GN+"
+      },
+      {
+       "plan_id": "P2",
+       "label": "Plan 2",
+       "network": "GN"
+      },
+      {
+       "plan_id": "P3",
+       "label": "Plan 3",
+       "network": "RNE"
+      },
+      {
+       "plan_id": "P4",
+       "label": "Plan 4",
+       "network": "RN"
+      },
+      {
+       "plan_id": "P5",
+       "label": "Plan 5",
+       "network": "RN2"
+      },
+      {
+       "plan_id": "P6",
+       "label": "Plan 6",
+       "network": "RN3/PCP"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sheet_name": "AUH Basic Rates",
+   "title": "Abu Dhabi Basic plan (DOH) - single rate table (GROSS basis, F7)",
+   "product_type": "BASIC",
+   "regulator": "DOH",
+   "rating_region": "AUH",
+   "mandatory": true,
+   "column_set": "RATE",
+   "sections": [
+    {
+     "label": "Employee",
+     "key": {
+      "member_category": "EMPLOYEE"
+     },
+     "age_bands": "AUH_BASIC_ADULT"
+    },
+    {
+     "label": "Small Investor",
+     "key": {
+      "member_category": "SMALL_INVESTOR"
+     },
+     "age_bands": "AUH_BASIC_ADULT"
+    },
+    {
+     "label": "Dependant by Employee",
+     "key": {
+      "member_category": "DEP_OF_EMPLOYEE"
+     },
+     "age_bands": "AUH_BASIC_DEP"
+    },
+    {
+     "label": "Dependant by Individual",
+     "key": {
+      "member_category": "DEP_OF_INDIVIDUAL"
+     },
+     "age_bands": "AUH_BASIC_DEP"
+    },
+    {
+     "label": "Maid (Non-UAE Sponsored)",
+     "key": {
+      "member_category": "DOMESTIC_NONUAE_SPONSOR"
+     },
+     "age_bands": "AUH_BASIC_ADULT"
+    },
+    {
+     "label": "Maid (UAE Sponsored)",
+     "key": {
+      "member_category": "DOMESTIC_UAE_SPONSOR"
+     },
+     "age_bands": "AUH_BASIC_ADULT"
+    }
+   ],
+   "copay_basis": {},
+   "blocks": [
+    {
+     "block_id": "BASIC_AUH_DIRECT",
+     "tpa": "DIRECT",
+     "label": "Direct (no TPA)",
+     "plans": [
+      {
+       "plan_id": "AUH_BASIC",
+       "label": "AUH Basic",
+       "network": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "sheet_name": "NE Rates",
+   "title": "Northern Emirates (MOH) - Basic, Enhanced 1, Enhanced 2",
+   "product_type": "NE_COMPULSORY",
+   "regulator": "MOH_NE",
+   "rating_region": "NE",
+   "mandatory": true,
+   "column_set": "RATE",
+   "copay_basis": {},
+   "refer_text": "Refer to the lead reinsurer",
+   "blocks": [
+    {
+     "block_id": "NE_BASIC_AAFIYA",
+     "tpa": "AAFIYA",
+     "label": "AAFIYA - NE Basic",
+     "rows": [
+      {
+       "label": "00-64",
+       "section": "Employee & Dependants",
+       "keys": [
+        {
+         "member_category": "EMPLOYEE",
+         "age": [
+          0,
+          64
+         ]
+        },
+        {
+         "member_category": "DEPENDANT",
+         "age": [
+          0,
+          64
+         ]
+        }
+       ]
+      },
+      {
+       "label": "00-64",
+       "section": "Partners & Investors",
+       "key": {
+        "member_category": "PARTNER_INVESTOR",
+        "age": [
+         0,
+         64
+        ]
+       }
+      },
+      {
+       "label": "64+",
+       "section": "Parents / Parents-in-law (with MAF)",
+       "key": {
+        "member_category": "PARENT",
+        "age": [
+         65,
+         120
+        ]
+       }
+      }
+     ],
+     "comment": "source labels 00-64 / 64+ overlap at 64: read as 0-64 and 65+ (confirm); member categories mapped to canonical codes",
+     "refer_cells": [
+      {
+       "member_category": "PARENT"
+      }
+     ],
+     "plans": [
+      {
+       "plan_id": "NE_BASIC",
+       "label": "NE Basic",
+       "network": "APN/NE"
+      }
+     ]
+    },
+    {
+     "block_id": "NE_ENH1_AAFIYA",
+     "tpa": "AAFIYA",
+     "label": "AAFIYA - NE Enhanced 1",
+     "age_bands": "NE_ENH1",
+     "refer_cells": [
+      {
+       "age": [
+        65,
+        120
+       ]
+      }
+     ],
+     "plans": [
+      {
+       "plan_id": "NE_ENH1",
+       "label": "NE Enhanced 1",
+       "network": "APN"
+      }
+     ]
+    },
+    {
+     "block_id": "NE_ENH2_AAFIYA",
+     "tpa": "AAFIYA",
+     "label": "AAFIYA - NE Enhanced 2",
+     "age_bands": "NE_ENH2",
+     "plans": [
+      {
+       "plan_id": "NE_ENH2",
+       "label": "NE Enhanced 2",
+       "network": "APN"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "reference_sheets": {
+  "existing_rates": true,
+  "factor_tables": true,
+  "addons": "READ_ONLY",
+  "tob_summary": false,
+  "terms": true
+ },
+ "options": {
+  "allow_proposed_multipliers": false,
+  "allow_benefit_comments": true,
+  "protect_structure": true,
+  "language": "en",
+  "rounding": 2,
+  "outlier_shading": false
+ },
+ "source_flags": [
+  "F1",
+  "F2",
+  "F3",
+  "F4",
+  "F5",
+  "F6",
+  "F7",
+  "F8"
+ ],
+ "pending": [
+  "age bands DXB15/AUH8/SME8 (HANDOVER 1)",
+  "AUH Individual splits (HANDOVER 2): default OFF"
+ ]
+}
