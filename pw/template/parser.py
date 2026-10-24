@@ -309,18 +309,22 @@ def to_catalogue(parsed: ParsedSubmission, template_spec: dict, catalogue_id: st
 
 
 def _apply(comp: Component, supplied: dict, prefix: str, scope_id: str, blank_is_missing: bool = False):
-    """Replace issued values by submitted ones. blank_is_missing: rows the submission left blank (or non-numeric)
-    become None with source_ref 'not quoted ...' (the evaluator then marks those cells REFER, 'rider not quoted')."""
+    """Replace issued values by submitted ones. blank_is_missing (riders in FILL mode): rows the submission left blank,
+    non-numeric or <= 0 become None with source_ref 'not quoted ...' (the evaluator then marks those cells REFER,
+    'rider not quoted'); an invalid rider is never priced."""
     from ..model import canonical_key_str
     from ..registry import load_registry
     order = load_registry().order
     for r in comp.rows:
         ck = f"{prefix}|scope={scope_id}|component={comp.component_id}|" + canonical_key_str(r["key"], order)
-        if ck in supplied and isinstance(supplied[ck], float):
-            r["value"] = supplied[ck]
+        v = supplied.get(ck)
+        usable = isinstance(v, float) and (v > 0 or not blank_is_missing)
+        if usable:
+            r["value"] = v
             r["status"] = "VALUE"
             r["source_ref"] = f"submitted {prefix}"
         elif blank_is_missing and r.get("value") is not None:
             r["value"] = None
             r["status"] = "REFER"
-            r["source_ref"] = f"not quoted ({prefix} left blank in the submission)"
+            r["source_ref"] = (f"not quoted ({prefix} left blank in the submission)" if v is None else
+                               f"not quoted ({prefix} value {v!r} is not a number > 0)")

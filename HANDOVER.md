@@ -43,17 +43,24 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 
 ### Owner-decisions batch (OD1) notes for the next sessions
 - Riders: `reference_sheets.addons = "FILL"` makes the Add-ons sheet quotable; a blank rider is NOT QUOTED (parser sets the
-  row to REFER with source_ref "not quoted ..."; the evaluator marks those cells REFER "rider not quoted"). V5 adds
-  RIDER_NOT_QUOTED / RIDER_INVALID / RIDER_NO_EXPIRING / RIDER_OUTLIER (rider flags are not in V5_FLAG_SHARE).
-- Evaluator result adds `base_status, price_base` (base x rating factors) and `price_riders` (additive modules).
+  row to REFER with source_ref "not quoted ..."; the evaluator marks those cells REFER "rider not quoted"); a rider
+  <= 0 or non-numeric is treated the same. V5 adds RIDER_NOT_QUOTED / RIDER_INVALID / RIDER_NO_EXPIRING /
+  RIDER_OUTLIER, and RIDERS_UNREAD when `_KEYS` is missing (rider flags are not in V5_FLAG_SHARE).
+- Evaluator result adds `base_status, price_base` (base x rating factors) and `price_riders` (premium before loading
+  and fees minus price_base: additive and multiplicative riders, any formula order; the parts add up).
   RateFactors / RateIndex add base-only and rider columns (extras; contract columns unchanged); headline index and
   TreatyFeed on full premium.
 - B1: override -> catalogue -> library (source shows the replaced value); rider value = expiring rider premium / expiring
   base over the standard mix (`module_values`), richness = product + sum of rider values; `run_benefit` builds the mix
   from the run's exposure (no exposure config -> riders left out when unchanged, MANUAL_REVIEW when changed).
 - Scorecard: scale set by single options; panels = lead on every criterion, SHARE = capacity (sum of members' shares).
-- Benchmark: CR #13 dimensions in the registry and the intake layout; bridging of add-on levels (BRIDGED); gap register
-  peers same region by default, LOW_PEERS below `gap_min_peers` (3). Fixture `MKT-CEDAR-2026` exercises bridging.
+- Benchmark: CR #13 dimensions in the registry and the intake layout; add-on levels resolved per network
+  (`_resolve_level`: exact row, else BRIDGED between the file's own limits; every offered network covered); gap register
+  peers same region by default, LOW_PEERS below `gap_min_peers` (3), presence share over all peer plans.
+  Fixture `MKT-CEDAR-2026` exercises bridging.
+- An independent review of the batch found 9 defects (invalid riders priced, bridging blocked by other networks, rider
+  value currency / multiplicative / formula-order errors, unread riders, presence-share denominator, bridging edge
+  cases); all fixed with regression tests in `tests/test_owner_decisions.py`.
 - UFIC example: real bands, master-table networks (plan letters A..G on every TPA), AUH splits on, SME AUH sections,
   Add-ons FILL, Cover states the TPA basis. `tests/test_owner_decisions.py` pins the decisions.
 
@@ -117,6 +124,9 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
    owner to confirm or switch off.
 4. Real scorecard weights for UFIC (examples/scorecard_weights.json is fictional).
 5. F2 swap and F3 multipliers are applied in the run's expiring UFIC catalogue spec (outside the repo, runs/).
+6. Scorecard (SPEC silent): when all single options have the same value on a criterion there is no scale and everyone,
+   panels included, scores 100 (e.g. a panel's larger capacity gets no credit if every option offers the same share).
+   Keep, or give panels a fixed credit there?
 
 ## Timeline driver
 UFIC reinsurer submissions due early November 2026. Priority order: OD1 merge → WS6 → WS4 (integration, release) → WS7.

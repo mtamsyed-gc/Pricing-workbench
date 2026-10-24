@@ -473,11 +473,13 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
     st["base"] = base
     st["factor_product"] = fprod
     st["modules_add"] = mod_add
-    # base-only price (base x rating factors; no modules, loading, fees or min/max) and the additive rider premium,
-    # for the B2 split (owner decision 24 Oct 2026, HANDOVER item 11)
+    # B2 split (owner decision 24 Oct 2026, HANDOVER item 11): base-only price = base x rating factors (no riders,
+    # loading, fees or min/max); rider premium = premium before loading and fees minus the base-only price, so it
+    # carries additive riders, multiplicative riders and, under order BASE-MODULES-FACTORS, the factors on riders.
+    # price_base + price_riders = premium before loading and fees (in the output currency).
     pb = (base * f_only * conv).round(rnd)
     st["price_base"] = pb.where(st["base_status"] == "PRICED")
-    st["price_riders"] = (mod_add * conv).round(rnd).where(st["status"] == "PRICED")
+    st["price_riders"] = ((pre * conv).round(rnd) - pb).where(st["status"] == "PRICED")
     st["premium_pre_loading"] = pre
     st["loading"] = la
     st["fees"] = fees

@@ -163,8 +163,8 @@ Rules feed the terms comparison (B and D) and are never used in pricing unless d
 
 - Market plans are priced **as sold** (own default design; CR #14) over the exposure mix and the standard cell set (CR #15), on the run basis with the file's own gross-to-net factor (CR #16).
 - Levers and add-ons with registry dimensions (incl. CR #13: room type, PEC limit, medication type, territory; physiotherapy, OP psychiatric, alternative medicine, home nursing, health check, repatriation) enter the market price.
-- A package add-on level the intake file does not price exactly is **interpolated linearly on the limit between the file's own two nearest priced limits** (same benefit, co-pay, network, form and applies-to), status BRIDGED. No extrapolation beyond the file's priced range, and no use of another source's reference basis; otherwise NOT_PRICED.
-- Gap register: GAP when the subject does not cover a line that ≥ `gap_share` (0.5) of the peers cover. **Peers = market plans of the same tier and the same rating region** (`peer_same_region`, default true: DHA and DOH mandatory benefits differ). Fewer than `gap_min_peers` (3) peer plans → LOW_PEERS, no call.
+- A package add-on level the intake file does not price exactly is **interpolated linearly on the limit between the file's own two nearest priced limits** (same benefit, co-pay, network, form and applies-to), status BRIDGED. Resolved per network ('All' and each offered network; an exact row wins, limits compared as numbers); every offered network must be covered by its own row or by 'All'. No extrapolation beyond the file's priced range, ambiguous rows are not used, and no other source's reference basis; otherwise NOT_PRICED.
+- Gap register: GAP when the subject does not cover a line that ≥ `gap_share` (0.5) of the peer plans cover (share of all peer plans; a peer without the line does not count as covering). **Peers = market plans of the same tier and the same rating region** (`peer_same_region`, default true: DHA and DOH mandatory benefits differ). Fewer than `gap_min_peers` (3) peer plans → LOW_PEERS, no call.
 - No reconciliation to the SME Benchmarking Tool's report is required (owner: that tool has not been used); the adapter's V1 and hand-checked tests are the control.
 
 ---
@@ -213,7 +213,7 @@ Rules:
 | V2 Block consistency | For BLOCK_SETs, each block ÷ Nil block = one flat multiplier; cells deviating > tolerance flagged with expected value (UFIC NAS AUH 20%: 13 cells) | Flag; use declared resolution (derived value) |
 | V3 Premium reconciliation | Expiring catalogue × exposure (default options) vs actual written premium by product × TPA × region × plan; implied factor = actual ÷ rated (captures co-pay mix, loadings, discounts) | Report; implied factor carried as calibration, never hidden |
 | V4 Template round-trip | Generated template → filled with synthetic values → parsed back = identical | Stop |
-| V5 Submission integrity | Submitted template structure hash = issued hash; all mandatory cells numeric > 0; outliers vs expiring (ratio band, default 0.7–1.3, run config `v5.outlier_band`) flagged. Quoted riders (Add-ons in FILL mode) are checked against the expiring rider rate on the same band (RIDER_OUTLIER); a blank rider is RIDER_NOT_QUOTED (priced as missing, not invalid) | Flag to user |
+| V5 Submission integrity | Submitted template structure hash = issued hash; all mandatory cells numeric > 0; outliers vs expiring (ratio band, default 0.7–1.3, run config `v5.outlier_band`) flagged. Quoted riders (Add-ons in FILL mode) are checked against the expiring rider rate on the same band (RIDER_OUTLIER); a blank rider is RIDER_NOT_QUOTED and a rider ≤ 0 or non-numeric is RIDER_INVALID (both priced as missing, never used); without `_KEYS` the riders cannot be located: RIDERS_UNREAD | Flag to user |
 
 ---
 
@@ -232,7 +232,7 @@ Rules:
 All outputs: Parquet + an Excel view; run manifest with versions and hashes.
 
 Additional columns (owner decision 24 Oct 2026; the contract columns above are unchanged):
-- `RateFactors` adds `rate_expiring_base, rate_option_base` (base × rating factors, no riders / loading / fees; priced where the base prices) and `rate_expiring_riders, rate_option_riders` (additive rider premium; priced where the full premium prices).
+- `RateFactors` adds `rate_expiring_base, rate_option_base` (base × rating factors, no riders / loading / fees; priced where the base prices) and `rate_expiring_riders, rate_option_riders` (rider premium = premium before loading and fees − base-only price, so additive and multiplicative riders and any formula order are covered and the two parts add up; priced where the full premium prices).
 - `RateIndex` adds `prem_expiring_base, prem_option_base, index_base` and `prem_expiring_riders, prem_option_riders, index_riders`. The headline `index` and the `TreatyFeed` stay on full premium; the split shows where an option's change comes from (e.g. cheap base, loaded riders).
 
 Scorecard (D) rules: min-max to 0–100 per criterion, **scale set by single options only**; panels are placed on that scale and may fall outside 0–100. **Followers write at the lead's rates and terms**: a panel takes the lead's value on every criterion except SHARE, which is the panel's capacity (sum of the members' offered shares) — CR #12 as amended 24 Oct 2026. Default directions: commission, profit share, cap, share higher is better; corridor width, price, unpriced share, V5 flag share and robustness spread lower is better (run config `scorecard.directions` overrides per tender). One-at-a-time sensitivity rescales the other weights proportionally (equal shares if they are all 0).

@@ -194,3 +194,122 @@ def test_gap_register_low_peers_and_same_region():
     assert (g2["assessment"] == "LOW_PEERS").all() and "only 2" in g2["note"].iloc[0]
     g3 = gap_register([subj] + market, {"SUBJ"}, tm, peer_same_region=False)
     assert g3[g3["benefit_code"] == "physio_sessions"].iloc[0]["n_peers"] == 5
+
+
+# ---------------------------------------------------------------------------- independent review findings (24 Oct)
+def _cells2():
+    return pd.DataFrame([
+        {"cell_id": 0, "product_type": "INDIVIDUAL", "regulator": "DHA", "rating_region": "RGN_A", "tpa": "TPA_RED",
+         "plan": "P1", "age": 30, "gender": "F", "marital": "MARRIED", "maternity_eligible": "Y", "nationality_group": "OTHER", "w": 3.0},
+        {"cell_id": 1, "product_type": "INDIVIDUAL", "regulator": "DHA", "rating_region": "RGN_A", "tpa": "TPA_RED",
+         "plan": "P1", "age": 40, "gender": "M", "marital": "MARRIED", "maternity_eligible": "N", "nationality_group": "OTHER", "w": 7.0}])
+
+
+def test_review_invalid_rider_quote_is_not_quoted_never_priced():
+    with tmpdir() as d:
+        alpha, spec, parsed = _submission(d, lambda r: -500.0)
+        v5 = v5_submission_integrity(parsed, spec, parsed.meta.get("structure_hash"), alpha, (0.7, 1.3))
+        assert v5["counts"].get("RIDER_INVALID", 0) == sum(1 for t in parsed.kinds.values() if t == "ADDON")
+        sub = to_catalogue(parsed, spec, "S", "synthetic", expiring=alpha, exclude=v5["invalid"])
+        mods = [c for s in sub.scopes for c in s.components if c.type == "MODULE"]
+        assert all(r["value"] is None and "not a number > 0" in r["source_ref"] for c in mods for r in c.rows)
+        res, _ = evaluate(sub, _cells2(), {"fill": "default"})
+        assert res.iloc[0]["status"] == "REFER" and "rider not quoted" in res.iloc[0]["reason"]
+
+
+def test_review_riders_unread_without_keys_is_flagged():
+    with tmpdir() as d:
+        alpha, spec, parsed = _submission(d, lambda r: 100.0)
+        wb = load_workbook(d / "s.xlsx")
+        del wb["_KEYS"]
+        wb.save(d / "nokeys.xlsx")
+        p2 = parse_submission(d / "nokeys.xlsx", template_spec=spec)
+        assert p2.positional
+        v5 = v5_submission_integrity(p2, spec, p2.meta.get("structure_hash"), alpha, (0.7, 1.3))
+        assert v5["counts"].get("RIDERS_UNREAD") == 1
+
+
+def _opt_rows(rows):
+    return [(i + 10, {"benefit": "Dental", "limit": lim, "copay": "20%", "network": net, "form": form,
+                      "applies": app, "value": val}) for i, (lim, net, form, app, val) in enumerate(rows)]
+
+
+def test_review_add_on_resolution_per_network():
+    from pw.market_intake import _resolve_level
+    F, A = "Flat per member", "All members"
+    # exact GN row + other networks bridged from 'All'
+    rows = _opt_rows([(1000, "All", F, A, 250.0), (5000, "All", F, A, 450.0), (2000, "GN", F, A, 300.0)])
+    out, bridged, why = _resolve_level(rows, "Dental", "2000", "20%", ["CN", "GN", "VN"])
+    got = {v["network"]: v["value"] for _, v in out}
+    assert bridged and got == {"All": 300.0, "GN": 300.0}
+    # an unoffered network with one row does not block bridging
+    rows = _opt_rows([(1000, "All", F, A, 250.0), (5000, "All", F, A, 450.0), (1000, "RN", F, A, 999.0)])
+    out, bridged, _ = _resolve_level(rows, "Dental", "2000", "20%", ["CN", "GN"])
+    assert bridged and [(v["network"], v["value"]) for _, v in out] == [("All", 300.0)]
+    # an exact limit stored as text "2000.0" is an exact match, not a bridge
+    rows = _opt_rows([(1000, "All", F, A, 250.0), ("2000.0", "All", F, A, 400.0), (5000, "All", F, A, 450.0)])
+    out, bridged, _ = _resolve_level(rows, "Dental", "2000", "20%", ["CN"])
+    assert not bridged and out[0][1]["value"] == 400.0
+    # a second form at the same limit is ignored only if it does not bracket; order of rows does not matter
+    for order in ((0, 1, 2), (1, 0, 2)):
+        base = [(1000, "All", F, A, 250.0), (1000, "All", F, "Principals", 200.0), (5000, "All", F, A, 450.0)]
+        out, bridged, _ = _resolve_level(_opt_rows([base[i] for i in order]), "Dental", "2000", "20%", ["CN"])
+        assert bridged and out[0][1]["value"] == 300.0 and out[0][1]["applies"] == A
+    # same limit at two values in one form: ambiguous -> not priced; an offered network left uncovered -> not priced
+    rows = _opt_rows([(1000, "All", F, A, 250.0), (1000, "All", F, A, 260.0), (5000, "All", F, A, 450.0)])
+    assert _resolve_level(rows, "Dental", "2000", "20%", ["CN"])[0] == []
+    rows = _opt_rows([(1000, "GN", F, A, 250.0), (5000, "GN", F, A, 450.0)])
+    out, _, why = _resolve_level(rows, "Dental", "2000", "20%", ["CN", "GN"])
+    assert out == [] and "CN" in why
+
+
+def test_review_rider_value_currency_invariant_and_multiply_modules():
+    alpha = catalogue("CAT_ALPHA")
+    s = alpha.scopes[0]
+    key = (s.scope_id, "P1", "module_maternity", "M10")
+    v_aed = module_values(alpha, _cells2(), {key[2:]})[key]
+    v_usd = module_values(alpha, _cells2(), {key[2:]}, {"currency": "USD", "fx": {"AED": 1.0, "USD": 3.6725}})[key]
+    assert abs(v_aed - v_usd) < 1e-3                                              # a ratio has no currency
+    mult = copy.deepcopy(alpha)
+    mm = next(c for c in mult.scopes[0].components if c.type == "MODULE" and c.family == "module_maternity")
+    mm.mode = "MULTIPLY"
+    for r in mm.rows:
+        if r["value"] is not None:
+            r["value"] = 1.25
+    v = module_values(mult, _cells2(), {key[2:]})[key]
+    e0, _ = evaluate(mult, _cells2().assign(module_maternity=NONE_OPTION), {"fill": "default"})
+    pb = e0["price_base"].to_numpy()
+    assert abs(v - 3.0 * 0.25 * pb[0] / (3.0 * pb[0] + 7.0 * pb[1])) < 1e-4      # only the eligible female carries it
+
+
+def test_review_split_adds_up_under_both_formula_orders():
+    alpha = catalogue("CAT_ALPHA")
+    for order in (None, ["BASE", "MODULES", "FACTORS"]):
+        cat = copy.deepcopy(alpha)
+        if order:
+            for sc in cat.scopes:
+                sc.formula.order = order
+        res, _ = evaluate(cat, _cells2(), {"fill": "default"})
+        for r in res.itertuples():
+            assert abs(r.price_base + r.price_riders - r.premium_pre_loading) < 0.011, (order, r)
+        assert res.iloc[0]["price_riders"] > 0 and res.iloc[1]["price_riders"] == 0.0
+
+
+def test_review_presence_share_counts_all_peer_plans():
+    from pw.benchmark import gap_register
+    from pw.model import BenefitLine
+    from pw.tiers import TierMap
+    base = catalogue("CAT_ALPHA")
+
+    def mk(cid, lines):
+        c = copy.deepcopy(base)
+        c.catalogue_id = cid
+        c.scopes = [c.scopes[0]]
+        c.scopes[0].plans = [c.scopes[0].plan("P1")]
+        c.scopes[0].benefits = [BenefitLine(plan_id="P1", benefit_code=k, value=v) for k, v in lines.items()]
+        return c
+    subj = mk("SUBJ", {"physio_sessions": 0})
+    market = [mk("M0", {"physio_sessions": 10})] + [mk(f"M{i}", {}) for i in range(1, 4)]
+    tm = TierMap(pd.DataFrame({"catalogue_id": ["ANY"], "plan": ["P1"], "tier": ["T1"], "weight": ["1"]}), ["T1"])
+    row = gap_register([subj] + market, {"SUBJ"}, tm).query("benefit_code == 'physio_sessions'").iloc[0]
+    assert row["market_presence_share"] == 0.25 and row["assessment"] == "IN_LINE"   # 1 of 4 peers, not 1 of 1

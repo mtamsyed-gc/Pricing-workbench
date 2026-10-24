@@ -269,17 +269,18 @@ def gap_register(catalogues: list, subjects: set, tmap: TierMap, gap_share: floa
                 out.append(row)
                 continue
             pres = [bool(_as_num(v)) if _as_num(v) is not None else (v not in (None, "", False)) for v in pv]
-            row["market_presence_share"] = sum(pres) / n
+            # share of ALL peer plans that cover the line (a peer without the line does not show cover; SPEC §4.5)
+            row["market_presence_share"] = sum(pres) / len(peers)
             s_present = sv is not None and (bool(_as_num(sv)) if _as_num(sv) is not None else sv not in ("", False))
             if code not in sub:
                 row["assessment"] = "NOT_IN_SCHEDULE"
-                row["note"] = (f"subject schedule has no '{code}' line; present in {sum(pres)}/{n} market plans "
+                row["note"] = (f"subject schedule has no '{code}' line; present in {sum(pres)}/{len(peers)} market plans "
                                "(data completeness, not a benefit gap)")
                 out.append(row)
                 continue
             if not s_present:
                 if row["market_presence_share"] >= gap_share:
-                    row["assessment"], row["note"] = "GAP", f"absent in subject; present in {sum(pres)}/{n} market plans"
+                    row["assessment"], row["note"] = "GAP", f"absent in subject; present in {sum(pres)}/{len(peers)} market plans"
                 else:
                     row["assessment"] = "IN_LINE"
                 out.append(row)

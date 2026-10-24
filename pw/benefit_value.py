@@ -91,8 +91,8 @@ def _relativity_source(cat, scope, family, option, plan_id, tpa, lib, reg):
 def module_values(expiring: Catalogue, mix: pd.DataFrame, wanted: set, eval_options: dict | None = None) -> dict:
     """Module (rider) value as a share of base, on the expiring catalogue's prices over the standard mix.
     wanted: {(family, option)}. Returns {(scope_id, plan, family, option): value | None}. Base = sum w x price_base of
-    the plan's cells priced without the rider; rider premium = modules_add with the option minus modules_add with NONE
-    over the same cells. A plan where any such cell fails to price WITH the option gets None (MANUAL_REVIEW).""" 
+    the plan's cells priced without the rider; rider premium = price_riders with the option minus price_riders with NONE
+    over the same cells (output currency, like price_base). A plan where any such cell fails to price WITH the option gets None (MANUAL_REVIEW).""" 
     from .evaluator import NONE_OPTION, evaluate
     opts = {"fill": "default", **(eval_options or {})}
     if mix is None or not len(mix):
@@ -106,8 +106,11 @@ def module_values(expiring: Catalogue, mix: pd.DataFrame, wanted: set, eval_opti
             none_cache[fam], _ = evaluate(expiring, mix.assign(**{fam: NONE_OPTION}), opts)
         e0 = none_cache[fam]
         e1, _ = evaluate(expiring, mix.assign(**{fam: opt}), opts)
-        d = keyed.merge(e1[["cell_id", "status", "modules_add"]], on="cell_id").merge(
-            e0[["cell_id", "status", "modules_add"]].rename(columns={"status": "status0", "modules_add": "add0"}), on="cell_id")
+        # rider premium in the output currency (price_riders: additive and multiplicative riders, any formula order)
+        d = keyed.merge(e1[["cell_id", "status", "price_riders"]].rename(columns={"price_riders": "modules_add"}),
+                        on="cell_id").merge(
+            e0[["cell_id", "status", "price_riders"]].rename(columns={"status": "status0", "price_riders": "add0"}),
+            on="cell_id")
         # valid cells: priced without the rider and with a base price; if any of them fails to price WITH the rider
         # option, the option is not priced for the plan -> None. Numerator and denominator use the same cells.
         d["_valid"] = (d["status0"] == "PRICED") & d["price_base"].notna()
