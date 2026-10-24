@@ -28,11 +28,11 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS | Scope | Status | Laptop check | Next step |
 |---|---|---|---|---|
 | WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Merged to main (PR #1, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 777c8e8 (Win 11, Py 3.14); GC work laptop (pinned Py 3.12) run outstanding | Run the check on the GC work laptop when available; answer open items below |
-| WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Built on `ws1-rate-index`, tests green in sandbox, PR open | **pending** | Owner: laptop check on the PR head; answer WS1 open items 11–14 |
+| WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | WS3 + WS6 next (WS2 in parallel); answer WS1 open items 11–14 |
 | WS2 | A market benchmark | Ready after WS0 merge (needs WS1 BenefitFactors for richness) | — | docs/workorders/WS2.md |
-| WS3 | D scorecard | Blocked on WS1 outputs | — | docs/workorders/WS3.md |
+| WS3 | D scorecard | Ready (WS1 merged) | — | docs/workorders/WS3.md |
 | WS4 | Integration, release | Blocked on WS1–WS3 | — | docs/workorders/WS4.md |
-| WS6 | Merit Annex as-if page (ete-dashboard repo) | RateFactors schema fixed in SPEC §7; needs WS1 outputs on fixtures | — | docs/workorders/WS6.md |
+| WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
 
 ### WS1 notes for the next sessions
 - `pw/template/ingest.py`: `t ingest` = parse + V5 + SUBMISSION catalogue + registration in `runs/<RunID>/options.json`.
