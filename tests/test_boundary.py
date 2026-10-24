@@ -5,7 +5,7 @@ import zipfile
 
 from _util import REPO, load_json, tmpdir
 
-SCANNED = ["pw", "registry", "fixtures", "tests", "tools", "contracts"]
+SCANNED = ["pw", "registry", "fixtures", "tests", "tools", "contracts", "specs"]
 TEXT = {".py", ".json", ".csv", ".md", ".txt"}
 
 

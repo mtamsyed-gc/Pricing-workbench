@@ -76,9 +76,10 @@ def v1_source_reproduction(cat: Catalogue, source_path: Path, raise_on_fail: boo
                                   "problem": "no canonical row matches the source key"})
                     continue
                 r = res.loc[i]
-                if e["status"] != r["__status"] or (e["status"] == "VALUE" and float(r["__value"]) != float(e["raw"])):
+                ev = e.get("value", e["raw"])
+                if e["status"] != r["__status"] or (e["status"] == "VALUE" and float(r["__value"]) != float(ev)):
                     fails.append({"scope_id": sid, "component_id": cid, "level": level, "ref": e["ref"],
-                                  "problem": "lookup differs", "lookup": r["__value"], "source": e["raw"],
+                                  "problem": "lookup differs", "lookup": r["__value"], "source": ev,
                                   "matched": r["__matched"]})
     # evaluator reproduction of BLOCK_SET cells (resolution SOURCE)
     for s in cat.scopes:

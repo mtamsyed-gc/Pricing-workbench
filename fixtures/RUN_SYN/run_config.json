@@ -22,6 +22,45 @@
   ]
  },
  "benefit_overrides": [],
+ "benchmark": {
+  "market_folders": [
+   "../MARKET_SYN/intake"
+  ],
+  "market_catalogues": [
+   "../CAT_GAMMA/spec.json",
+   "../CAT_IPMI/spec.json"
+  ],
+  "subjects": [
+   "@expiring",
+   "@options"
+  ],
+  "tier_map": "../MARKET_SYN/tier_map.csv",
+  "tier_ladder": [
+   "CN",
+   "GN",
+   "RN",
+   "RN2",
+   "RN3",
+   "VN"
+  ],
+  "standard_cells": "../MARKET_SYN/standard_cells.csv",
+  "use_exposure_mix": true,
+  "market_basis": "../MARKET_SYN/market_basis.json",
+  "option_map": "../MARKET_SYN/option_map.csv",
+  "richness_families": [
+   "copay_op_diag",
+   "aml"
+  ],
+  "currency": "AED",
+  "fx": {
+   "AED": 1.0,
+   "USD": 3.6725
+  },
+  "basis": "NET",
+  "basis_factors": {},
+  "gap_share": 0.5,
+  "peer_same_region": false
+ },
  "scorecard": {
   "weights_file": "../../examples/scorecard_weights.json",
   "terms_scores": "terms_scores.csv",

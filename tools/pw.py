@@ -14,6 +14,7 @@
   t ingest <submission.xlsx> --spec <template_spec.json> --issued <template.xlsx> --run <run_config.json> --id ID --owner NAME
   index <run_config.json>          B1 + B2: RateFactors, RateIndex (+ sensitivities), TreatyFeed, OptionTerms
   benefit <run_config.json>        B1 level 1 only: BenefitDiff, BenefitFactors
+  benchmark <run_config.json>      A market benchmark: ValueMap, GapRegister, TaxonomyReconciliation
   score <run_config.json>          D scorecard: ScoreInputs, Scorecard, Ranking, weight sensitivity, recommendation pack
   fixtures build
 
@@ -214,6 +215,19 @@ def cmd_score(a):
     print(f"recommendation pack: {r['pack']}")
 
 
+def cmd_benchmark(a):
+    from pw.benchmark import run_benchmark
+    from pw.rate_index import load_run_config
+    r = run_benchmark(load_run_config(a.run_config), Path(a.runs_root) if a.runs_root else None)
+    vm = r["ValueMap"]
+    print(f"{len(r['market'])} market catalogues, {len(r['subjects'])} subjects; outputs in {r['dir'] / 'out'}")
+    cols = ["tier", "role", "catalogue_id", "plan", "price_standard", "ratio_to_median_standard", "richness", "richness_status", "status"]
+    print(vm[cols].to_string(index=False))
+    g = r["GapRegister"]
+    if len(g):
+        print(g["assessment"].value_counts().to_string())
+
+
 def cmd_fixtures(a):
     import subprocess
     for s in ("build_fixtures.py", "build_submissions.py"):
@@ -281,6 +295,10 @@ def main(argv=None):
     p.add_argument("run_config")
     p.add_argument("--runs-root")
     p.set_defaults(fn=cmd_benefit)
+    p = sub.add_parser("benchmark")
+    p.add_argument("run_config")
+    p.add_argument("--runs-root")
+    p.set_defaults(fn=cmd_benchmark)
     p = sub.add_parser("score")
     p.add_argument("run_config")
     p.add_argument("--runs-root")

@@ -285,7 +285,8 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
     plan_net = {(p.plan_id, t): n for p in s.plans for t, n in p.network_by_tpa.items()}
     miss = sub["network"].isna()
     if miss.any():
-        sub.loc[miss, "network"] = [plan_net.get((p, t)) for p, t in zip(sub.loc[miss, "plan"], sub.loc[miss, "tpa"])]
+        sub.loc[miss, "network"] = [plan_net.get((p, t), plan_net.get((p, ANY))) for p, t in
+                                    zip(sub.loc[miss, "plan"], sub.loc[miss, "tpa"])]
     # age used for lookups
     if s.rating_basis_age == "ENTRY_AGE":
         sub["__age_lookup"] = sub["entry_age"] if "entry_age" in sub.columns else np.nan

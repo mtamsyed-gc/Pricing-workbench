@@ -114,7 +114,13 @@ def read_grid(reader: WorkbookReader, src: dict, maps: dict, plans_by_label: dic
             n_cols += 1
         if nr_h == 0:
             n_cols = 1
-    n_rows = src.get("n_rows")
+    row_keys = src.get("row_keys")            # explicit per-row partial keys (labels not read from the sheet)
+    if row_keys is not None:
+        row_dims = []
+        nc_h = 0
+        data_c0 = c0
+    scale = float(src.get("value_scale", 1.0))  # e.g. 12 for monthly rates annualised
+    n_rows = len(row_keys) if row_keys is not None else src.get("n_rows")
     if n_rows is None:
         n_rows = 0
         probe_c = c0 + max(nc_h - 1, 0) if nc_h else data_c0
@@ -140,6 +146,10 @@ def read_grid(reader: WorkbookReader, src: dict, maps: dict, plans_by_label: dic
     lastr = [None] * nc_h
     for i in range(n_rows):
         rparts, rlabels = [], {}
+        if row_keys is not None:
+            rk = dict(row_keys[i])
+            rparts.append([rk])
+            rlabels.update({d: (f"{v[0]}-{v[1]}" if isinstance(v, list) else str(v)) for d, v in rk.items()})
         for j, entry in enumerate(row_dims):
             v = ws.cell(row=data_r0 + i, column=c0 + j).value
             if v in (None, ""):
@@ -172,7 +182,8 @@ def read_grid(reader: WorkbookReader, src: dict, maps: dict, plans_by_label: dic
             keys = _cross(rparts + cparts)
             fixed = src.get("fixed", {})
             keys = [{**fixed, **k} for k in keys]
-            out.append({"keys": keys, "labels": {**rlabels, **clabels}, "raw": raw, "ref": ref, "status": status})
+            out.append({"keys": keys, "labels": {**rlabels, **clabels}, "raw": raw, "ref": ref, "status": status,
+                        "value": None if raw is None else raw * scale})
     return out
 
 

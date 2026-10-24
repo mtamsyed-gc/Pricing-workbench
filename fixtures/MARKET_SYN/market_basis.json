@@ -1,0 +1,67 @@
+{
+ "_note": "FICTIONAL market relativities for tests (stand-in for a market basis imported at run time).",
+ "source": "fictional fixture",
+ "placeholder": true,
+ "entries": [
+  {
+   "family": "copay_op_diag",
+   "option": "0%",
+   "network": "ANY",
+   "relativity": 1.04
+  },
+  {
+   "family": "copay_op_diag",
+   "option": "10%",
+   "network": "ANY",
+   "relativity": 1.0
+  },
+  {
+   "family": "copay_op_diag",
+   "option": "20%",
+   "network": "ANY",
+   "relativity": 0.96
+  },
+  {
+   "family": "copay_op_diag",
+   "option": "AED 25",
+   "network": "ANY",
+   "relativity": 1.01
+  },
+  {
+   "family": "aml",
+   "option": "300000",
+   "network": "ANY",
+   "relativity": 0.95
+  },
+  {
+   "family": "aml",
+   "option": "500000",
+   "network": "ANY",
+   "relativity": 0.97
+  },
+  {
+   "family": "aml",
+   "option": "750000",
+   "network": "ANY",
+   "relativity": 0.985
+  },
+  {
+   "family": "aml",
+   "option": "1000000",
+   "network": "ANY",
+   "relativity": 1.0
+  },
+  {
+   "family": "aml",
+   "option": "1500000",
+   "network": "ANY",
+   "relativity": 1.012
+  },
+  {
+   "family": "aml",
+   "option": "2000000",
+   "network": "ANY",
+   "relativity": 1.02
+  }
+ ]
+}

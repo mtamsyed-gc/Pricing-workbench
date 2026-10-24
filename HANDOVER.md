@@ -34,10 +34,21 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 |---|---|---|---|---|
 | WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Merged to main (PR #1, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 777c8e8 (Win 11, Py 3.14); GC work laptop (pinned Py 3.12) run outstanding | Run the check on the GC work laptop when available; answer open items below |
 | WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | WS3 + WS6 next (WS2 in parallel); answer WS1 open items 11–14 |
-| WS2 | A market benchmark | Ready after WS0 merge (needs WS1 BenefitFactors for richness) | — | docs/workorders/WS2.md |
+| WS2 | A market benchmark | Built on `ws2-benchmark`, tests green in sandbox, PR open | **pending** | Owner: laptop check on the PR head; CR #13 (lever dimensions); WS2 open items 18–21 |
 | WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC; answer WS3 open items 15–17 |
 | WS4 | Integration, release | Blocked on WS1–WS3 | — | docs/workorders/WS4.md |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
+
+### WS2 notes for the next sessions
+- `pw/market_intake.py` + `specs/market/sme_intake_v2_4.json`: one adapter for the SME-INTAKE v2.4 template (layout +
+  taxonomy map as data). Writes a catalogue spec; the standard parser reads the rates, so V1 runs on market files.
+  All 40 intake files shipped with the SME tool load and pass V1 (sandbox, `PBM_SME_DIR=<PBM>/sme_benchmarking`).
+- `io_excel.read_grid` gained `row_keys` (explicit per-row keys) and `value_scale` (monthly x 12); V1 compares the scaled value.
+- `pw/tiers.py` (tier_map.csv, ANY precedence, weights sum to 1), `pw/benchmark.py` (ValueMap, GapRegister,
+  TaxonomyReconciliation), CLI `benchmark`, `tools/import_sme_basis.py` (tool's REF_LEVER -> runs/<id>/market_basis.json,
+  flagged PLACEHOLDER).
+- Fixtures: `fixtures/MARKET_SYN` (3 fictional intake files, tier map, option map, standard cells, fictional basis).
+- Evaluator: a plan network keyed on TPA `ANY` now resolves for any TPA (market plans have no TPA).
 
 ### WS3 notes for the next sessions
 - `pw/scorecard.py`: ScoreInputs (SPEC §7) from RateIndex / options.json / `terms_scores.csv`; lead-only panels;
@@ -107,6 +118,14 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
     either member's, which moves the ROBUSTNESS range. Acceptable, or normalise on single options only?
 17. (WS3) One-at-a-time sensitivity rescales the other weights proportionally; if a criterion currently has weight 1,
     the others are taken as equal-weighted. Confirm.
+18. (WS2) CR #13: add the lever / add-on dimensions so room type, PEC limit, medication, territory and six add-ons
+    enter market prices (today benefit lines only; listed per plan in TaxonomyReconciliation).
+19. (WS2) Gap threshold: GAP when the subject does not cover a line that >= 50% of same-tier market plans cover
+    (run config `gap_share`). Peers are all same-tier market plans; `peer_same_region` restricts to the subject's region.
+20. (WS2) Package add-ons the intake prices only at other levels (the SME tool bridges or uses its reference) are kept
+    out of the market price and flagged NOT_PRICED; should the workbench bridge them too?
+21. (WS2) Reconciliation to the SME tool's 5_Report on its own subject plan needs a workbook saved by Excel (values);
+    not automated here - the adapter's V1 on the intake rates is the tie-out today.
 10. (WS0) xlsxwriter cannot lock workbook structure (sheet order/insertion); sheets are protected individually and
     `_KEYS` tolerates moves. Acceptable?
 
