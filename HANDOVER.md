@@ -27,7 +27,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 ## Status
 | WS | Scope | Status | Laptop check | Next step |
 |---|---|---|---|---|
-| WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Built on `ws0-core`, 49 tests green in sandbox, PR open | **pending** | Owner: `git checkout ws0-core`, `py tools\laptop_check.py`, return the summary line; answer open items below |
+| WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Built on `ws0-core`, 49 tests green, PR #1 open | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 777c8e8 (Win 11, Py 3.14); GC work laptop (pinned Py 3.12) run outstanding | Merge PR #1; run the check on the GC work laptop when available; answer open items below |
 | WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Ready after WS0 merge | — | Start with docs/workorders/WS1.md |
 | WS2 | A market benchmark | Ready after WS0 merge (needs WS1 BenefitFactors for richness) | — | docs/workorders/WS2.md |
 | WS3 | D scorecard | Blocked on WS1 outputs | — | docs/workorders/WS3.md |
