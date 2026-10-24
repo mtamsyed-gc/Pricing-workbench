@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import GateFailed
+from . import GateFailed, SpecError
 from .evaluator import evaluate, lookup_component
 from .io_excel import WorkbookReader
 from .model import Catalogue, canonical_key_str
@@ -284,6 +284,39 @@ def v5_submission_integrity(parsed, template_spec: dict, issued_hash: str | None
                 r = v / e
                 if r < lo or r > hi:
                     flag(ck, "OUTLIER", value=v, exp=e, ratio=r, detail=f"ratio outside [{lo}, {hi}]")
+    if parsed.positional and ((template_spec or {}).get("reference_sheets") or {}).get("addons") == "FILL":
+        flag("_KEYS", "RIDERS_UNREAD", detail="_KEYS sheet missing: rider quotes cannot be located, every rider is priced "
+                                               "as not quoted - ask for the file with its _KEYS sheet")
+    # riders (Add-ons sheet in FILL mode): blank = not quoted (priced as missing, not invalid); quoted values vs the
+    # expiring rider rate on the same band (owner decision 24 Oct 2026, HANDOVER items 11 and 14)
+    for ck, kind in sorted(parsed.kinds.items()):
+        if kind != "ADDON":
+            continue
+        v = parsed.values.get(ck)
+        if v is None:
+            flag(ck, "RIDER_NOT_QUOTED", detail="rider rate left blank: priced as missing")
+            continue
+        if not isinstance(v, float) or v <= 0:
+            flag(ck, "RIDER_INVALID", value=str(v), detail="rider rate must be a number > 0: treated as not quoted")
+            continue
+        if expiring is None:
+            continue
+        k = dict(parsed.keys[ck][0])
+        sid, cid = k.pop("scope_id", None), k.pop("component_id", None)
+        e = None
+        try:
+            comp = next(c for c in expiring.scope(sid).components if c.component_id == cid)
+            want = json.dumps(k, sort_keys=True)
+            row = next((r for r in comp.rows if json.dumps(r["key"], sort_keys=True) == want), None)
+            e = row["value"] if row is not None and row.get("status", "VALUE") == "VALUE" else None
+        except (StopIteration, KeyError, SpecError):
+            e = None
+        if e is None or not float(e) > 0:
+            flag(ck, "RIDER_NO_EXPIRING", value=v, detail="no priced expiring rider rate")
+            continue
+        r = v / float(e)
+        if r < lo or r > hi:
+            flag(ck, "RIDER_OUTLIER", value=v, exp=float(e), ratio=r, detail=f"ratio outside [{lo}, {hi}]")
     if multiplier_band is not None:
         mlo, mhi = multiplier_band
         for ck, kind in sorted(parsed.kinds.items()):

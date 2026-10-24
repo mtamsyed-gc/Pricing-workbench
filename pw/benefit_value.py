@@ -2,16 +2,19 @@
 
 Per plan (matched by scope product x region x TPA and plan_id), each factor-valued benefit line is the plan's
 standard option for a factor family (plan default -> scope default -> component default, SPEC §3.4) linked through
-registry/benefit_factors.json 'family_map'. Both schedules are valued on ONE scale, in this order (SPEC §4.3):
-  1. the expiring catalogue's own factor table for the family, at the plan's key (network, plan, TPA);
-  2. the market library (benefit_factors.json 'entries');
-  3. owner overrides (run input) - used only where 1 and 2 have no value.
+registry/benefit_factors.json 'family_map'. Both schedules are valued on ONE scale, in this order (SPEC §4.3 v0.4,
+owner decision 24 Oct 2026):
+  1. owner overrides (run input) - always win; the source column shows the value they replace;
+  2. the expiring catalogue's own factor table for the family, at the plan's key (network, plan, TPA);
+  3. the market library (benefit_factors.json 'entries').
 value_factor = relativity(option schedule) / relativity(expiring schedule); > 1 = richer (more cost covered).
-richness = product of value_factors (expiring = 1.0, the reference schedule); ratio = richness_option / richness_expiring.
-Lines without a relativity are MANUAL_REVIEW (value_factor null) and make the plan ratio null - never assumed 1.
+Add-on modules (riders): module value = expiring rider premium for the schedule's option / the plan's expiring base
+premium (base x rating factors), both summed over the B2 standard mix (latest UWY, lives in force), expiring prices
+throughout. richness = product of value_factors + sum of module values (expiring: 1 + its module values);
+ratio = richness_option / richness_expiring. Without a mix (no exposure), module lines are left out when unchanged
+and MANUAL_REVIEW when changed.
+Lines without a relativity / module value are MANUAL_REVIEW and make the plan ratio null - never assumed 1.
 Non-factor lines (benefit schedule) are compared by their comparison_rule (direction only, no value_factor).
-Add-on modules are not in level-1 richness (SPEC §4.3 'plus module values as % of base' needs a base definition -
-open item in HANDOVER); module option changes are listed as MANUAL_REVIEW.
 """
 from __future__ import annotations
 
@@ -58,6 +61,16 @@ def _relativity(cat: Catalogue, scope: RatingScope, family: str, option, plan_id
     """(relativity, source) or (None, reason)."""
     if option is None:
         return None, "no option declared"
+    base_val, base_src = _relativity_source(cat, scope, family, option, plan_id, tpa, lib, reg)
+    if (family, str(option)) in overrides:
+        was = "no source value" if base_val is None else f"{base_src}={base_val:.6g}"
+        return float(overrides[(family, str(option))]), f"override (replaces {was})"
+    if base_val is None:
+        return None, "no relativity (override, catalogue table, library)"
+    return base_val, base_src
+
+
+def _relativity_source(cat, scope, family, option, plan_id, tpa, lib, reg):
     comp = next((c for c in scope.components if c.type == "FACTOR_TABLE" and c.family == family and family in c.keys), None)
     if comp is not None:
         plan = scope.plan(plan_id)
@@ -72,9 +85,44 @@ def _relativity(cat: Catalogue, scope: RatingScope, family: str, option, plan_id
             if all(v == ANY or {"product_type": scope.product_type, "rating_region": scope.rating_region,
                                 "tpa": tpa, "plan": plan_id}.get(k) == v for k, v in sc.items()):
                 return float(e["relativity"]), f"library:{e.get('source', '')}"
-    if (family, str(option)) in overrides:
-        return float(overrides[(family, str(option))]), "override"
-    return None, "no relativity (catalogue table, library, override)"
+    return None, None
+
+
+def module_values(expiring: Catalogue, mix: pd.DataFrame, wanted: set, eval_options: dict | None = None) -> dict:
+    """Module (rider) value as a share of base, on the expiring catalogue's prices over the standard mix.
+    wanted: {(family, option)}. Returns {(scope_id, plan, family, option): value | None}. Base = sum w x price_base of
+    the plan's cells priced without the rider; rider premium = price_riders with the option minus price_riders with NONE
+    over the same cells (output currency, like price_base). A plan where any such cell fails to price WITH the option gets None (MANUAL_REVIEW).""" 
+    from .evaluator import NONE_OPTION, evaluate
+    opts = {"fill": "default", **(eval_options or {})}
+    if mix is None or not len(mix):
+        return {}
+    e, _ = evaluate(expiring, mix, opts)
+    keyed = mix[["cell_id", "plan", "w"]].merge(e[["cell_id", "scope_id", "price_base"]], on="cell_id")
+    keyed = keyed[keyed["scope_id"].notna()]
+    out, none_cache = {}, {}
+    for fam, opt in sorted(wanted, key=lambda t: (t[0], str(t[1]))):
+        if fam not in none_cache:
+            none_cache[fam], _ = evaluate(expiring, mix.assign(**{fam: NONE_OPTION}), opts)
+        e0 = none_cache[fam]
+        e1, _ = evaluate(expiring, mix.assign(**{fam: opt}), opts)
+        # rider premium in the output currency (price_riders: additive and multiplicative riders, any formula order)
+        d = keyed.merge(e1[["cell_id", "status", "price_riders"]].rename(columns={"price_riders": "modules_add"}),
+                        on="cell_id").merge(
+            e0[["cell_id", "status", "price_riders"]].rename(columns={"status": "status0", "price_riders": "add0"}),
+            on="cell_id")
+        # valid cells: priced without the rider and with a base price; if any of them fails to price WITH the rider
+        # option, the option is not priced for the plan -> None. Numerator and denominator use the same cells.
+        d["_valid"] = (d["status0"] == "PRICED") & d["price_base"].notna()
+        d["_bad"] = d["_valid"] & (d["status"] != "PRICED")
+        d["_wm"] = d["w"] * (d["modules_add"] - d["add0"])
+        d["_wb"] = d["w"] * d["price_base"]
+        for (sid, plan), g in d.groupby(["scope_id", "plan"], sort=True):
+            v = g[g["_valid"]]
+            b = float(v["_wb"].sum())
+            out[(sid, plan, fam, opt)] = (float(v["_wm"].sum() / b) if not g["_bad"].any() and len(v) and b > 0
+                                          else None)
+    return out
 
 
 def _direction(rule: str, a, b) -> str:
@@ -97,13 +145,31 @@ def _direction(rule: str, a, b) -> str:
 
 
 def benefit_diff(expiring: Catalogue, option: Catalogue, option_id: str, overrides: dict | None = None,
-                 library: dict | None = None):
-    """Returns (BenefitDiff, BenefitFactors) DataFrames for one option."""
+                 library: dict | None = None, mix: pd.DataFrame | None = None, eval_options: dict | None = None):
+    """Returns (BenefitDiff, BenefitFactors) DataFrames for one option. mix: aggregated standard-mix cells
+    (cell_id, pricing key, w) for module values; None leaves modules out of richness (see module docstring)."""
     reg = load_registry()
     lib = library or load_library()
     fmap = lib.get("family_map", {})
     ov = {(k[0], str(k[1])): v for k, v in (overrides or {}).items()}
     diff, fac = [], []
+    mvals = {}
+    if mix is not None and len(mix):
+        wanted = set()
+        for s in option.scopes:
+            es = _match_scope(expiring, s)
+            if es is None:
+                continue
+            for fam in {c.family for c in es.components if c.type == "MODULE" and c.family}:
+                for p in s.plans:
+                    try:
+                        es.plan(p.plan_id)
+                    except SpecError:
+                        continue
+                    for o in (_default_option(es, p.plan_id, fam), _default_option(s, p.plan_id, fam)):
+                        if o is not None:
+                            wanted.add((fam, o))
+        mvals = module_values(expiring, mix, wanted, eval_options)
     for s in option.scopes:
         es = _match_scope(expiring, s)
         if es is None:
@@ -136,13 +202,35 @@ def benefit_diff(expiring: Catalogue, option: Catalogue, option_id: str, overrid
                 diff.append({"option_id": option_id, "plan": p.plan_id, "benefit_code": code, "expiring_value": eo,
                              "option_value": oo, "direction": d, "value_factor": vf, "scope_id": s.scope_id,
                              "family": fam, "status": status, "source": src})
+            m_exp = m_opt = 0.0
             for fam in mod_fams:
                 eo, oo = _default_option(es, p.plan_id, fam), _default_option(s, p.plan_id, fam)
-                if eo != oo:
-                    diff.append({"option_id": option_id, "plan": p.plan_id, "benefit_code": fam, "expiring_value": eo,
-                                 "option_value": oo, "direction": "UNKNOWN", "value_factor": np.nan, "scope_id": s.scope_id,
-                                 "family": fam, "status": "MANUAL_REVIEW", "source": "module (not in level-1 richness)"})
-                    ok = False
+                if not mvals:
+                    if eo != oo:
+                        diff.append({"option_id": option_id, "plan": p.plan_id, "benefit_code": fam, "expiring_value": eo,
+                                     "option_value": oo, "direction": "UNKNOWN", "value_factor": np.nan,
+                                     "scope_id": s.scope_id, "family": fam, "status": "MANUAL_REVIEW",
+                                     "source": "module (no exposure mix to value it)", "module_value_expiring": np.nan,
+                                     "module_value_option": np.nan})
+                        ok = False
+                    continue
+                if eo is None and oo is None:
+                    continue
+                me = 0.0 if eo is None else mvals.get((es.scope_id, p.plan_id, fam, eo))
+                mo = 0.0 if oo is None else mvals.get((es.scope_id, p.plan_id, fam, oo))
+                if me is None or mo is None:
+                    st_m, ok, d = "MANUAL_REVIEW", False, "UNKNOWN"
+                    src = "module: option not priced by the expiring catalogue on the plan's mix cells"
+                else:
+                    m_exp += me
+                    m_opt += mo
+                    st_m, d = "VALUED", ("SAME" if eo == oo else "RICHER" if mo > me else "LEANER" if mo < me else "SAME")
+                    src = "module value % of expiring base (standard mix)"
+                diff.append({"option_id": option_id, "plan": p.plan_id, "benefit_code": fam, "expiring_value": eo,
+                             "option_value": oo, "direction": d, "value_factor": np.nan, "scope_id": s.scope_id,
+                             "family": fam, "status": st_m, "source": src,
+                             "module_value_expiring": np.nan if me is None else me,
+                             "module_value_option": np.nan if mo is None else mo})
             eb = {b.benefit_code: b for b in es.benefits if b.plan_id == p.plan_id}
             ob = {b.benefit_code: b for b in s.benefits if b.plan_id == p.plan_id}
             for code in sorted(set(eb) | set(ob)):
@@ -162,11 +250,12 @@ def benefit_diff(expiring: Catalogue, option: Catalogue, option_id: str, overrid
                              "expiring_value": None if av is None else str(av), "option_value": None if bv is None else str(bv),
                              "direction": d, "value_factor": np.nan, "scope_id": s.scope_id, "family": None,
                              "status": st, "source": "benefit schedule"})
-            fac.append({"option_id": option_id, "plan": p.plan_id, "scope_id": s.scope_id, "richness_expiring": 1.0,
-                        "richness_option": prod if ok else np.nan, "ratio": prod if ok else np.nan,
+            r_e, r_o = 1.0 + m_exp, prod + m_opt
+            fac.append({"option_id": option_id, "plan": p.plan_id, "scope_id": s.scope_id, "richness_expiring": r_e,
+                        "richness_option": r_o if ok else np.nan, "ratio": r_o / r_e if ok else np.nan,
                         "status": "VALUED" if ok else "MANUAL_REVIEW"})
     dcols = ["option_id", "plan", "benefit_code", "expiring_value", "option_value", "direction", "value_factor",
-             "scope_id", "family", "status", "source"]
+             "scope_id", "family", "status", "source", "module_value_expiring", "module_value_option"]
     fcols = ["option_id", "plan", "richness_expiring", "richness_option", "ratio", "scope_id", "status"]
     bd = pd.DataFrame(diff, columns=dcols)
     for c in ("expiring_value", "option_value"):
@@ -176,7 +265,7 @@ def benefit_diff(expiring: Catalogue, option: Catalogue, option_id: str, overrid
             bf.sort_values(["option_id", "scope_id", "plan"], kind="stable").reset_index(drop=True))
 
 
-BENEFIT_DIFF_EXTRAS = ("scope_id", "family", "status", "source")
+BENEFIT_DIFF_EXTRAS = ("scope_id", "family", "status", "source", "module_value_expiring", "module_value_option")
 BENEFIT_FACTORS_EXTRAS = ("scope_id", "status")
 
 

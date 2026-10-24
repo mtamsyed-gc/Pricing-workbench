@@ -791,7 +791,10 @@ def build_market_syn(out: Path):
          "nets": {"CN": 4300.0, "GN": 3300.0, "RN3": 1650.0, "VN": 1250.0},
          "design": {**base_design, "OP lab / radiology copay": "0%", "Pharmacy copay": "10%"},
          "optional": [("Maternity", 15000, "10% Copayment", "GN", "Flat per member", "Married eligible females (maternity ages)", 3300.0),
-                      ("Maternity", 15000, "10% Copayment", "All", "Flat per member", "Married eligible females (maternity ages)", 2900.0)],
+                      ("Maternity", 15000, "10% Copayment", "All", "Flat per member", "Married eligible females (maternity ages)", 2900.0),
+                      # Dental priced at 1,000 and 5,000 only: the package level 2,000 is BRIDGED (300.0)
+                      ("Dental", 1000, "20% Copayment", "All", "Flat per member", "All members", 250.0),
+                      ("Dental", 5000, "20% Copayment", "All", "Flat per member", "All members", 450.0)],
          "package": {"Maternity": (15000, "10% Copayment", "No"), "Dental": (2000, "20% Copayment", "No")},
          "other_yes": [0, 4, 5]},
     ]

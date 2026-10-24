@@ -7,7 +7,11 @@ Owner decisions (24 Oct 2026, WS2 thread):
              (run input standard_cells.csv: age, gender, member_category, marital, maternity_eligible, weight)
   basis      Gross plans put on the run basis with the plan's own gross-to-net factor (intake A_Plan C16, or the
              catalogue's run-config basis_factors); missing factor -> price null, status BASIS_MISSING
-  levers     without a registry dimension: benefit lines only until CR #13
+  levers     room type, PEC limit, medication type, territory and six add-ons have registry dimensions (CR #13,
+             owner 24 Oct 2026), so their factors / premiums enter the market price
+  add-ons    a package level the file does not price exactly is interpolated between the file's own priced limits
+             (BRIDGED, no extrapolation; owner 24 Oct 2026)
+  peers      gap register peers = same tier AND same rating region by default; < gap_min_peers (3) -> LOW_PEERS
 
 Outputs:
   ValueMap        catalogue x scope x plan: tier(s), price_exposure, price_standard (run currency and basis), richness,
@@ -15,7 +19,7 @@ Outputs:
   GapRegister     subject plan x benefit_code vs the market plans of the same tier: subject value, market median /
                   presence share, n_peers, assessment GAP (subject line says not covered while >= gap_share of the
                   market covers it) / WEAKER / IN_LINE / RICHER / NOT_IN_SCHEDULE (subject has no line: data
-                  completeness) / NOT_COMPARABLE
+                  completeness) / LOW_PEERS (too few peer plans to call) / NOT_COMPARABLE
   Taxonomy        intake reconciliation (what of each market file is priced, a benefit line only, or unmapped)
 Richness (SPEC §4.3, common scale): product over the requested factor families of the market basis relativity of the
 plan's default option at its tier (run input market_basis.json, e.g. imported from the SME tool - a SYNTHETIC
@@ -225,7 +229,9 @@ def _as_num(v):
 
 
 def gap_register(catalogues: list, subjects: set, tmap: TierMap, gap_share: float = 0.5,
-                 peer_same_region: bool = False) -> pd.DataFrame:
+                 peer_same_region: bool = True, min_peers: int = 3) -> pd.DataFrame:
+    """Peers = market plans of the same tier, same rating region by default (DHA / DOH mandatory benefits differ);
+    fewer than min_peers peer plans -> LOW_PEERS, no GAP / WEAKER / RICHER call (owner decision 24 Oct 2026)."""
     reg = load_registry()
     plans = []
     for cat in catalogues:
@@ -252,22 +258,29 @@ def gap_register(catalogues: list, subjects: set, tmap: TierMap, gap_share: floa
                    "group": info.get("group"), "comparison_rule": rule,
                    "subject_value": None if sv is None else str(sv), "n_peers": n, "market_median": None,
                    "market_presence_share": np.nan, "share_peers_richer": np.nan, "assessment": "NOT_COMPARABLE", "note": ""}
+            if len(peers) < min_peers:
+                row["assessment"] = "LOW_PEERS"
+                row["note"] = (f"only {len(peers)} same-tier peer plan(s)"
+                               + (" in the subject's region" if peer_same_region else "") + f" (< {min_peers}); no call made")
+                out.append(row)
+                continue
             if n == 0:
                 row["note"] = "no market plan of this tier carries the line"
                 out.append(row)
                 continue
             pres = [bool(_as_num(v)) if _as_num(v) is not None else (v not in (None, "", False)) for v in pv]
-            row["market_presence_share"] = sum(pres) / n
+            # share of ALL peer plans that cover the line (a peer without the line does not show cover; SPEC §4.5)
+            row["market_presence_share"] = sum(pres) / len(peers)
             s_present = sv is not None and (bool(_as_num(sv)) if _as_num(sv) is not None else sv not in ("", False))
             if code not in sub:
                 row["assessment"] = "NOT_IN_SCHEDULE"
-                row["note"] = (f"subject schedule has no '{code}' line; present in {sum(pres)}/{n} market plans "
+                row["note"] = (f"subject schedule has no '{code}' line; present in {sum(pres)}/{len(peers)} market plans "
                                "(data completeness, not a benefit gap)")
                 out.append(row)
                 continue
             if not s_present:
                 if row["market_presence_share"] >= gap_share:
-                    row["assessment"], row["note"] = "GAP", f"absent in subject; present in {sum(pres)}/{n} market plans"
+                    row["assessment"], row["note"] = "GAP", f"absent in subject; present in {sum(pres)}/{len(peers)} market plans"
                 else:
                     row["assessment"] = "IN_LINE"
                 out.append(row)
@@ -354,7 +367,7 @@ def run_benchmark(cfg: dict, runs_root=None) -> dict:
     if mb is not None:
         vm["richness_basis"] = ("PLACEHOLDER: " if mb["placeholder"] else "") + mb["source"]
     gr = gap_register(subj + market, {c.catalogue_id for c in subj}, tmap, float(b.get("gap_share", 0.5)),
-                      bool(b.get("peer_same_region", False)))
+                      bool(b.get("peer_same_region", True)), int(b.get("gap_min_peers", 3)))
     rc = pd.DataFrame(recon, columns=["plan_id", "area", "item", "status", "detail"])
     out = rd / "out"
     m = {"ValueMap": write_table("ValueMap", vm, out, None, contract=False),

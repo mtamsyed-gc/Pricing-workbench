@@ -4,7 +4,10 @@ Owner decisions (24 Oct 2026, WS3 thread):
   criteria   price, benefit-adjusted price, price robustness, commercial terms (no qualitative scores)
   normalise  min-max per criterion to 0-100 (best = 100, worst = 0; all equal -> 100)
   terms      numeric terms from a structured run input terms_scores.csv (Terms sheet text kept beside for audit)
-  panels     lead-only: a panel takes its lead reinsurer's terms; price metrics are share-weighted over members
+  panels     followers write at the lead's rates AND terms (owner, 24 Oct 2026, amends CR #12): a panel scores as
+             its lead on every criterion except SHARE, which is the panel's capacity (sum of members' offered shares)
+  scale      min-max is set by single options only; panels are placed on that scale and may fall outside 0-100
+             (owner, 24 Oct 2026, HANDOVER item 16), so adding a panel never moves an option's score
 
 Criteria (metric, direction, source):
   PRICE              RateIndex STANDARD TOTAL index                            lower is better   WS1 RateIndex
@@ -21,8 +24,8 @@ Directions are defaults; the run config may override them per criterion ("direct
 every criterion used, be >= 0 and sum to 1 (tolerance 1e-9): never renormalised silently. A criterion with weight 0
 is still shown. An option missing a value for a weighted criterion is UNRANKED with the reason (never scored 0).
 
-Panel price metrics: index_panel = sum share_i x index_i (same expiring premium base, so this equals the panel's
-premium-weighted index); spread from the share-weighted index per scenario; data-quality shares share-weighted.
+Panels: every metric is the lead's (the followers' own quotes are not used); SHARE = sum of the members' offered
+shares, so a panel shows whether the lead's quote can be filled.
 """
 from __future__ import annotations
 
@@ -124,11 +127,11 @@ def score_inputs(rate_index: pd.DataFrame, options_registry: dict, terms_scores:
 
 
 def panel_inputs(si: pd.DataFrame, rate_index: pd.DataFrame, panels: list) -> pd.DataFrame:
-    """Lead-only panels: terms of the lead; price metrics share-weighted over members (shares sum to 1)."""
+    """Panels: followers write at the lead's rates and terms, so every criterion is the lead's value; SHARE is the
+    panel's capacity = sum of the members' offered shares (NaN if any member has none). Member shares (the intended
+    allocation) must sum to 1."""
     if not panels:
         return si.iloc[0:0].copy()
-    ri = rate_index[rate_index["cut"] == "TOTAL"]
-    piv = ri.pivot_table(index="scenario", columns="option_id", values="index", aggfunc="first")
     base = si.set_index(["option_id", "criterion"])["value"]
     rows = []
     for p in panels:
@@ -143,30 +146,31 @@ def panel_inputs(si: pd.DataFrame, rate_index: pd.DataFrame, panels: list) -> pd
         if pid in set(si["option_id"]):
             raise SpecError(f"panel id {pid} clashes with an option id")
         for c in CRITERIA:
-            if c in TERM_CRITERIA:
-                v, src = base.get((lead, c), np.nan), f"lead {lead}: {CRITERIA[c][2]}"
-            elif c == "ROBUSTNESS_SPREAD":
-                s = sum(piv[m] * w for m, w in mem.items())
-                v, src = float(s.max() - s.min()), "share-weighted index per scenario"
+            if c == "SHARE":
+                vals = [base.get((m, c), np.nan) for m in sorted(mem)]
+                v = float(sum(vals)) if all(x == x for x in vals) else np.nan
+                src = "capacity: sum of members' offered shares"
             else:
-                vals = [base.get((m, c), np.nan) for m in mem]
-                v = float(sum(x * w for x, w in zip(vals, mem.values()))) if all(x == x for x in vals) else np.nan
-                src = "share-weighted members"
+                v, src = base.get((lead, c), np.nan), f"lead {lead} (followers write at the lead's rates and terms)"
             rows.append({"option_id": pid, "criterion": c, "metric": CRITERIA[c][0], "value": v, "source": src,
                          "submitted_text": None})
     return pd.DataFrame(rows, columns=si.columns)
 
 
 # ------------------------------------------------------------------------------------------------ scoring
-def normalise(values: pd.Series, direction: str) -> pd.Series:
-    """Min-max to 0-100, best = 100. NaN stays NaN. All equal (or a single value) -> 100."""
+def normalise(values: pd.Series, direction: str, ref: pd.Series | None = None) -> pd.Series:
+    """Min-max to 0-100, best = 100. NaN stays NaN. All equal (or a single value) -> 100. ref: boolean mask of the
+    rows that set the scale (single options); other rows (panels) are placed on it and may fall outside 0-100."""
     v = values.astype(float)
     ok = v.notna()
     out = pd.Series(np.nan, index=v.index)
     if not ok.any():
         return out
-    lo, hi = v[ok].min(), v[ok].max()
-    if hi - lo <= 1e-15:
+    sc = ok & (ref if ref is not None else True)
+    if not sc.any():
+        sc = ok
+    lo, hi = v[sc].min(), v[sc].max()
+    if hi - lo <= 1e-15:          # no spread among the scale-setting rows: no scale, everyone scores 100
         out[ok] = 100.0
         return out
     out[ok] = (v[ok] - lo) / (hi - lo) * 100.0 if direction == "HIGHER" else (hi - v[ok]) / (hi - lo) * 100.0
@@ -183,7 +187,8 @@ def score(inputs: pd.DataFrame, weights: dict, dirs: dict | None = None, kinds: 
         if c not in wide.columns:
             wide[c] = np.nan
     wide = wide[used].sort_index()
-    norm = pd.DataFrame({c: normalise(wide[c], d[c]) for c in used}, index=wide.index)
+    ref = pd.Series([(kinds or {}).get(o, "OPTION") == "OPTION" for o in wide.index], index=wide.index)
+    norm = pd.DataFrame({c: normalise(wide[c], d[c], ref) for c in used}, index=wide.index)
     long = []
     for oid in wide.index:
         for c in used:
@@ -209,22 +214,20 @@ def score(inputs: pd.DataFrame, weights: dict, dirs: dict | None = None, kinds: 
 
 
 # ------------------------------------------------------------------------------------------------ sensitivity
-def _norm_matrix(inputs, weights, dirs):
+def _norm_matrix(inputs, weights, dirs, kinds=None):
     w = validate_weights(weights)
-    d = directions(dirs)
-    used = [c for c in CRITERIA if c in w and w[c] > 0] or [c for c in CRITERIA if c in w]
-    sc, rk = score(inputs, weights, dirs)
+    sc, rk = score(inputs, weights, dirs, kinds)
     ranked = rk[rk["status"] == "RANKED"]["option_id"].tolist()
     allc = [c for c in CRITERIA if c in w]
     piv = sc.pivot_table(index="option_id", columns="criterion", values="normalised", aggfunc="first")
     return piv.loc[ranked, allc], {c: w[c] for c in allc}
 
 
-def one_at_a_time(inputs: pd.DataFrame, weights: dict, dirs: dict | None = None) -> pd.DataFrame:
+def one_at_a_time(inputs: pd.DataFrame, weights: dict, dirs: dict | None = None, kinds: dict | None = None) -> pd.DataFrame:
     """For each criterion c: weight t in [0, 1], the other weights scaled by (1 - t) / (1 - w_c) (keeping their
     proportions and the sum at 1). Scores are linear in t, so the leader changes exactly where two score lines cross.
     Output: criterion, t_from, t_to, leader, runner_up (intervals over [0, 1]) and the current weight."""
-    N, w = _norm_matrix(inputs, weights, dirs)
+    N, w = _norm_matrix(inputs, weights, dirs, kinds)
     if len(N) < 2:
         return pd.DataFrame(columns=["criterion", "current_weight", "t_from", "t_to", "leader", "margin_at_mid"])
     out = []
@@ -276,10 +279,10 @@ def flip_points(oat: pd.DataFrame) -> pd.DataFrame:
 
 
 def grid(inputs: pd.DataFrame, weights: dict, dirs: dict | None = None, step: float = 0.1,
-         max_points: int = 200_000) -> pd.DataFrame:
+         max_points: int = 200_000, kinds: dict | None = None) -> pd.DataFrame:
     """Every weight vector on the simplex grid (multiples of step summing to 1) over the weighted criteria:
     share of grid points where each option ranks first (ties split equally)."""
-    N, w = _norm_matrix(inputs, weights, dirs)
+    N, w = _norm_matrix(inputs, weights, dirs, kinds)
     crits = [c for c in w if w[c] > 0]
     k = round(1 / step)
     if abs(k * step - 1) > 1e-9:
@@ -336,9 +339,9 @@ def run_scorecard(cfg: dict, runs_root=None) -> dict:
     allin = pd.concat([si, pi], ignore_index=True)
     kinds = {**{o: "OPTION" for o in si["option_id"].unique()}, **{p: "PANEL" for p in pi["option_id"].unique()}}
     card, rank = score(allin, weights, sc_cfg.get("directions"), kinds)
-    oat = one_at_a_time(allin, weights, sc_cfg.get("directions"))
+    oat = one_at_a_time(allin, weights, sc_cfg.get("directions"), kinds)
     flips = flip_points(oat)
-    gr = grid(allin, weights, sc_cfg.get("directions"), sc_cfg.get("grid_step", 0.1))
+    gr = grid(allin, weights, sc_cfg.get("directions"), sc_cfg.get("grid_step", 0.1), kinds=kinds)
     m = {"ScoreInputs": write_table("ScoreInputs", allin, out, ["option_id", "criterion"], contract=False),
          "Scorecard": write_table("Scorecard", card, out, ["option_id", "criterion"], contract=False),
          "Ranking": write_table("Ranking", rank, out, None, contract=False),

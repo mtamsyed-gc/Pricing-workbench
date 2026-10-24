@@ -3,10 +3,9 @@ no cedant labels appear in tests/."""
 import copy
 import re
 
-from _util import REPO, load_json, raises, tmpdir
+from _util import REPO, load_json, tmpdir
 from openpyxl import load_workbook
 
-from pw import ProposalRequired
 from pw.gates import v4_round_trip
 from pw.template.generator import generate_template
 from pw.template.parser import fill_template, parse_submission, to_catalogue
@@ -42,11 +41,16 @@ def test_ufic_structure_matches_spec_8_4():
     spec = load_template_spec(EX / "template_spec.json")
     ns = normalise(spec)
     _check(ns, load_json(EX / "expected_structure.json"))
-    # every rate block belongs to exactly one TPA (no shared tables), placeholders are marked
+    # every rate block belongs to exactly one TPA (no shared tables); owner-confirmed bands: no placeholders left
     for s in ns["sheets"]:
         for b in s["blocks"]:
             assert isinstance(b["tpa"], str)
-    assert any(r["placeholder"] for s in ns["sheets"] for b in s["blocks"] for r in b["rows"])
+    assert not any(r["placeholder"] for s in ns["sheets"] for b in s["blocks"] for r in b["rows"])
+    # plan letters line up across TPAs within each product x region (master plan table); networks differ per TPA
+    for s in ns["sheets"]:
+        ids = [[p["plan_id"] for p in b["plans"]] for b in s["blocks"] if len(b["plans"]) > 1]
+        for a in ids:
+            assert a == sorted(a) and set(a) <= set(max(ids, key=len)), s["sheet_name"]
 
 
 def test_ufic_splits_option_on():
@@ -83,4 +87,5 @@ def test_ufic_v4_round_trip_and_generated_workbook():
         assert g.n_refer == 2
         fill_template(d / "t.xlsx", d / "f.xlsx")
         p = parse_submission(d / "f.xlsx", template_spec=spec)
-        raises(ProposalRequired, to_catalogue, p, spec, "SUB", "synthetic")    # placeholder bands have no ranges
+        cat = to_catalogue(p, spec, "SUB", "synthetic")                          # every band has a range now
+        assert len(cat.scopes) == sum(len(s["blocks"]) for s in normalise(spec)["sheets"])

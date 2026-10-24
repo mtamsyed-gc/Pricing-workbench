@@ -1,5 +1,5 @@
 {
- "_note": "Acceptance structure for the generated UFIC template (SPEC \u00a78.4 table). Used by tests/test_ufic_example.py.",
+ "_note": "Acceptance structure for the generated UFIC template (SPEC \u00a78.4 table, v0.4). Used by tests/test_cedant_example.py.",
  "sheets": {
   "Ind Rates - DXB-NE": {
    "blocks": {
@@ -29,22 +29,22 @@
    "blocks": {
     "NEXTCARE": [
      6,
-     8,
+     15,
      2
     ],
     "MEDNET": [
      6,
-     8,
+     15,
      2
     ],
     "NAS": [
      6,
-     8,
+     15,
      2
     ],
     "AAFIYA": [
      2,
-     8,
+     15,
      2
     ]
    }
@@ -53,17 +53,17 @@
    "blocks": {
     "NAS": [
      6,
-     8,
+     9,
      2
     ],
     "NEXTCARE": [
      6,
-     8,
+     9,
      2
     ],
     "MEDNET": [
      6,
-     8,
+     9,
      2
     ]
    }
@@ -72,17 +72,17 @@
    "blocks": {
     "NAS": [
      6,
-     8,
+     7,
      2
     ],
     "NEXTCARE": [
      6,
-     8,
+     7,
      2
     ],
     "MEDNET": [
      6,
-     8,
+     7,
      2
     ]
    }
@@ -123,17 +123,22 @@
   "Ind Rates - AUH": {
    "NEXTCARE": [
     6,
-    16,
+    15,
     2
    ],
    "MEDNET": [
     6,
-    16,
+    15,
     2
    ],
    "NAS": [
     6,
-    16,
+    15,
+    2
+   ],
+   "AAFIYA": [
+    2,
+    15,
     2
    ]
   }

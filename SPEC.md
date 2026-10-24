@@ -1,6 +1,6 @@
 # Pricing Workbench — Specification: Canonical Model, Contracts, Template Generator
 
-Version 0.3 · 24 Oct 2026 (v0.2: owner's tender-template principle, §8.0; UFIC structure derived from the reference document, §8.4; v0.3: laptop acceptance after every change, §13, CR #1) · Owner: Etam (GC L&H IMEA)
+Version 0.4 · 24 Oct 2026 (v0.2: owner's tender-template principle, §8.0; UFIC structure derived from the reference document, §8.4; v0.3: laptop acceptance after every change, §13, CR #1; v0.4: owner decisions on HANDOVER items 1–21 — UFIC bands, plan → network map and source flags, §8.4 / §12; B1 order and rider value, §4.3; benchmark rules, §4.5; coverage rule, §5; riders and V5, §6 / §8; B2 split and scorecard rules, §7) · Owner: Etam (GC L&H IMEA)
 Status: design baseline for WS0. WS1–WS6 build against this document; changes only via `docs/CHANGE_REQUESTS.md`.
 First applied case: UFIC medical QS 2027 tender. The model is cedant-agnostic: no cedant, TPA or catalogue logic in code.
 
@@ -142,8 +142,9 @@ Co-pay structures use one canonical object: `{type: PCT|FIXED|PCT_CAPPED|DEDUCTI
 
 ### 4.3 Valuation (B1 level 1)
 
-- Value relativities come from (in priority order): the catalogue's own factor tables (co-pay, AML, pharmacy, network option); a market factor library (`registry/benefit_factors.json`, versioned); owner overrides.
+- Value relativities come from (in priority order, owner decision 24 Oct 2026): **owner overrides** (run input; they always win, and the trace and BenefitDiff `source` show the value they replace); the catalogue's own factor tables (co-pay, AML, pharmacy, network option); a market factor library (`registry/benefit_factors.json`, versioned). Benefit valuation only: pricing always uses the catalogue's own factors.
 - Richness index per plan = product of factor relativities vs a reference schedule, plus module values as % of base.
+- **Module (rider) value** = the expiring catalogue's rider premium for the schedule's option ÷ the plan's expiring base premium (base × rating factors), both summed over the B2 standard mix (latest UWY, lives in force) on the cells priced without the rider. Expiring prices throughout, so a change of rider limit is valued on one fixed price scale. richness_expiring = 1 + Σ module values (expiring options); richness_option = Π relativities + Σ module values (option's options); ratio = richness_option ÷ richness_expiring. A rider option the expiring catalogue does not price on the plan's cells is MANUAL_REVIEW.
 - Level 2 (re-adjudicating claims with each schedule) is designed in WS1 and uses Merit `fact_claims` (FOB/FOC, BeneficiaryShare, Approved, PayerShare).
 
 ### 4.4 Rules (non-pricing terms)
@@ -157,6 +158,14 @@ Co-pay structures use one canonical object: `{type: PCT|FIXED|PCT_CAPPED|DEDUCTI
 - quarterly price review.
 
 Rules feed the terms comparison (B and D) and are never used in pricing unless declared as LOADING or REFER.
+
+### 4.5 Market benchmark (A) rules (owner decisions 24 Oct 2026)
+
+- Market plans are priced **as sold** (own default design; CR #14) over the exposure mix and the standard cell set (CR #15), on the run basis with the file's own gross-to-net factor (CR #16).
+- Levers and add-ons with registry dimensions (incl. CR #13: room type, PEC limit, medication type, territory; physiotherapy, OP psychiatric, alternative medicine, home nursing, health check, repatriation) enter the market price.
+- A package add-on level the intake file does not price exactly is **interpolated linearly on the limit between the file's own two nearest priced limits** (same benefit, co-pay, network, form and applies-to), status BRIDGED. Resolved per network ('All' and each offered network; an exact row wins, limits compared as numbers); every offered network must be covered by its own row or by 'All'. No extrapolation beyond the file's priced range, ambiguous rows are not used, and no other source's reference basis; otherwise NOT_PRICED.
+- Gap register: GAP when the subject does not cover a line that ≥ `gap_share` (0.5) of the peer plans cover (share of all peer plans; a peer without the line does not count as covering). **Peers = market plans of the same tier and the same rating region** (`peer_same_region`, default true: DHA and DOH mandatory benefits differ). Fewer than `gap_min_peers` (3) peer plans → LOW_PEERS, no call.
+- No reconciliation to the SME Benchmarking Tool's report is required (owner: that tool has not been used); the adapter's V1 and hand-checked tests are the control.
 
 ---
 
@@ -177,7 +186,7 @@ Rules:
 - Age = `AgeAtInception` (single year); missing DOB → flagged, not banded by default.
 - `member_category` from `member_category_map.csv`; `maternity_eligible` from `Gender Group` unless the catalogue defines its own rule.
 - Co-pay/module options: not in Merit → catalogue default option (§3.4). Optional `exposure_options.csv` override if UFIC supplies product codes.
-- Coverage report: share of lives / premium matched to a priced cell, to a REFER cell, or unmatched (with reasons). Gate: matched ≥ 95% of premium, otherwise run stops with the list.
+- Coverage report: share of lives / premium matched to a priced cell, to a REFER cell, or unmatched (with reasons). Gate: matched (= priced + REFER) ≥ 95% of premium, otherwise run stops with the list. The gate tests mapping quality; the REFER share is reported separately and the unpriced share is carried by B2 and D (owner decision 24 Oct 2026).
 
 ---
 
@@ -204,7 +213,7 @@ Rules:
 | V2 Block consistency | For BLOCK_SETs, each block ÷ Nil block = one flat multiplier; cells deviating > tolerance flagged with expected value (UFIC NAS AUH 20%: 13 cells) | Flag; use declared resolution (derived value) |
 | V3 Premium reconciliation | Expiring catalogue × exposure (default options) vs actual written premium by product × TPA × region × plan; implied factor = actual ÷ rated (captures co-pay mix, loadings, discounts) | Report; implied factor carried as calibration, never hidden |
 | V4 Template round-trip | Generated template → filled with synthetic values → parsed back = identical | Stop |
-| V5 Submission integrity | Submitted template structure hash = issued hash; all mandatory cells numeric > 0; outliers vs expiring (ratio bands) flagged | Flag to user |
+| V5 Submission integrity | Submitted template structure hash = issued hash; all mandatory cells numeric > 0; outliers vs expiring (ratio band, default 0.7–1.3, run config `v5.outlier_band`) flagged. Quoted riders (Add-ons in FILL mode) are checked against the expiring rider rate on the same band (RIDER_OUTLIER); a blank rider is RIDER_NOT_QUOTED and a rider ≤ 0 or non-numeric is RIDER_INVALID (both priced as missing, never used); without `_KEYS` the riders cannot be located: RIDERS_UNREAD | Flag to user |
 
 ---
 
@@ -222,16 +231,24 @@ Rules:
 
 All outputs: Parquet + an Excel view; run manifest with versions and hashes.
 
+Additional columns (owner decision 24 Oct 2026; the contract columns above are unchanged):
+- `RateFactors` adds `rate_expiring_base, rate_option_base` (base × rating factors, no riders / loading / fees; priced where the base prices) and `rate_expiring_riders, rate_option_riders` (rider premium = premium before loading and fees − base-only price, so additive and multiplicative riders and any formula order are covered and the two parts add up; priced where the full premium prices).
+- `RateIndex` adds `prem_expiring_base, prem_option_base, index_base` and `prem_expiring_riders, prem_option_riders, index_riders`. The headline `index` and the `TreatyFeed` stay on full premium; the split shows where an option's change comes from (e.g. cheap base, loaded riders).
+
+Scorecard (D) rules: min-max to 0–100 per criterion, **scale set by single options only**; panels are placed on that scale and may fall outside 0–100. **Followers write at the lead's rates and terms**: a panel takes the lead's value on every criterion except SHARE, which is the panel's capacity (sum of the members' offered shares) — CR #12 as amended 24 Oct 2026. Default directions: commission, profit share, cap, share higher is better; corridor width, price, unpriced share, V5 flag share and robustness spread lower is better (run config `scorecard.directions` overrides per tender). One-at-a-time sensitivity rescales the other weights proportionally (equal shares if they are all 0).
+
 ---
 
 ## 8. Tender Rates Template generator (T)
 
 ### 8.0 Owner's template principle (24 Oct 2026)
 
-- **Base table = age × network × gender at 0% co-pay.** Reinsurers price only the base. Co-pay, AML, TPA, nationality and network-option adjustments are separate factor tables (read-only by default).
+- **Base table = age × network × gender at 0% co-pay.** Reinsurers price the base. Co-pay, AML, TPA, nationality and network-option adjustments are separate factor tables (read-only by default).
+- **TPA basis (owner decision 24 Oct 2026, final):** the rate in each TPA block is the base **before** the TPA factor; the issued TPA factor applies on top. The Cover states it.
+- **Riders:** reinsurers may quote their own rider (add-on module) rates when the spec sets `reference_sheets.addons = "FILL"`. A blank rider cell means **not quoted**: the rider is priced as missing (cells needing it are REFER "rider not quoted", counted in the unpriced share), never the expiring rate carried over.
 - **One table per product type × emirate (rating region) × TPA.** Tables are never shared between TPAs in the template, even where the source catalogue shares one (e.g. UFIC AUH NC & Mednet). The parser can map a shared source table to several template blocks.
 - The number of networks per block is dynamic: one column group per network/plan of that TPA.
-- Extra splits (marital status, e.g. AUH Married-F; member section, e.g. AUH Employee/SI vs Dependant) are spec options, off by default. They are switched on per block only where the cedant's catalogue prices them; see the open question in the WS0 work order.
+- Extra splits (marital status, e.g. AUH Married-F; member section, e.g. AUH Employee/SI vs Dependant) are spec options, off by default. They are switched on per block only where the cedant's catalogue prices them (UFIC: on for every AUH Individual block, owner decision 24 Oct 2026). A section may carry its own band set (e.g. an Employee section without an under-18 row where principals under 18 are not offered).
 - Simple tables (regulatory basic / compulsory plans) use member category × age band, or age band only, as their spec declares.
 - The tender structure is generated fresh by the tool from a `template_spec.json`. There is no reliance on a previously issued workbook.
 
@@ -250,7 +267,7 @@ All outputs: Parquet + an Excel view; run manifest with versions and hashes.
 - `reference_sheets`:
   - Existing Rates (from the expiring catalogue, with derived co-pay values and V2 flags);
   - Co-Pay Multipliers (read-only, or an optional "proposed multipliers" column);
-  - Add-on tables (fill or read-only);
+  - Add-on tables (`addons`: `"READ_ONLY"` default, or `"FILL"`: a submitted column per rider row; blank = not quoted);
   - TOB summary;
   - Terms sheet (share, basis, conditions, validity, comments).
 - `options`:
@@ -290,18 +307,23 @@ Blocks under §8.0:
 
 | Product | Emirate | TPA blocks | Plans / networks | Ages × columns |
 |---|---|---|---|---|
-| Individual | DXB-NE | NC, NAS, Mednet | 7 each (A–G; labels per TPA) | 15 bands × M/F |
-| Individual | DXB-NE | Aafiya | 3 (APN Plus, Essential, APN) | 15 bands × M/F |
-| Individual | AUH | NC, Mednet, NAS | 6 each (Plan 1–6) | 8 bands × M/F (optional: marital, member section) |
-| Individual | AUH | Aafiya | 2 | 8 bands × M/F |
-| SME | DXB-NE | NAS, NC, Mednet | 6 each | 8 bands × M/F |
-| SME | AUH | NAS, NC, Mednet | 6 each | 8 bands × M/F |
+| Individual | DXB-NE | NC, NAS, Mednet | 7 each (A–G) | 15 bands × M/F |
+| Individual | DXB-NE | Aafiya | 3 (plans E–G) | 15 bands × M/F |
+| Individual | AUH | NC, Mednet, NAS | 6 each (A–F) | Employee/SI (7 bands, no under-18 row) + Dependant (8 bands) × M/SF, Married-F |
+| Individual | AUH | Aafiya | 2 (plans E–F) | as above |
+| SME | DXB-NE | NAS, NC, Mednet | 6 each (A–F) | 9 bands × M/F |
+| SME | AUH | NAS, NC, Mednet | 6 each (A–F) | Employee (3 bands, no under-18 row) + Dependent (4 bands) × M/F |
 | Basic | AUH | — (direct) | 1 | 6 member categories × up to 4 bands |
 | NE Basic / Enhanced 1 / Enhanced 2 | NE | Aafiya | 1 each | member category or age bands as in reference §10–12 |
 
 Reference sheets: Existing Rates (expiring catalogue in the same blocks, with derived values and V2 flags), Co-Pay & Factor tables (reference §3), Add-ons (dental, optical, maternity), Terms.
 
-**Missing from the reference document:** the exact DXB 15-band, AUH 8-band and SME 8-band age boundaries. The owner supplies these as band labels only (no rates) in `examples/ufic_2027/age_bands.json`.
+**Confirmed by the owner from the catalogue (24 Oct 2026), labels only, no rates:**
+- Age bands in `examples/ufic_2027/age_bands.json`: DXB Individual 15 bands (top band [71-99] read as 71+); AUH Individual 8 bands (Employee/SI section 7, no 00-17); SME DXB/NE 9 bands; SME AUH 4 bands (Employee section 3, no 0-17). SME differs from the reference's "8 bands" (v0.3), corrected here.
+- Plan → network per TPA from the catalogue's master plan table: plan letter A… = plan number 1…, the same plan letter across TPAs, with each TPA's own network label (Mednet labels are the Mednet network names). Aafiya sits at E–G (IND DXB), E–F (IND AUH); **no Aafiya SME block**. The map is in `examples/ufic_2027/template_spec.json` (each plan carries `plan_id` = letter and `plan_number`).
+- Individual AML is fixed by the table of benefits: no AML factor for Individual. SME AML reference (factor 1.0) per network column, and the SME AML / maternity column of a NAS or Mednet plan is taken through its plan letter (A GN+, B GN, C RN, D RN2, E RN3, F PCP-RN3).
+- Network options: Option 1 only (Option 2 for DXB Plan B / C switched off for Individual and SME; "RN3 Open" left off).
+- Riders (dental, optical, maternity) are quotable (`addons = "FILL"`); NE Basic bands read 0–64 / 65+.
 
 Acceptance check: the generated UFIC template has exactly the blocks, plans, bands and columns above. Its round-trip test (V4) passes.
 
@@ -362,23 +384,26 @@ Acceptance check: the generated UFIC template has exactly the blocks, plans, ban
 | WS3 | D: scorecard, option pack template | Weighted scores, sensitivity to weights |
 | WS4 | Integration, release zip, treaty tool feed | End-to-end synthetic run |
 | WS6 | Merit Annex option slicer + as-if page reading `RateFactors` (ete-dashboard repo) | As-if equals workbench numbers on fixtures |
+| WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Accepted proposal changes richness by a hand-checked amount; ignored changes nothing |
 
 Every work order is also subject to the laptop acceptance check (§13).
 
 ---
 
-## 12. UFIC source flags (to confirm with UFIC before the template is final)
+## 12. UFIC source flags (outcomes recorded 24 Oct 2026)
 
-| # | Item | Observation | Proposed handling |
+| # | Item | Observation | Outcome (owner, 24 Oct 2026) |
 |---|---|---|---|
-| F1 | Plan → network by TPA (DXB, §1) | Rows A–C look shifted: NC "CN" for Plan A and NAS "GN+" vs the NC GN+/GN/RN… and NAS CN/GN/RN/SRN/WN/VN ladders used elsewhere | Confirm the mapping; it drives exposure matching and AML/maternity factor lookup |
-| F2 | AUH Individual co-pay blocks (NC/Mednet, NAS) | 10% → ×0.945 but 20% → ×0.980 (a higher co-pay gives a smaller discount); Aafiya is the intuitive way round. The "HAAD methodology" explanation does not hold actuarially | Likely block labels swapped in source. Confirm; the rate index is unaffected (flat multipliers cancel) but benefit valuation and premium reconstruction are |
-| F3 | Aafiya DXB section (§5) | Shows the AUH multipliers 0.98 / 0.945, while §3.1 says Aafiya DXB uses Factors-Individual | Confirm which applies |
-| F4 | Consultation deductible "10% flat" = 1.085 | Higher than "10% up to AED 20" (1.05), although uncapped member cost should give a lower factor | Confirm definition |
-| F5 | AML factor reference | "Standard" AED 1m has factor 0.9537 for GN+ and 1.0145 for RN, so the base rate's implied AML differs by tier | Store reference per tier (§3.4); confirm intended base AML |
-| F6 | NAS AUH 20% block | 13 erroneous cells (known) | V2 flags and uses the derived ×0.9734 values |
-| F7 | Premium basis | AUH Basic gross; NE and add-ons net | Declare per component; state the comparison basis in the template |
-| F8 | Incumbent references | "Refer to Optio Re" appears in tables and rules | Template and outputs say "refer to the lead reinsurer"; no incumbent name in market-facing files |
+| F1 | Plan → network by TPA (DXB, §1) | The reference rows A–C looked shifted (NC CN / NAS GN+ on Plan A) | **Resolved** from the catalogue's master plan table: NC GN+ / NAS CN on Plan A; full map in the UFIC template spec |
+| F2 | AUH Individual co-pay blocks (NC/Mednet, NAS) | 10% → ×0.945 but 20% → ×0.980 (a higher co-pay gives a smaller discount); Aafiya is the intuitive way round | **Swap the labels**: 10% → ×0.980, 20% → ×0.945 (mathematically logical; same as Aafiya). Applied in the run's expiring catalogue spec (outside the repo) |
+| F3 | Aafiya DXB section (§5) | Shows the AUH multipliers 0.98 / 0.945, while §3.1 says Aafiya DXB uses Factors-Individual | **Aafiya co-pay block multipliers apply** (the Aafiya sheets' 10% / 20% blocks are flat ×0.980 / ×0.945 of the Nil rate in every cell) |
+| F4 | Consultation deductible "10% flat" = 1.085 | Higher than "10% up to AED 20" (1.05), although uncapped member cost should give a lower factor | **Keep the source value, flagged**; may be updated later (an owner override can correct it for B1) |
+| F5 | AML factor reference | The base rate's implied AML differs by tier | **Resolved (SME only):** reference AML per network column; Individual has no AML factor |
+| F6 | NAS AUH 20% block | 13 erroneous cells (known) | **Agreed:** V2 flags and uses the derived ×0.9734 values |
+| F7 | Premium basis | AUH Basic gross; NE and add-ons net | **Agreed:** declare per component; state the comparison basis in the template |
+| F8 | Incumbent references | Incumbent named in tables and rules | **Agreed:** template and outputs say "refer to the lead reinsurer"; no incumbent name in market-facing files |
+| — | SME maternity columns | Columns GN+, GN, RNE, RN, RN2, RN3/PCP-RN3; RNE is not in the master plan table | **Provisional (owner assumption):** column RNE = RN (plan C), RN = RN2 (D), RN2 = RN3 (E), RN3/PCP-RN3 = PCP-RN3 (F); "Annual Limit" row ignored for now. To confirm with UFIC |
+| — | Network factor "GN excl. named hospitals" on Plan 2 (SME) | Network option not in the base | Kept as a network option (not offered in the base table) |
 
 Note for the rate index: because every co-pay adjustment is a flat multiplier fixed by UFIC, the cell-level rate ratio (option ÷ expiring) does not depend on members' co-pay options. Missing co-pay fields in Merit therefore matter only for V3 (premium reconciliation) and B1, not for B2, unless a reinsurer proposes different multipliers.
 

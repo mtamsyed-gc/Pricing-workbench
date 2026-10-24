@@ -39,7 +39,7 @@ ALT_ORDER = ["BASE", "MODULES", "FACTORS"]
 NONE_OPTION = "NONE"   # module option meaning "not purchased"
 
 RESULT_COLUMNS = ["cell_id", "scope_id", "status", "reason", "base", "factor_product", "modules_add", "premium_pre_loading",
-                  "loading", "fees", "price", "currency", "defaulted"]
+                  "loading", "fees", "price", "currency", "defaulted", "base_status", "price_base", "price_riders"]
 
 
 def _connect(options):
@@ -263,7 +263,8 @@ def evaluate(cat: Catalogue, cells, options: dict | None = None, registry=None):
         if c not in res.columns:
             res[c] = None
     res = res[RESULT_COLUMNS].sort_values("cell_id", kind="stable").reset_index(drop=True)
-    for c in ("base", "factor_product", "modules_add", "premium_pre_loading", "loading", "fees", "price"):
+    for c in ("base", "factor_product", "modules_add", "premium_pre_loading", "loading", "fees", "price", "price_base",
+              "price_riders"):
         res[c] = pd.to_numeric(res[c], errors="coerce").astype("float64")
     if options.get("strict") and (res["status"] == "UNMATCHED").any():
         bad = res[res["status"] == "UNMATCHED"].head(5)
@@ -296,11 +297,12 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
     n = len(sub)
     ids = sub["cell_id"].to_numpy()
     st = pd.DataFrame({"cell_id": ids, "scope_id": s.scope_id, "status": "PRICED", "reason": "", "currency": out_ccy,
-                       "defaulted": sub["__defaulted"].to_numpy()})
+                       "defaulted": sub["__defaulted"].to_numpy(), "base_status": "PRICED"})
     st = st.set_index("cell_id")
     if s.rating_basis_age == "ENTRY_AGE":
         bad = sub["__age_lookup"].isna().to_numpy()
-        st.loc[ids[bad], ["status", "reason"]] = ["UNMATCHED", "entry_age required (rating_basis_age = ENTRY_AGE)"]
+        st.loc[ids[bad], ["status", "reason", "base_status"]] = ["UNMATCHED", "entry_age required (rating_basis_age = ENTRY_AGE)",
+                                                                "UNMATCHED"]
 
     def tr(df_like, comp, option_col, value, running, note=""):
         if not trace.enabled:
@@ -313,14 +315,19 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
                           "value": value, "running": running, "note": note})
         trace.add(t)
 
-    def mark(mask_ids, status, reason):
+    def mark(mask_ids, status, reason, base_too=True):
+        # base_status tracks the base-only price (base x rating factors, no modules): module issues leave it PRICED
         cur = st.loc[mask_ids, "status"]
         ok = cur[cur == "PRICED"].index
         st.loc[ok, "status"] = status
         st.loc[ok, "reason"] = reason
+        if base_too:
+            cb = st.loc[mask_ids, "base_status"]
+            st.loc[cb[cb == "PRICED"].index, "base_status"] = status
 
     if s.components_of("EXPERIENCE_RATED"):
         st["status"] = "EXPERIENCE_RATED"
+        st["base_status"] = "EXPERIENCE_RATED"
         st["reason"] = "scope is experience rated (no tabled price)"
         out = st.reset_index()
         return out
@@ -364,6 +371,7 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
         block_src[comp.component_id] = np.array(hit, dtype=ids.dtype)
     running = base.copy()
     fprod = pd.Series(1.0, index=ids)
+    f_only = pd.Series(1.0, index=ids)      # rating factors only (no MULTIPLY modules): base-only price
     mod_add = pd.Series(0.0, index=ids)
 
     def apply_factors():
@@ -380,6 +388,7 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
                 f.loc[block_src[comp.component_id]] = 1.0
                 note = "1.0 where the block source value is used"
             fprod.loc[:] = fprod.to_numpy() * f.to_numpy()
+            f_only.loc[:] = f_only.to_numpy() * f.to_numpy()
             running = running * f
             fmr = fm.reset_index()
             tr(fmr, comp, comp.family if comp.family in sub.columns else None, f.loc[fmr["cell_id"]].to_numpy(),
@@ -402,8 +411,11 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
                 continue
             mm = lookup(con, comp.rows, comp.keys, take, reg, "__age_lookup").set_index("cell_id")
             un = np.setdiff1d(take["cell_id"].to_numpy(), mm.index.to_numpy())
-            mark(un, "UNMATCHED", f"no row in MODULE {comp.component_id} for the selected option")
-            mark(mm.index[mm["__status"] == "REFER"], "REFER", f"refer ({comp.component_id})")
+            mark(un, "UNMATCHED", f"no row in MODULE {comp.component_id} for the selected option", base_too=False)
+            ref = mm[mm["__status"] == "REFER"]
+            nq = ref["__row"].map(lambda i: str(comp.rows[int(i)].get("source_ref") or "").startswith("not quoted"))
+            mark(ref.index[nq.to_numpy(dtype=bool)], "REFER", f"rider not quoted ({comp.component_id})", base_too=False)
+            mark(ref.index[~nq.to_numpy(dtype=bool)], "REFER", f"refer ({comp.component_id})", base_too=False)
             vals = mm["__value"].fillna(0.0)
             if comp.mode == "MULTIPLY":
                 fprod.loc[mm.index] = fprod.loc[mm.index].to_numpy() * vals.to_numpy()
@@ -461,6 +473,13 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
     st["base"] = base
     st["factor_product"] = fprod
     st["modules_add"] = mod_add
+    # B2 split (owner decision 24 Oct 2026, HANDOVER item 11): base-only price = base x rating factors (no riders,
+    # loading, fees or min/max); rider premium = premium before loading and fees minus the base-only price, so it
+    # carries additive riders, multiplicative riders and, under order BASE-MODULES-FACTORS, the factors on riders.
+    # price_base + price_riders = premium before loading and fees (in the output currency).
+    pb = (base * f_only * conv).round(rnd)
+    st["price_base"] = pb.where(st["base_status"] == "PRICED")
+    st["price_riders"] = ((pre * conv).round(rnd) - pb).where(st["status"] == "PRICED")
     st["premium_pre_loading"] = pre
     st["loading"] = la
     st["fees"] = fees

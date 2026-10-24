@@ -291,6 +291,8 @@ def generate_template(spec: dict, out_path: Path, expiring=None) -> GeneratedTem
              ("Basis statement", "Submit base rates only, at the reference co-pay options stated on each sheet. Co-pay, "
                                  "annual limit, TPA, nationality and network-option adjustments are the factor tables "
                                  "shown in Factor Tables (read only unless a proposed column is offered)."),
+             ("TPA basis", "The rate in each TPA block is BEFORE the TPA factor: the issued TPA factor in Factor Tables "
+                           "is applied on top. Do not build the TPA difference into the block as well."),
              ("Instructions", "Fill the yellow cells with annual premiums per member greater than 0. Grey cells are "
                               "referred. Do not insert, delete or rename sheets, rows or columns."),
              ("Template version", f"{TEMPLATE_SPEC_VERSION} / generator {GENERATOR_VERSION}"),
@@ -300,8 +302,11 @@ def generate_template(spec: dict, out_path: Path, expiring=None) -> GeneratedTem
         ws_cover.write(2 + i, 1, v, f.wrap)
     r = 3 + len(lines)
     ws_cover.write(r, 0, "Sheet directory", f.bold)
-    directory = [(n, "read only") for n, w in (("Existing Rates", ws_er), ("Factor Tables", ws_fac), ("Add-ons", ws_add),
-                                               ("TOB Summary", ws_tob)) if w is not None]
+    add_fill = nspec["reference_sheets"].get("addons") == "FILL"
+    directory = [(n, "fill the submitted column (rider rates; a blank cell means not quoted)" if n == "Add-ons" and add_fill
+                  else "read only")
+                 for n, w in (("Existing Rates", ws_er), ("Factor Tables", ws_fac), ("Add-ons", ws_add),
+                              ("TOB Summary", ws_tob)) if w is not None]
     directory += [(s["sheet"], f"fill yellow cells ({len(s['blocks'])} block(s): "
                                + ", ".join(bl["block"]["label"] for bl in s["blocks"]) + ")") for s in lay.rate_sheets]
     if ws_terms is not None:

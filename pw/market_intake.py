@@ -213,14 +213,14 @@ def spec_from_sme_intake(path: Path, layout: dict | None = None, catalogue_id: s
         if not covered or inb == "Yes":
             continue
         level = f"{lim}|{cop}"
-        priced = [(rr, v) for rr, v in opt_rows if _s(v["benefit"]) == ben and _opt(v["limit"]) == lim and _s(v["copay"]) == cop]
         if not am.get("module"):
             rep.add("addons", ben, "NOT_PRICED", f"package level {level} has no module dimension "
                                                  f"({am.get('pending_dim') or 'unmapped'}); kept out of the price")
             continue
+        priced, bridged, why = _resolve_level(opt_rows, ben, lim, cop, offered)
         if not priced:
-            rep.add("addons", ben, "NOT_PRICED", f"package level {level} not priced at this exact level on "
-                                                 f"{O.title}; kept out of the price (the tool bridges or uses its reference)")
+            rep.add("addons", ben, "NOT_PRICED", f"package level {level} not priced on {O.title} ({why}); "
+                                                 "kept out of the price")
             continue
         forms = {(_s(v["form"]), _s(v["applies"])) for _, v in priced}
         if len(forms) > 1:
@@ -240,13 +240,15 @@ def spec_from_sme_intake(path: Path, layout: dict | None = None, catalogue_id: s
             val = float(v["value"]) * (scale if form == "Flat per member" else 1.0)
             rows.append({"key": {fam: level, "network": "ANY" if net == "All" else net},
                          "value": (1.0 + float(v["value"])) if form == "Multiplier on base" else val,
-                         "source_ref": f"{O.title}!G{rr}"})
+                         "source_ref": (f"{O.title}!G{rr[0]}:G{rr[1]} bridged (linear on limit)" if isinstance(rr, tuple)
+                                        else f"{O.title}!G{rr}")})
         components.append({"component_id": f"m_{fam}", "type": "MODULE", "family": fam, "keys": [fam, "network"],
                            "unit": ap["unit"], "eligibility": ap["eligibility"],
                            "mode": "MULTIPLY" if form == "Multiplier on base" else "ADD", "rows": rows})
         for p in plans:
             p["defaults"][fam] = level
-        rep.add("addons", ben, "PRICED", f"{level}: {form}, {applies}")
+        rep.add("addons", ben, "BRIDGED" if bridged else "PRICED",
+                f"{level}: {form}, {applies}" + (" - interpolated between the file's own priced limits" if bridged else ""))
 
     # ---- benefit lines: lever defaults, terms, other benefits
     for n in offered:
@@ -302,6 +304,73 @@ def spec_from_sme_intake(path: Path, layout: dict | None = None, catalogue_id: s
                               "text": "small-group loading (not in the base price)"})
     wb.close()
     return spec, rep.rows
+
+
+def _same_limit(a, b) -> bool:
+    na, nb = _num(a), _num(b)
+    return (na is not None and nb is not None and na == nb) or (a is not None and a == b)
+
+
+def _resolve_level(opt_rows, ben, lim, cop, offered):
+    """Rows pricing a package add-on level, per network (owner decision 24 Oct 2026, HANDOVER item 20).
+    For 'All' and each OFFERED network that has rows: an exact row at the level wins (limit compared as a number when
+    numeric); otherwise the level is interpolated linearly on the limit between that network's own two nearest priced
+    limits of one pricing form / applies-to (BRIDGED). No extrapolation; ambiguous rows (two exact rows, or the same
+    limit at different values, or brackets in two forms) fail that network. Every offered network must be resolved
+    by its own row or by 'All', otherwise the add-on is not priced. Returns ([(ref, vals)], bridged, reason);
+    ref is the row number, or (row_lo, row_hi) when bridged."""
+    target = _num(lim)
+    by_net = {}
+    for rr, v in opt_rows:
+        if _s(v["benefit"]) != ben or _s(v["copay"]) != cop:
+            continue
+        net = _s(v["network"])
+        if net == "All" or net in offered:
+            by_net.setdefault(net, []).append((rr, v))
+    if not by_net:
+        return [], False, "no priced rows for this benefit and co-pay"
+    out, bridged, why = [], False, {}
+    for net, rows in sorted(by_net.items()):
+        exact = [(rr, v) for rr, v in rows if _same_limit(_opt(v["limit"]), lim)]
+        if len(exact) == 1:
+            out.append(exact[0])
+            continue
+        if len(exact) > 1:
+            why[net] = "several rows at this exact level"
+            continue
+        if target is None:
+            why[net] = f"limit {lim!r} is not numeric"
+            continue
+        groups = {}
+        for rr, v in rows:
+            x, y = _num(_opt(v["limit"])), _num(v["value"])
+            if x is not None and y is not None:
+                groups.setdefault((_s(v["form"]), _s(v["applies"])), []).append((x, y, rr, v))
+        hits = []
+        for g, pts in sorted(groups.items(), key=lambda t: str(t[0])):
+            xs = {}
+            for x, y, rr, v in pts:
+                xs.setdefault(x, set()).add(y)
+            if any(len(ys) > 1 for ys in xs.values()):
+                continue                                   # same limit at two values: ambiguous form group
+            pts = sorted({x: (x, y, rr, v) for x, y, rr, v in pts}.values(), key=lambda t: t[0])
+            lo = [p_ for p_ in pts if p_[0] < target]
+            hi = [p_ for p_ in pts if p_[0] > target]
+            if lo and hi:
+                hits.append((lo[-1], hi[0]))
+        if len(hits) != 1:
+            why[net] = ("limit outside the file's priced range" if not hits else "brackets in several pricing forms")
+            continue
+        a, b = hits[0]
+        val = a[1] + (b[1] - a[1]) * (target - a[0]) / (b[0] - a[0])
+        out.append(((a[2], b[2]), {**a[3], "limit": lim, "value": val}))
+        bridged = True
+    got = {_s(v["network"]) for _, v in out}
+    missing = [n for n in offered if n not in got and "All" not in got]
+    if missing or not out:
+        detail = "; ".join(f"{n}: {r}" for n, r in sorted(why.items())) or "no row for these networks"
+        return [], False, f"not resolved for {missing or 'any network'} ({detail})"
+    return out, bridged, ""
 
 
 def load_sme_intake(path: Path, layout: dict | None = None, catalogue_id: str | None = None) -> tuple[Catalogue, list]:
