@@ -54,7 +54,10 @@ def test_v3_on_expo_syn_by_product_tpa_region_plan():
     assert tot["actual_prem_unpriced"] > 0              # REFER premium reported beside, not hidden
 
 
-def test_v5_is_a_stub_with_hash_check():
-    r = v5_submission_integrity(FIX / "SUB_X" / "submission.xlsx")
-    assert r["status"] == "STUB" and r["hash_ok"] and r["structure_hash"]
-    assert not v5_submission_integrity(FIX / "SUB_X" / "submission.xlsx", issued_hash="0" * 64)["hash_ok"]
+def test_v5_clean_submission_passes():
+    import json
+    from pw.template.parser import parse_submission, read_meta
+    spec = json.loads((FIX / "T_ALPHA" / "template_spec.json").read_text(encoding="utf-8"))
+    p = parse_submission(FIX / "SUB_X" / "submission.xlsx", template_spec=spec)
+    r = v5_submission_integrity(p, spec, read_meta(FIX / "T_ALPHA" / "template.xlsx")["structure_hash"], catalogue("CAT_ALPHA"))
+    assert r["status"] == "PASS" and r["hash_ok"] and not r["invalid"] and r["rate_cells"] == 618

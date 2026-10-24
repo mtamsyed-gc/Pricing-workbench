@@ -5,8 +5,10 @@
  "effective_date": "2027-01-01",
  "kind": "SUBMISSION",
  "meta": {
+  "excluded_cells": [],
   "hash_ok": true,
   "structure_hash": "a5cc3bbbff4544408e647e19fa833066ddb52921c093d9af3d88eaa052486296",
+  "tpa_factor_basis": "PRE",
   "warnings": []
  },
  "owner": "Reinsurer X (fictional)",

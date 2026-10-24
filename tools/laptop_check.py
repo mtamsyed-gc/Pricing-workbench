@@ -79,6 +79,19 @@ def tool_checks(run: Path):
                                      "--expiring", str(a), "--id", "SUB_X", "--owner", "Reinsurer X", "--out", str(run / "sub_x.json")],
          0, "hash_ok=True"),
         ("package release zip", [PY, str(HERE / "package.py"), "--out", str(run / "release.zip")], 0, "files"),
+        # WS1: T ingest + V5, B1 / B2 / TreatyFeed on the synthetic run (runs root inside this check's run folder)
+        ("t ingest SUB_X (V5)", PW + ["t", "ingest", str(FIX / "SUB_X" / "submission.xlsx"), "--spec",
+                                     str(FIX / "T_ALPHA" / "template_spec.json"), "--issued", str(FIX / "T_ALPHA" / "template.xlsx"),
+                                     "--run", str(FIX / "RUN_SYN" / "run_config.json"), "--id", "SUB_X", "--owner", "Reinsurer X",
+                                     "--runs-root", str(run / "runs")], 0, "V5 PASS"),
+        ("t ingest SUB_Y (V5)", PW + ["t", "ingest", str(FIX / "SUB_Y" / "submission.xlsx"), "--spec",
+                                     str(FIX / "T_ALPHA" / "template_spec.json"), "--issued", str(FIX / "T_ALPHA" / "template.xlsx"),
+                                     "--run", str(FIX / "RUN_SYN" / "run_config.json"), "--id", "SUB_Y", "--owner", "Reinsurer Y",
+                                     "--runs-root", str(run / "runs")], 0, "V5 PASS"),
+        ("index (B1 + B2 + TreatyFeed)", PW + ["index", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "runs")],
+         0, "coverage PASS"),
+        ("benefit (B1 level 1)", PW + ["benefit", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "runs")],
+         0, "BenefitFactors"),
     ]
 
 
@@ -133,7 +146,8 @@ def main(argv=None):
     # generated workbooks open with openpyxl
     try:
         from openpyxl import load_workbook
-        for f in ("template.xlsx", "example_template.xlsx"):
+        for f in ("template.xlsx", "example_template.xlsx", "runs/RUN_SYN/out/RateIndex.xlsx",
+                  "runs/RUN_SYN/out/TreatyFeed.xlsx"):
             load_workbook(run / f).close()
         add("generated workbooks open", True, "openpyxl load ok")
     except Exception as ex:  # noqa: BLE001

@@ -11,6 +11,9 @@
   t generate <template_spec.json> --out <xlsx> [--expiring <catalogue|spec>]
   t generate --from-catalogue <catalogue|spec> --tender <tender.json> [--select s1,s2] --out-spec <json> --out <xlsx>
   t parse <submission.xlsx> --spec <template_spec.json> [--expiring <catalogue|spec>] [--id ID] [--owner NAME] --out <catalogue.json>
+  t ingest <submission.xlsx> --spec <template_spec.json> --issued <template.xlsx> --run <run_config.json> --id ID --owner NAME
+  index <run_config.json>          B1 + B2: RateFactors, RateIndex (+ sensitivities), TreatyFeed, OptionTerms
+  benefit <run_config.json>        B1 level 1 only: BenefitDiff, BenefitFactors
   fixtures build
 
 Paths are resolved from this script's location for repo resources; arguments are taken as given (or relative to
@@ -155,6 +158,18 @@ def cmd_t(a):
             spec = load_template_spec(Path(a.spec))
         g = generate_template(spec, _out(a.out, "template.xlsx"), expiring=exp)
         print(f"{g.path}: {g.n_inputs} input cells, {g.n_refer} refer cells, structure hash {g.structure_hash}")
+    elif a.action == "ingest":
+        from pw.rate_index import load_run_config, load_catalogue_any, _path
+        from pw.template.ingest import ingest
+        cfg = load_run_config(a.run)
+        spec = load_template_spec(Path(a.spec_file))
+        exp = load_catalogue_any(a.expiring) if a.expiring else load_catalogue_any(_path(cfg, cfg["expiring"]))
+        band = (cfg.get("v5") or {}).get("outlier_band")
+        r = ingest(Path(a.spec), spec, cfg["run_id"], a.id, a.owner or a.id, issued_template=Path(a.issued),
+                   expiring=exp, outlier_band=band, runs_root=Path(a.runs_root) if a.runs_root else None)
+        e = r["entry"]
+        print(f"ingested {a.id}: V5 {e['v5_status']} {e['v5_counts']}; excluded {e['excluded_cells']} of "
+              f"{e['rate_cells']} rate cells; registered in run {cfg['run_id']}")
     elif a.action == "parse":
         from pw.template.parser import parse_submission, to_catalogue
         spec = load_template_spec(Path(a.spec_file))
@@ -164,6 +179,27 @@ def cmd_t(a):
         out = _out(a.out, f"{cat.catalogue_id}.json")
         cat.write(out)
         print(f"parsed {len(parsed.values)} values (hash_ok={parsed.hash_ok}, {len(parsed.warnings)} warnings) -> {out}")
+
+
+def cmd_index(a):
+    from pw.rate_index import load_run_config, run_b2
+    cfg = load_run_config(a.run_config)
+    r = run_b2(cfg, Path(a.runs_root) if a.runs_root else None)
+    ri = r["RateIndex"]
+    tot = ri[(ri["scenario"] == "STANDARD") & (ri["cut"] == "TOTAL")]
+    print(f"coverage {r['coverage']['status']} ({r['coverage']['matched_share']:.2%}); outputs in {r['dir'] / 'out'}")
+    print(tot[["option_id", "lives", "index", "index_benefit_adj", "unpriced_share"]].to_string(index=False))
+    if r["TreatyFeed"] is not None:
+        print(r["TreatyFeed"][["option_id", "treaty_book", "premium_change_pct", "lr_adjustment_pts"]].to_string(index=False))
+
+
+def cmd_benefit(a):
+    from pw.rate_index import load_run_config, run_benefit
+    cfg = load_run_config(a.run_config)
+    bd, bf = run_benefit(cfg, Path(a.runs_root) if a.runs_root else None)
+    print(f"BenefitDiff {len(bd)} rows ({int((bd['status'] == 'MANUAL_REVIEW').sum())} MANUAL_REVIEW); "
+          f"BenefitFactors {len(bf)} rows")
+    print(bf.groupby("option_id")["ratio"].agg(["min", "max", "count"]).to_string())
 
 
 def cmd_fixtures(a):
@@ -210,7 +246,7 @@ def main(argv=None):
     p.add_argument("--workdir")
     p.set_defaults(fn=cmd_gates)
     p = sub.add_parser("t")
-    p.add_argument("action", choices=["generate", "parse"])
+    p.add_argument("action", choices=["generate", "parse", "ingest"])
     p.add_argument("spec", nargs="?")
     p.add_argument("--out")
     p.add_argument("--expiring")
@@ -221,7 +257,18 @@ def main(argv=None):
     p.add_argument("--spec", dest="spec_file")
     p.add_argument("--id")
     p.add_argument("--owner")
+    p.add_argument("--issued")
+    p.add_argument("--run")
+    p.add_argument("--runs-root")
     p.set_defaults(fn=cmd_t)
+    p = sub.add_parser("index")
+    p.add_argument("run_config")
+    p.add_argument("--runs-root")
+    p.set_defaults(fn=cmd_index)
+    p = sub.add_parser("benefit")
+    p.add_argument("run_config")
+    p.add_argument("--runs-root")
+    p.set_defaults(fn=cmd_benefit)
     p = sub.add_parser("fixtures")
     p.add_argument("action", choices=["build"])
     p.set_defaults(fn=cmd_fixtures)

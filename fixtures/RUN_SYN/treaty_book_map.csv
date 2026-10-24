@@ -1,0 +1,3 @@
+product_type,rating_region,tpa,treaty_book
+INDIVIDUAL,RGN_A,TPA_GREEN,BOOK_IND_GREEN
+INDIVIDUAL,RGN_A,ANY,BOOK_IND_OTHER

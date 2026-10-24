@@ -27,12 +27,26 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 ## Status
 | WS | Scope | Status | Laptop check | Next step |
 |---|---|---|---|---|
-| WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Built on `ws0-core`, 49 tests green, PR #1 open | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 777c8e8 (Win 11, Py 3.14); GC work laptop (pinned Py 3.12) run outstanding | Merge PR #1; run the check on the GC work laptop when available; answer open items below |
-| WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Ready after WS0 merge | — | Start with docs/workorders/WS1.md |
+| WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Merged to main (PR #1, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 777c8e8 (Win 11, Py 3.14); GC work laptop (pinned Py 3.12) run outstanding | Run the check on the GC work laptop when available; answer open items below |
+| WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | WS3 + WS6 next (WS2 in parallel); answer WS1 open items 11–14 |
 | WS2 | A market benchmark | Ready after WS0 merge (needs WS1 BenefitFactors for richness) | — | docs/workorders/WS2.md |
-| WS3 | D scorecard | Blocked on WS1 outputs | — | docs/workorders/WS3.md |
+| WS3 | D scorecard | Ready (WS1 merged) | — | docs/workorders/WS3.md |
 | WS4 | Integration, release | Blocked on WS1–WS3 | — | docs/workorders/WS4.md |
-| WS6 | Merit Annex as-if page (ete-dashboard repo) | RateFactors schema fixed in SPEC §7; needs WS1 outputs on fixtures | — | docs/workorders/WS6.md |
+| WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
+
+### WS1 notes for the next sessions
+- `pw/template/ingest.py`: `t ingest` = parse + V5 + SUBMISSION catalogue + registration in `runs/<RunID>/options.json`.
+  V5 flags HASH_MISMATCH, KEYS_TAMPERED, POSITIONAL_PARSE, BLANK, NON_NUMERIC, NOT_POSITIVE, OUTLIER (ratio vs expiring
+  base, band from run config, default 0.7–1.3), NO_EXPIRING, MULTIPLIER_OUTLIER. Never stops; invalid cells are left
+  out of the option catalogue (they price UNMATCHED and show in the index's unpriced share).
+- TPA factor basis: single switch `TPA_FACTOR_BASIS = "PRE"` in `pw/template/parser.py` (option A, provisional); "POST"
+  neutralises family `tpa` factor tables. Pinned by `tests/test_ws1_ingest.py`.
+- `pw/rate_index.py`: RateFactors / RateIndex (scenarios STANDARD = latest UWY × lives in force at snapshot,
+  WRITTEN_LY, UWY_MINUS_1; cuts TOTAL → product × region × TPA × plan), TreatyFeed, OptionTerms, `run_b2` orchestration.
+- `pw/benefit_value.py`: B1 level 1 on the expiring catalogue's factor scale → library → overrides; MANUAL_REVIEW never 1.
+- `pw/outputs.py`: SPEC §7 column contracts checked on write; Parquet + Excel view; `run_manifest.json` with hashes.
+- Run config: `fixtures/RUN_SYN/run_config.json` is the template (paths relative to the config file).
+- B1 level 2: design only, `docs/B1_level2_design.md` (owner open points listed there).
 
 ### WS0 notes for the next sessions
 - Package: `pw/` (registry, model, spec_parser, evaluator, exposure, gates, trace, io_excel, template/{spec,generator,parser}).
@@ -65,6 +79,13 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 7. (WS0) NE Basic source bands "00–64" / "64+" overlap at 64: example reads them as 0–64 and 65+; confirm with UFIC.
 8. (WS0) SME / AUH-Mednet network labels per TPA are not in the reference: example uses the add-on table labels for all TPAs.
 9. (WS0) CRs #2–#4 in docs/CHANGE_REQUESTS.md (extra mapping tables, group_size_band as numeric range, V0 version source).
+11. (WS1) The index prices the full rated premium (base × factors + add-on modules + fees). Should add-on modules
+    (e.g. maternity per eligible female) be excluded from B2, so the index reflects base-rate change only?
+12. (WS1) B1 relativity order follows SPEC §4.3 literally: catalogue table → market library → owner overrides, so an
+    override only fills gaps. Should owner overrides win instead?
+13. (WS1) SPEC §4.3 "plus module values as % of base" needs a base definition (which cell / mix); modules are left out
+    of level-1 richness and module option changes are MANUAL_REVIEW until defined.
+14. (WS1) V5 outlier band default 0.7–1.3 (run config `v5.outlier_band`); confirm the band for UFIC.
 10. (WS0) xlsxwriter cannot lock workbook structure (sheet order/insertion); sheets are protected individually and
     `_KEYS` tolerates moves. Acceptable?
 

@@ -209,11 +209,90 @@ def v4_round_trip(template_spec: dict, workdir: Path, expiring: Catalogue | None
 
 
 # ------------------------------------------------------------------------------------------------------------ V5
-def v5_submission_integrity(submission_path: Path, issued_hash: str | None = None) -> dict:
-    """STUB (WS0): structure-hash check only. WS1 adds mandatory-cell (numeric > 0) checks and outlier ratio bands
-    vs expiring (SPEC §6 V5)."""
-    from .template.parser import read_meta
-    meta = read_meta(submission_path)
-    ok = issued_hash is None or meta.get("structure_hash") == issued_hash
-    return {"gate": "V5", "status": "STUB", "hash_ok": ok, "structure_hash": meta.get("structure_hash"),
-            "note": "WS1 completes V5: mandatory numeric > 0, outliers vs expiring"}
+DEFAULT_OUTLIER_BAND = (0.7, 1.3)
+V5_FLAGS = ("HASH_MISMATCH", "KEYS_TAMPERED", "POSITIONAL_PARSE", "BLANK", "NON_NUMERIC", "NOT_POSITIVE", "OUTLIER",
+            "NO_EXPIRING", "MULTIPLIER_OUTLIER")
+
+
+def v5_submission_integrity(parsed, template_spec: dict, issued_hash: str | None, expiring: Catalogue | None = None,
+                            outlier_band=None, multiplier_band=None) -> dict:
+    """V5 (SPEC §6): structure hash = issued; every mandatory cell numeric > 0; outliers vs expiring flagged
+    (ratio submitted / expiring base outside the run's band). Failure action: flag to user (never stops).
+    Returns {status: PASS|FLAGGED, flags: DataFrame[cell_key, flag, value, expiring, ratio, detail], invalid: set}.
+    'invalid' = cells whose value cannot be used (BLANK, NON_NUMERIC, NOT_POSITIVE): ingest excludes them."""
+    from .evaluator import lookup_component
+    from .registry import load_registry
+    reg = load_registry()
+    lo, hi = outlier_band or DEFAULT_OUTLIER_BAND
+    recs = []
+
+    def flag(ck, f, value=None, exp=None, ratio=None, detail=""):
+        recs.append({"cell_key": ck, "flag": f, "value": value, "expiring": exp, "ratio": ratio, "detail": detail})
+
+    meta_hash = parsed.meta.get("structure_hash")
+    if issued_hash is None:
+        flag("_META", "HASH_MISMATCH", detail="no issued hash supplied to compare against")
+    elif meta_hash != issued_hash:
+        flag("_META", "HASH_MISMATCH", detail=f"submitted {str(meta_hash)[:12]} != issued {issued_hash[:12]}")
+    if parsed.recomputed_hash != issued_hash and not parsed.positional:
+        flag("_KEYS", "KEYS_TAMPERED", detail="_KEYS content does not hash to the issued structure hash")
+    if parsed.positional:
+        flag("_KEYS", "POSITIONAL_PARSE", detail="_KEYS sheet missing: values read by position")
+    invalid = set()
+    probes = {}
+    for ck, kind in sorted(parsed.kinds.items()):
+        if kind != "RATE":
+            continue
+        v = parsed.values.get(ck)
+        if v is None:
+            flag(ck, "BLANK", detail="mandatory rate cell is blank")
+            invalid.add(ck)
+        elif not isinstance(v, float):
+            flag(ck, "NON_NUMERIC", value=str(v))
+            invalid.add(ck)
+        elif v <= 0:
+            flag(ck, "NOT_POSITIVE", value=v)
+            invalid.add(ck)
+        else:
+            probes[ck] = v
+    if expiring is not None and probes:
+        by_scope = {}
+        for ck in probes:
+            k = parsed.keys[ck][0]
+            scope = next((s for s in expiring.scopes if s.product_type == k.get("product_type")
+                          and s.rating_region == k.get("rating_region")
+                          and (k.get("tpa") in s.tpa_set or "ANY" in s.tpa_set)), None)
+            if scope is None:
+                flag(ck, "NO_EXPIRING", value=probes[ck], detail="no expiring scope for this block")
+                continue
+            by_scope.setdefault(scope.scope_id, []).append(ck)
+        for sid, cks in sorted(by_scope.items()):
+            scope = expiring.scope(sid)
+            base = next(c for c in scope.components if c.type == "BASE_TABLE")
+            keys = []
+            for ck in cks:
+                k = parsed.keys[ck][0]
+                keys.append({d: (v[0] if isinstance(v, list) else v) for d, v in k.items() if d in base.keys})
+            res = lookup_component(expiring, sid, base, keys, reg).set_index("cell_id")
+            for i, ck in enumerate(cks):
+                v = probes[ck]
+                if i not in res.index or res.loc[i, "__status"] != "VALUE":
+                    flag(ck, "NO_EXPIRING", value=v, detail="no priced expiring base cell")
+                    continue
+                e = float(res.loc[i, "__value"])
+                r = v / e
+                if r < lo or r > hi:
+                    flag(ck, "OUTLIER", value=v, exp=e, ratio=r, detail=f"ratio outside [{lo}, {hi}]")
+    if multiplier_band is not None:
+        mlo, mhi = multiplier_band
+        for ck, kind in sorted(parsed.kinds.items()):
+            v = parsed.values.get(ck)
+            if kind == "MULTIPLIER" and isinstance(v, float) and not (mlo <= v <= mhi):
+                flag(ck, "MULTIPLIER_OUTLIER", value=v, detail=f"proposed multiplier outside [{mlo}, {mhi}]")
+    flags = pd.DataFrame(recs, columns=["cell_key", "flag", "value", "expiring", "ratio", "detail"])
+    n_rate = sum(1 for k in parsed.kinds.values() if k == "RATE")
+    counts = flags["flag"].value_counts().to_dict() if len(flags) else {}
+    return {"gate": "V5", "status": "PASS" if flags.empty else "FLAGGED", "flags": flags, "invalid": invalid,
+            "counts": {k: int(v) for k, v in sorted(counts.items())}, "rate_cells": n_rate,
+            "hash_ok": not any(f in counts for f in ("HASH_MISMATCH", "KEYS_TAMPERED", "POSITIONAL_PARSE")),
+            "band": [lo, hi]}
