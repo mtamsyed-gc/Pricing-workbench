@@ -42,3 +42,15 @@ def test_package_excludes_reference_and_client_examples():
         assert any(n.endswith("/pw/evaluator.py") for n in names)
         with zipfile.ZipFile(d / "rel.zip") as z:
             assert len(z.namelist()) == len(names)
+
+
+def test_check_bundle_has_runner_and_examples_but_no_reference():
+    import sys
+    sys.path.insert(0, str(REPO / "tools"))
+    import package
+    with tmpdir() as d:
+        names = package.build(d / "check.zip", check_bundle=True)
+        assert "RUN_LAPTOP_CHECK.bat" in names
+        assert any(n.endswith("/COMMIT.txt") for n in names)
+        assert any("/examples/ufic_2027/template_spec.json" in n for n in names)
+        assert not [n for n in names if "/reference/" in n or "/runs/" in n]
