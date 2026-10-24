@@ -31,7 +31,7 @@ from ..registry import ANY, load_registry
 from . import GENERATOR_VERSION, KEYS_SHEET, META_SHEET, TEMPLATE_SPEC_VERSION
 from .generator import InputCell, Layout, _Fmt, compute_layout, hash_keys_rows, write_keys_meta, write_rate_sheets
 from .parser import _keys_table, _locate, fill_template, read_meta
-from .spec import ALL_TPAS, NONE_OPTION, cedant_model, normalise, spec_hash
+from .spec import ALL_TPAS, NONE_OPTION, cedant_model, cedant_spec_hash, normalise, spec_hash
 
 MODE = "CEDANT"
 FACTORS, RIDERS, DEFAULTS, BENEFITS, LISTS = "Factors", "Riders", "Plan defaults", "Benefits", "_LISTS"
@@ -362,7 +362,7 @@ def generate_cedant_workbook(spec: dict, out_path: Path) -> GeneratedCedantWorkb
     n_in = sum(1 for x in krows if x[1] != "REFER")
     n_ref = sum(1 for x in krows if x[1] == "REFER")
     meta = [("tender_id", nspec["tender_id"]), ("cedant", nspec["cedant"]), ("mode", MODE), ("structure_hash", shash),
-            ("spec_hash", sphash), ("template_spec_version", nspec["template_spec_version"]),
+            ("spec_hash", sphash), ("cedant_spec_hash", cedant_spec_hash(spec)), ("template_spec_version", nspec["template_spec_version"]),
             ("generator_version", GENERATOR_VERSION), ("issue_date", nspec.get("issue_date") or ""),
             ("currency", nspec["currency"]), ("premium_basis", nspec["premium_basis"]),
             ("n_inputs", str(n_in)), ("n_refer", str(n_ref))]
@@ -476,6 +476,8 @@ def _benefit_value(v, line: dict):
         n, prob, _ = _num(x)
         if prob:
             return None, f"'{x}' is not a number"
+        if n < 0:
+            return None, f"'{x}' is negative"
         if integral:
             if abs(n - round(n)) > 1e-9:
                 return None, f"'{x}' is not a whole number"
@@ -514,6 +516,10 @@ def read_cedant(path: Path, spec: dict, catalogue_id: str | None = None, owner: 
     if meta and meta.get("mode") != MODE:
         rep.add(META_SHEET, "", "mode", f"workbook mode is '{meta.get('mode') or 'TENDER'}', not {MODE} (is this a "
                                          "reinsurer template?)")
+    elif meta and meta.get("cedant_spec_hash") != cedant_spec_hash(spec):
+        rep.add(META_SHEET, "", "spec", "the workbook was generated from a different template spec (plans, networks, "
+                                        "tables or options changed): read it with the spec it was issued from, or "
+                                        "regenerate and re-enter")
     wb_f = load_workbook(path, data_only=False)
     wb_v = load_workbook(path, data_only=True)
     try:
@@ -606,7 +612,7 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
         for t in m["riders"]:
             tables[(m["sheet_name"], t["tpas_label"], t["family"], RIDERS)] = {"model": t, "rows": [], "msh": m}
 
-    def resolve(sname, r, d, idx, fam_col):
+    def resolve(sname, r, d, idx, fam_col, canon=None):
         prod, emi = _txt(d["Product"]), _txt(d["Emirate"])
         msh = by_pe.get((prod, emi))
         cell = lambda c: a1(r, idx[c])  # noqa: E731
@@ -621,9 +627,10 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
                                                        f"(groups: {', '.join(x['label'] for x in msh['groups'])})")
             return msh, g
         fam = _txt(d[fam_col])
-        tb = tables.get((msh["sheet_name"], tl, fam, sname))
+        tb = tables.get((msh["sheet_name"], tl, fam, canon))
         if tb is None:
-            rep.add(sname, cell(fam_col), "unknown", f"no {sname[:-1].lower()} table of family '{fam}' for TPAs '{tl}' on "
+            what = "factor" if canon == FACTORS else "rider"
+            rep.add(sname, cell(fam_col), "unknown", f"no {what} table of family '{fam}' for TPAs '{tl}' on "
                                                      f"{msh['sheet_name']} (spare rows extend existing tables only)")
         return msh, tb
 
@@ -639,7 +646,7 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
             continue
         seen, present = {}, set()
         for r, d in rows:
-            msh, tb = resolve(nm, r, d, idx, fam_col)
+            msh, tb = resolve(nm, r, d, idx, fam_col, canon=sname)
             if tb is None:
                 continue
             t = tb["model"]
@@ -776,16 +783,23 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
             if not opt:
                 rep.add(nm, cell("Option"), "default", f"blank plan default {plan} / {fam}")
                 continue
-            opts, rider = set(), False
+            opts, rider, missing = set(), False, []
+            pl = next(p for p in g["plans"] if p["plan_id"] == plan)
             for (shn, tl, f2, kind), tb in tables.items():
                 if shn == msh["sheet_name"] and f2 == fam and set(g["tpas"]) <= set(tb["model"]["tpas"]):
-                    opts |= {x["option"] for x in tb["rows"]}
                     rider = rider or kind == RIDERS
+                    # the option must exist for every key the plan's cells take (plan / its networks / its TPAs), or ANY
+                    for kv in _plan_keys(tb["model"], pl, g):
+                        here = {x["option"] for x in tb["rows"] if x["key"] in (kv, ANY)}
+                        opts |= here
+                        if opt not in here and not (kind == RIDERS and opt == NONE_OPTION):
+                            missing.append(kv)
             if rider and opt == NONE_OPTION:
                 defaults[dk] = opt
-            elif opt not in opts:
-                rep.add(nm, cell("Option"), "default", f"plan default {plan} / {fam} = '{opt}' is not an option of its table "
-                                                       f"({', '.join(sorted(opts)) or 'no rows'})", opt)
+            elif missing or opt not in opts:
+                where = f" for key {', '.join(str(m) for m in missing if m is not None)}" if any(m is not None for m in missing) else ""
+                rep.add(nm, cell("Option"), "default", f"plan default {plan} / {fam} = '{opt}' is not an option of its table"
+                                                       f"{where} ({', '.join(sorted(opts)) or 'no rows'})", opt)
             else:
                 defaults[dk] = opt
         for dk in sorted(want_defaults - set(seen)):
@@ -796,6 +810,8 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
     benefits = {}          # (sheet, group label) -> [BenefitLine]
     nm = sheet_of(BENEFITS)
     n_blank = 0
+    if nm is None and any(m["benefits"] for m in model["sheets"]):
+        rep.add(BENEFITS, "", "sheet", f"sheet '{BENEFITS}' is missing")
     if nm is not None:
         idx, rows = _scan(wb_v[nm], COLS[BENEFITS])
         if idx is None:
@@ -869,7 +885,10 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
             scope = RatingScope(scope_id=g["scope_id"], product_type=msh["product_type"], regulator=msh["regulator"],
                                 rating_region=msh["rating_region"], tpa_set=list(g["tpas"]),
                                 formula=RatingFormula(order=list(fopts.get("order") or ["BASE", "FACTORS", "MODULES"]),
-                                                      rounding=int(fopts.get("rounding", nspec["options"]["rounding"]))))
+                                                      rounding=int(fopts.get("rounding", nspec["options"]["rounding"])),
+                                                      min_premium=fopts.get("min_premium"),
+                                                      max_premium=fopts.get("max_premium"),
+                                                      refer_rules=list(fopts.get("refer_rules") or [])))
             for p in g["plans"]:
                 pdef = {fam: defaults[(msh["sheet_name"], g["label"], p["plan_id"], fam)] for fam in g["default_families"]
                         if (msh["sheet_name"], g["label"], p["plan_id"], fam) in defaults}
@@ -880,7 +899,7 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
             for cid in g["factor_tables"]:
                 t = next(x for x in msh["factor_tables"] if x["component_id"] == cid)
                 tb = tables[(msh["sheet_name"], t["tpas_label"], t["family"], FACTORS)]
-                scope.components.append(_factor_component(t, tb["rows"]))
+                scope.components.append(_factor_component(t, tb["rows"], g))
             for cid in g["riders"]:
                 t = next(x for x in msh["riders"] if x["component_id"] == cid)
                 tb = tables[(msh["sheet_name"], t["tpas_label"], t["family"], RIDERS)]
@@ -888,7 +907,8 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
                     component_id=t["component_id"], type="MODULE", family=t["family"], keys=list(t["keys"]),
                     rows=[{"key": _row_key(t, r), "value": r["value"], "status": "VALUE", "labels": {}, "source_ref": r["ref"]}
                           for r in tb["rows"]],
-                    unit=t["unit"], mode=t["mode"], eligibility=dict(t["eligibility"]), premium_basis=t.get("premium_basis")))
+                    unit=t["unit"], mode=t["mode"], eligibility=dict(t["eligibility"]), premium_basis=t.get("premium_basis"),
+                    default_option=t.get("default_option")))
             scope.benefits = list(benefits.get((msh["sheet_name"], g["label"]), []))
             cat.scopes.append(scope)
     cat.validate()
@@ -902,16 +922,36 @@ def _row_key(t: dict, r: dict) -> dict:
     return {k: vals[k] for k in t["keys"]}
 
 
-def _factor_component(t: dict, rows: list) -> Component:
+def _plan_keys(t: dict, plan: dict, g: dict) -> list:
+    """Key values a plan's cells take in a table keyed on plan / network / tpa; [None] = keyless or other key."""
+    kd = t["key_dim"]
+    if kd == "plan":
+        return [plan["plan_id"]]
+    if kd == "network":
+        return sorted({n for tp, n in plan["network_by_tpa"].items() if tp in g["tpas"] and n is not None}) or [None]
+    if kd == "tpa":
+        return [tp for tp in g["tpas"] if tp in plan["network_by_tpa"]] or list(g["tpas"])
+    return [None]
+
+
+def _factor_component(t: dict, rows: list, g: dict) -> Component:
     comp = Component(component_id=t["component_id"], type="FACTOR_TABLE", family=t["family"], keys=list(t["keys"]),
                      rows=[{"key": _row_key(t, r), "value": r["value"], "status": "VALUE", "labels": {}, "source_ref": r["ref"]}
-                           for r in rows])
+                           for r in rows],
+                     default_option=t.get("default_option"))
     own = {r["key"]: r["option"] for r in rows if r["reference"]}
-    if len(set(own.values())) == 1:
-        comp.reference_level = next(iter(own.values()))
+    # every key a cell can take gets its effective reference (own row, else the ANY row's): the evaluator looks the
+    # key up literally (fill = reference), so an inherited reference is written out per key
+    domain = {r["key"] for r in rows if r["key"] != ANY}
+    for p in g["plans"]:
+        domain |= {k for k in _plan_keys(t, p, g) if k is not None}
+    eff = {k: own.get(k, own.get(ANY)) for k in sorted(domain)}
+    vals = set(eff.values()) | ({own[ANY]} if ANY in own else set())
+    if len(vals) == 1 and None not in vals:
+        comp.reference_level = next(iter(vals))
     else:
         comp.reference_level_by = t["key_dim"]
-        comp.reference_level_by_key = dict(sorted(own.items()))
+        comp.reference_level_by_key = {k: v for k, v in eff.items() if v is not None}
     return comp
 
 

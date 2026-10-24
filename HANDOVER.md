@@ -37,7 +37,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | WS3 + WS6 next (WS2 in parallel); answer WS1 open items 11–14 |
 | WS2 | A market benchmark | Merged to main (PR #6, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ e54e4b7; GC work laptop run outstanding | Done; CR #13 and items 19–21 applied in the owner-decisions batch |
 | OD1 | Owner decisions on HANDOVER items 1–21 (SPEC v0.4; UFIC example; riders; B2 split; B1; V5; scorecard; benchmark) | Merged to main (PR #7, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 32e7a31; GC work laptop run outstanding | Done |
-| WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Built on branch `ws5-cedant-workbook`, PR open (UFIC deadline 5 Nov) | **PENDING** — run `py tools\laptop_check.py` on the PR head; also open `runs\laptop_check\<stamp>\example_cedant.xlsx` and `example_template.xlsx` in Excel | Owner: laptop check + items 7–12; then GC fills the UFIC copy in `runs\` |
+| WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Built on branch `ws5-cedant-workbook`, PR #9 open (UFIC deadline 5 Nov) | **PENDING** — run `py tools\laptop_check.py` on the PR head; also open `runs\laptop_check\<stamp>\example_cedant.xlsx` and `example_template.xlsx` in Excel | Owner: laptop check + items 7–12; then GC fills the UFIC copy in `runs\` |
 | WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC; answer WS3 open items 15–17 |
 | WS4 | Integration, release | Blocked on WS1–WS3 | — | docs/workorders/WS4.md |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
@@ -64,6 +64,12 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
   built by `tools/build_submissions.py`. Proven: EXPO_SYN prices cell for cell as CAT_ALPHA (defaults, seeded explicit
   options, fill = reference; traces equal); the reinsurer template from the read-back is byte-identical to T_ALPHA;
   V5 on SUB_Y identical; every gate tested (`tests/test_ws5_cedant.py`); UFIC structure in `tests/test_ws5_ufic.py`.
+- Independent review (25 Oct) found 6 defects, all fixed with regression tests: plan defaults checked per key (plan /
+  network / TPA); inherited ANY references written per key (fill = reference); formula min / max / refer rules and
+  component default_option carried (different formulas on one sheet raise ProposalRequired); `_META.cedant_spec_hash`
+  stops a read against a different spec; missing Benefits sheet stops; renamed long-table sheets followed via `_KEYS`;
+  negative benefit amounts stop. Known, as in the tender parser: two `_KEYS` formulas swapped by hand swap values
+  (only 'moved' warnings).
 - UFIC: `examples/ufic_2027/template_spec.json` carries the cedant sections (labels only; Cover notes for F2 / F3 /
   F4 / F6 / F7, AML and maternity column shift, nationality groups). Choices pending the owner are listed in its
   `cedant_workbook.provisional` and items 7–12 below; each is a small JSON edit.

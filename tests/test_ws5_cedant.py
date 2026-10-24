@@ -408,3 +408,84 @@ def test_cli_cedant_and_cedant_read():
                                  str(d / "exp.json"), "--id", "CAT_ALPHA"], capture_output=True, text=True, cwd=str(REPO / "docs"))
         assert r.returncode == 0 and "CEDANT READ PASS" in r.stdout, r.stdout + r.stderr
         assert (d / "exp.json").read_text(encoding="utf-8") == (C / "expiring.json").read_text(encoding="utf-8")
+
+
+# ------------------------------------------------------------------------------------------------ review fixes
+def test_plan_default_must_exist_for_the_plans_own_key():
+    def edit(wb):
+        ws = wb[DEFAULTS]
+        r, h = _find(ws, Plan="P1", Family="network_option")
+        ws.cell(r, h["Option"]).value = "OPT2"          # OPT2 rows exist for P2 / P3 only
+    with tmpdir() as d:
+        cat, rep = _mutated(d, edit)
+        assert cat is None and any("for key P1" in p["message"] for p in rep.problems), rep.problems
+
+
+def test_inherited_reference_is_written_per_key_for_fill_reference():
+    s = _spec()
+    t = next(x for x in s["sheets"][0]["factor_tables"] if x["component_id"] == "f_netopt")
+    t["reference"] = {"ANY": "OPT1", "P2": "OPT2"}             # P2 has its own reference; the others inherit ANY's
+
+    def vf(ck, keys, kind, v):
+        k = keys[0]
+        return 1.0 if kind == "FACTOR" and k["component_id"] == "f_netopt" and k["key"] == "P2" else v
+    with tmpdir() as d:
+        generate_cedant_workbook(s, d / "c.xlsx")
+        fill_from_catalogue(d / "c.xlsx", d / "f.xlsx", catalogue("CAT_ALPHA"), value_fn=vf)
+        cat = read_cedant_workbook(d / "f.xlsx", s)
+        c = next(x for x in cat.scopes[0].components if x.component_id == "f_netopt")
+        assert c.reference_level is None and c.reference_level_by == "plan"
+        assert c.reference_level_by_key == {**{f"P{i}": "OPT1" for i in range(1, 8)}, "P2": "OPT2"}
+        res, _ = evaluate(cat, pd.DataFrame([{"product_type": "INDIVIDUAL", "rating_region": "RGN_A", "tpa": "TPA_RED",
+                                              "plan": p, "age": 40, "gender": "M", "nationality_group": "OTHER",
+                                              "maternity_eligible": "N"} for p in ("P2", "P3")]), {"fill": "reference"})
+        assert (res["status"] == "PRICED").all()
+
+
+def test_formula_bounds_and_component_defaults_are_carried():
+    alpha = copy.deepcopy(catalogue("CAT_ALPHA"))
+    alpha.scopes[0].formula.min_premium = 5000.0
+    tender = {k: _spec()[k] for k in ("cedant", "tender_id", "deadline", "contact", "issue_date", "effective_date")}
+    s = cedant_spec_from_catalogue(alpha, tender)
+    assert s["sheets"][0]["formula"]["min_premium"] == 5000.0
+    with tmpdir() as d:
+        generate_cedant_workbook(s, d / "c.xlsx")
+        fill_from_catalogue(d / "c.xlsx", d / "f.xlsx", alpha)
+        cat = read_cedant_workbook(d / "f.xlsx", s)
+        cells = _cells()
+        a, _ = evaluate(alpha, cells)
+        b, _ = evaluate(cat, cells)
+        assert np.array_equal(a["price"].to_numpy(), b["price"].to_numpy(), equal_nan=True)
+    # two scopes on one sheet with different formulas cannot share one cedant sheet
+    two = copy.deepcopy(catalogue("CAT_ALPHA"))
+    sc2 = copy.deepcopy(two.scopes[0])
+    sc2.scope_id, sc2.tpa_set, sc2.formula.rounding = "ALPHA_B", ["TPA_PINK"], 0
+    two.scopes[0].tpa_set = ["TPA_RED"]
+    two.scopes.append(sc2)
+    from pw import ProposalRequired
+    raises(ProposalRequired, cedant_spec_from_catalogue, two, tender)
+
+
+def test_spec_mismatch_missing_benefits_rename_and_negative_benefit():
+    s = _spec()
+    s["sheets"][0]["blocks"][0]["plans"][0]["network"] = "N_BASIC"
+    cat, rep = read_cedant(C / "filled.xlsx", s)
+    assert cat is None and any(p["check"] == "spec" for p in rep.problems)
+    with tmpdir() as d:
+        cat, rep = _mutated(d, lambda wb: wb.remove(wb[BENEFITS]), "nb.xlsx")
+        assert cat is None and any("Benefits' is missing" in p["message"] for p in rep.problems)
+
+        def rename(wb):                                  # as Excel does: sheet renamed, _KEYS formulas follow
+            wb[FACTORS].title = "Factors X"
+            for row in wb["_KEYS"].iter_rows(min_row=2):
+                if isinstance(row[1].value, str) and row[1].value.startswith("='Factors'!"):
+                    row[1].value = row[1].value.replace("='Factors'!", "='Factors X'!")
+        cat, rep = _mutated(d, rename, "rn.xlsx")
+        assert rep.status == "PASS", rep.problems[:3]
+
+        def neg(wb):
+            ws = wb[BENEFITS]
+            r, h = _find(ws, Plan="P1", **{"Benefit code": "aml"})
+            ws.cell(r, h["Value"]).value = -5
+        cat, rep = _mutated(d, neg, "ng.xlsx")
+        assert cat is None and any("is negative" in p["message"] for p in rep.problems)

@@ -346,6 +346,18 @@ NONE_OPTION = "NONE"          # rider option meaning "not purchased" (evaluator 
 _MODULE_UNITS = ("PER_MEMBER", "PER_ELIGIBLE_FEMALE", "PER_FAMILY")
 
 
+def cedant_spec_hash(spec: dict) -> str:
+    """Hash of the whole structure a cedant workbook is read against (tender layout + cedant sections), written to
+    _META at generation and compared at read-back. Text-only fields (notes, provisional, not_carried, catalogue
+    id / version / effective date, spare rows) are left out."""
+    ns = normalise(spec)
+    d = {k: v for k, v in ns.items() if not k.startswith("_")}
+    cw = {k: v for k, v in (d.get("cedant_workbook") or {}).items()
+          if k not in ("notes", "provisional", "not_carried", "catalogue_id", "version", "effective_date", "spare_rows")}
+    d["cedant_workbook"] = cw
+    return hashlib.sha256(json.dumps(d, sort_keys=True, ensure_ascii=False, default=str).encode()).hexdigest()
+
+
 def has_cedant_sections(spec: dict) -> bool:
     return any(sh.get(k) for sh in spec.get("sheets", []) for k in CEDANT_SECTIONS)
 
@@ -420,6 +432,9 @@ def cedant_model(spec: dict) -> tuple[dict, list[str]]:
             errs.append(f"{where}: product x emirate {pe} also on sheet '{pe_seen[pe]}' (the long tables are keyed on "
                         "product x emirate)")
         pe_seen[pe] = sh.get("sheet_name")
+        bad_f = set(sh.get("formula") or {}) - {"order", "rounding", "min_premium", "max_premium", "refer_rules"}
+        if bad_f:
+            errs.append(f"{where}: unknown formula fields {sorted(bad_f)}")
         if sh.get("premium_basis") is not None and sh["premium_basis"] not in ("GROSS", "NET"):
             errs.append(f"{where}: premium_basis must be GROSS or NET")
         plans_all = []
@@ -479,13 +494,16 @@ def cedant_model(spec: dict) -> tuple[dict, list[str]]:
                     errs.append(f"{tw}: plan '{r['key']}' is not a plan of the sheet")
                 if kdim == "tpa" and r["key"] != ANY and r["key"] not in ttp:
                     errs.append(f"{tw}: TPA key '{r['key']}' is outside the table's tpas")
+            dop = t.get("default_option")
+            if dop is not None and dop not in {r["option"] for r in rows} and not (kind == "riders" and dop == NONE_OPTION):
+                errs.append(f"{tw}: default_option '{dop}' is not an option of the table")
             klab = dict(t.get("key_labels") or {})
             bad = [k for k in klab if k not in {r["key"] for r in rows}]
             if bad:
                 errs.append(f"{tw}: key_labels for keys without rows: {bad}")
             return {"component_id": cid, "family": fam, "option_dim": odim, "key_dim": kdim, "keys": keys,
                     "tpas": ttp, "tpas_label": tpas_label(ttp, tpas), "label": t.get("label"), "rows": rows,
-                    "key_labels": klab}
+                    "key_labels": klab, "default_option": dop}
 
         for ti, t in enumerate(sh.get("factor_tables") or []):
             m = _common(t, "factor_tables", ti)
@@ -632,7 +650,16 @@ def cedant_spec_from_catalogue(cat, tender: dict, select: list[str] | None = Non
         plan_ids = []
         for s in scopes:
             tp = list(s.tpa_set) if multi else None
-            sh["formula"] = {"order": list(s.formula.order), "rounding": s.formula.rounding}
+            f = {"order": list(s.formula.order), "rounding": s.formula.rounding}
+            for k in ("min_premium", "max_premium"):
+                if getattr(s.formula, k) is not None:
+                    f[k] = getattr(s.formula, k)
+            if s.formula.refer_rules:
+                f["refer_rules"] = list(s.formula.refer_rules)
+            if "formula" in sh and sh["formula"] != f:
+                raise ProposalRequired(f"sheet {sname}: scopes {[x.scope_id for x in scopes]} have different formulas; "
+                                       "one cedant sheet carries one formula (select the scopes separately)")
+            sh["formula"] = f
             base = next(c for c in s.components if c.type == "BASE_TABLE")
             if base.premium_basis and base.premium_basis != cat.premium_basis:
                 sh["premium_basis"] = base.premium_basis
@@ -659,6 +686,8 @@ def cedant_spec_from_catalogue(cat, tender: dict, select: list[str] | None = Non
                         raise ProposalRequired(f"{s.scope_id}/{c.component_id}: range keys have no long-table form")
                     rows.append({"key": str(kv), "option": str(r["key"][odim])})
                 t = {"component_id": c.component_id, "family": c.family, "keys": list(c.keys), "rows": rows}
+                if c.default_option is not None:
+                    t["default_option"] = c.default_option
                 if odim != c.family:
                     t["option_dim"] = odim
                 if kdim:
