@@ -34,7 +34,7 @@ def test_cli_commands():
         assert "coverage PASS" in r.stdout
 
 
-def test_fixtures_rebuild_byte_identical():
+def test_fixtures_rebuild_identical_content():
     with tmpdir() as d:
         subprocess.run([sys.executable, str(REPO / "tools" / "build_fixtures.py"), "--out", str(d)], check=True, capture_output=True)
         subprocess.run([sys.executable, str(REPO / "tools" / "build_submissions.py"), "--out", str(d)], check=True, capture_output=True)
@@ -62,3 +62,18 @@ def _content_hash(p):
             h.update(n.encode())
             h.update(data)
     return h.hexdigest()
+
+
+def test_every_cli_command_has_a_laptop_check():
+    """SPEC §13: a tool without a laptop check is not complete."""
+    src = (REPO / "tools" / "laptop_check.py").read_text(encoding="utf-8")
+    cli = (REPO / "tools" / "pw.py").read_text(encoding="utf-8")
+    import re
+    cmds = re.findall(r'sub\.add_parser\("([a-z]+)"\)', cli)
+    assert cmds
+    for c in cmds:
+        if c == "fixtures":
+            continue
+        assert f'"{c}"' in src, f"no laptop check for CLI command '{c}'"
+    for g in ("v0", "v1", "v2", "v3", "v4"):
+        assert f'"{g}"' in src, g
