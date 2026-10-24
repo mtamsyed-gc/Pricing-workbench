@@ -55,8 +55,11 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 2. AUH Individual blocks: keep the catalogue's Married-F column and Employee/SI vs Dependant sections, or collapse to M/F per the
    template principle (SPEC §8.0)?
 3. UFIC source flags F1–F8 (SPEC §12), especially F1 (plan→network mapping) and F2 (AUH co-pay block labels).
-4. (WS0) Is a submitted per-TPA base rate before or after the catalogue's TPA factor? WS0 reads it on the expiring
-   base-table basis (TPA factor still applied) and shows Existing Rates as pure base-table values.
+4. (WS0) TPA factor basis of a submitted per-TPA base rate. **Decision 24 Oct (provisional): option A** — the value
+   in a per-TPA block is the base BEFORE the catalogue TPA factor; the issued TPA factor is still applied (current
+   WS0 behaviour; Existing Rates shows the pre-factor base). Owner is verifying how the cedant's adjustment factor
+   works and will confirm. If it changes to B (block = the TPA's final rate), raise a CR: amend SPEC §8.0, show
+   Existing Rates after the TPA factor, set the TPA factor to 1.0 when parsing submissions, state it on the Cover.
 5. (WS0) Coverage gate counts PRICED + REFER premium as "matched" — confirm (SPEC §5 wording is ambiguous).
 6. (WS0) MODULE unit PER_FAMILY has no allocation rule in SPEC: raises ProposalRequired until defined.
 7. (WS0) NE Basic source bands "00–64" / "64+" overlap at 64: example reads them as 0–64 and 65+; confirm with UFIC.
