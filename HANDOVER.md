@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-24 (owner-decisions batch on `owner-decisions-1`: HANDOVER items 1–21 decided, SPEC v0.4, CRs #2–#4, #13, #18–#21 approved, CR #12 amended, CR #17 → WS7).
+Last updated: 2026-10-25 (OD1 merged, PR #7: HANDOVER items 1–21 decided, SPEC v0.4. Owner 25 Oct: the expiring catalogue comes in through our own cedant rate workbook — SPEC §8.5, work order WS5, next).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -10,7 +10,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | SPEC.md | Canonical model, registries, catalogue/benefit/exposure models, evaluator and gates V1–V5, output contracts, tender template generator, fixtures, work-order summary, UFIC source flags F1–F8 |
 | docs/workorders/WS0.md | Full work order for the first session (core + contracts + generator core + other work orders) |
 | docs/CHANGE_REQUESTS.md | Contract change requests (all decided; CR #17 = work order WS7) |
-| docs/workorders/WS1–WS4, WS6, WS7 | Work orders for the next streams (WS7: structured benefit proposals, CR #17) |
+| docs/workorders/WS1–WS7 | Work orders (WS5: cedant rate workbook, next; WS7: structured benefit proposals, CR #17) |
 | tools/laptop_check.py | SPEC §13 laptop acceptance: run `py tools\laptop_check.py` on the laptop after every change |
 | reference/ufic/UFIC_Medical_Reinsurance_Reference.md | TEMPORARY GC material: UFIC catalogue V10 14.1 reference (ToB, factors, rate-table structure, UW rules). Structure only — see CLAUDE.md data boundary |
 | requirements-native.txt | Runtime pins (same as ete-dashboard) |
@@ -35,7 +35,8 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Merged to main (PR #1, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 777c8e8 (Win 11, Py 3.14); GC work laptop (pinned Py 3.12) run outstanding | Run the check on the GC work laptop when available; answer open items below |
 | WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | WS3 + WS6 next (WS2 in parallel); answer WS1 open items 11–14 |
 | WS2 | A market benchmark | Merged to main (PR #6, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ e54e4b7; GC work laptop run outstanding | Done; CR #13 and items 19–21 applied in the owner-decisions batch |
-| OD1 | Owner decisions on HANDOVER items 1–21 (SPEC v0.4; UFIC example; riders; B2 split; B1; V5; scorecard; benchmark) | Built on `owner-decisions-1`, tests green in sandbox, PR open | **pending** | Owner: laptop check on the PR head, then merge |
+| OD1 | Owner decisions on HANDOVER items 1–21 (SPEC v0.4; UFIC example; riders; B2 split; B1; V5; scorecard; benchmark) | Merged to main (PR #7, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 32e7a31; GC work laptop run outstanding | Done |
+| WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Ready — **next** (UFIC deadline 5 Nov) | — | docs/workorders/WS5.md |
 | WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC; answer WS3 open items 15–17 |
 | WS4 | Integration, release | Blocked on WS1–WS3 | — | docs/workorders/WS4.md |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
@@ -129,4 +130,5 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
    Keep, or give panels a fixed credit there?
 
 ## Timeline driver
-UFIC reinsurer submissions due early November 2026. Priority order: OD1 merge → WS6 → WS4 (integration, release) → WS7.
+UFIC reinsurer submissions due 5 Nov 2026. Priority order: WS5 (cedant workbook; GC fills UFIC current rates; reinsurer
+template issued) → WS4 (integration, release on GC laptops) → WS6 (Merit as-if, other repo, can run in parallel) → WS7.

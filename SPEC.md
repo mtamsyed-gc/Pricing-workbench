@@ -1,6 +1,6 @@
 # Pricing Workbench — Specification: Canonical Model, Contracts, Template Generator
 
-Version 0.4 · 24 Oct 2026 (v0.2: owner's tender-template principle, §8.0; UFIC structure derived from the reference document, §8.4; v0.3: laptop acceptance after every change, §13, CR #1; v0.4: owner decisions on HANDOVER items 1–21 — UFIC bands, plan → network map and source flags, §8.4 / §12; B1 order and rider value, §4.3; benchmark rules, §4.5; coverage rule, §5; riders and V5, §6 / §8; B2 split and scorecard rules, §7) · Owner: Etam (GC L&H IMEA)
+Version 0.4 · 24 Oct 2026 (v0.2: owner's tender-template principle, §8.0; UFIC structure derived from the reference document, §8.4; v0.3: laptop acceptance after every change, §13, CR #1; v0.4: owner decisions on HANDOVER items 1–21 — UFIC bands, plan → network map and source flags, §8.4 / §12; B1 order and rider value, §4.3; benchmark rules, §4.5; coverage rule, §5; riders and V5, §6 / §8; B2 split and scorecard rules, §7; v0.5: cedant rate workbook, §8.5) · Owner: Etam (GC L&H IMEA)
 Status: design baseline for WS0. WS1–WS6 build against this document; changes only via `docs/CHANGE_REQUESTS.md`.
 First applied case: UFIC medical QS 2027 tender. The model is cedant-agnostic: no cedant, TPA or catalogue logic in code.
 
@@ -327,6 +327,26 @@ Reference sheets: Existing Rates (expiring catalogue in the same blocks, with de
 
 Acceptance check: the generated UFIC template has exactly the blocks, plans, bands and columns above. Its round-trip test (V4) passes.
 
+### 8.5 Cedant rate workbook (owner decision 25 Oct 2026; work order WS5)
+
+The expiring catalogue does not have to be mapped from the cedant's own workbook. The tool generates a **cedant-mode
+rate workbook** from the same `template_spec.json`; GC fills it from the cedant's catalogue and the tool reads it back
+into the EXPIRING catalogue. One layout, two modes, one parser:
+
+| Sheet | Cedant mode (GC fills current rates) | Reinsurer mode (§8.2) |
+|---|---|---|
+| Rate sheets | Same blocks as the tender; Nil / 0% co-pay base, before the TPA factor | Same; Existing Rates from the read-back catalogue |
+| Factors | Long table: product, emirate, family, key (network / plan or ANY), option, factor, reference (Y = 1.0). Options pre-filled; one reference per key | Read only |
+| Riders | Long table: product, emirate, rider family, limit, network, unit, eligibility, rate | Quotable (`addons = "FILL"`) |
+| Plan defaults | Plan × family → the option the plan is sold with (§3.4 catalogue default) | — |
+| Benefits | Plan × benefit_code (registry) → value, condition text | — |
+| Terms | — | Fill |
+
+Co-pay variants are never entered: the Nil base and the factor tables generate them. Read-back is gated (blank or
+non-numeric mandatory cells, missing / duplicate reference rows, defaults naming unknown options, unknown benefit
+codes stop the read with the cell list). The filled cedant copy holds client rates and lives only in `runs/`; the
+repo holds the spec (structure only).
+
 ---
 
 ## 9. Catalogue spec format (sketch)
@@ -384,6 +404,7 @@ Acceptance check: the generated UFIC template has exactly the blocks, plans, ban
 | WS3 | D: scorecard, option pack template | Weighted scores, sensitivity to weights |
 | WS4 | Integration, release zip, treaty tool feed | End-to-end synthetic run |
 | WS6 | Merit Annex option slicer + as-if page reading `RateFactors` (ete-dashboard repo) | As-if equals workbench numbers on fixtures |
+| WS5 | Cedant rate workbook (§8.5): generate, fill (GC), read back into the expiring catalogue; UFIC structure | Round trip prices EXPO_SYN identically to CAT_ALPHA; UFIC cedant workbook generates with every block, factor family, rider and default |
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Accepted proposal changes richness by a hand-checked amount; ignored changes nothing |
 
 Every work order is also subject to the laptop acceptance check (§13).
