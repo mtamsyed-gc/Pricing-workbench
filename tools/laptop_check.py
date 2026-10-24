@@ -37,7 +37,9 @@ def _run(cmd, cwd, expect_rc=0, must_contain=None, timeout=900):
     t = time.time()
     r = subprocess.run(cmd, capture_output=True, text=True, cwd=str(cwd), timeout=timeout)
     ok = r.returncode == expect_rc and (must_contain is None or must_contain in (r.stdout + r.stderr))
-    tail = (r.stdout + r.stderr).strip().splitlines()[-6:]
+    lines = (r.stdout + r.stderr).strip().splitlines()
+    keep = [ln for ln in lines if ln.startswith(("FAIL ", "E ")) or " passed, " in ln]
+    tail = keep + lines[-6:]
     return ok, f"rc={r.returncode} ({time.time() - t:.1f}s)", tail
 
 
@@ -144,7 +146,10 @@ def main(argv=None):
         commit = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
         branch = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True).stdout.strip()
     except OSError:
-        commit = branch = "unknown"
+        commit = branch = ""
+    if not commit and (REPO / "COMMIT.txt").exists():      # package copied without git history
+        commit, branch = (REPO / "COMMIT.txt").read_text(encoding="utf-8").strip(), "package"
+    commit, branch = commit or "unknown", branch or "unknown"
     n_fail = sum(r["status"] == "FAIL" for r in results)
     summary = (f"LAPTOP CHECK {'PASS' if not n_fail else 'FAIL'}: {len(results) - n_fail}/{len(results)} checks, "
                f"branch {branch} @ {commit}, {stamp}")

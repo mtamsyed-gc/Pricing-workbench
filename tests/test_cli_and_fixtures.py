@@ -41,9 +41,23 @@ def test_fixtures_rebuild_byte_identical():
         committed = sorted(p.relative_to(FIX) for p in FIX.rglob("*") if p.is_file())
         rebuilt = sorted(p.relative_to(d) for p in d.rglob("*") if p.is_file())
         assert committed == rebuilt
-        h = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()  # noqa: E731
-        diff = [str(r) for r in committed if h(FIX / r) != h(d / r)]
+        diff = [str(r) for r in committed if _content_hash(FIX / r) != _content_hash(d / r)]
         assert not diff, diff
+
+
+def _content_hash(p):
+    """Bytes for text files; for .xlsx the sorted, uncompressed zip members. Deflate output differs between zlib
+    builds (e.g. CPython 3.14 on Windows uses zlib-ng), so compressed bytes are only reproducible on one build;
+    the workbook content must be identical everywhere."""
+    import zipfile
+    if p.suffix != ".xlsx":
+        return hashlib.sha256(p.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+    h = hashlib.sha256()
+    with zipfile.ZipFile(p) as z:
+        for n in sorted(z.namelist()):
+            h.update(n.encode())
+            h.update(z.read(n))
+    return h.hexdigest()
 
 
 def test_every_cli_command_has_a_laptop_check():
