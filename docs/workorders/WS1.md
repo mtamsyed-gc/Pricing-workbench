@@ -24,6 +24,11 @@ richer or leaner than expiring" at level 1 (B1), and finish the submission inges
 5. Outputs as Parquet + Excel view + run manifest (versions, hashes) in `runs/<RunID>/`.
 6. CLI commands `index`, `benefit`, `t ingest`; their end-to-end checks added to `tools/laptop_check.py`.
 
+## Decisions carried in
+- TPA factor basis (HANDOVER open item 4): provisional option A — submitted per-TPA block values are pre-TPA-factor;
+  the issued TPA factor applies. Keep the basis in one place (parser `to_catalogue`) so a switch to B is a one-line
+  change plus the CR; add a test that pins the current behaviour.
+
 ## Files
 - May create: `pw/rate_index.py`, `pw/benefit_value.py`, `pw/outputs.py`, `pw/template/ingest.py`, tests `tests/test_ws1_*.py`, docs.
 - May edit: `pw/gates.py` (V5 only), `tools/pw.py` (new commands), `tools/laptop_check.py` (new checks), `registry/benefit_factors.json` (entries).
