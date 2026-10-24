@@ -22,6 +22,24 @@
   ]
  },
  "benefit_overrides": [],
+ "scorecard": {
+  "weights_file": "../../examples/scorecard_weights.json",
+  "terms_scores": "terms_scores.csv",
+  "panels": [
+   {
+    "panel_id": "PANEL_XY",
+    "lead": "SUB_X",
+    "members": {
+     "SUB_X": 0.6,
+     "SUB_Y": 0.4
+    }
+   }
+  ],
+  "grid_step": 0.1,
+  "show_reinsurer_names": false,
+  "market_facing": false,
+  "incumbent_names": []
+ },
  "duckdb": {
   "memory_limit": "2GB",
   "threads": 2

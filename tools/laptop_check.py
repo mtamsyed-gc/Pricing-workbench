@@ -92,6 +92,9 @@ def tool_checks(run: Path):
          0, "coverage PASS"),
         ("benefit (B1 level 1)", PW + ["benefit", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "runs")],
          0, "BenefitFactors"),
+        # WS3: scorecard on the same run (needs the index outputs above)
+        ("score (D scorecard + pack)", PW + ["score", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "runs")],
+         0, "recommendation pack"),
     ]
 
 
@@ -147,7 +150,7 @@ def main(argv=None):
     try:
         from openpyxl import load_workbook
         for f in ("template.xlsx", "example_template.xlsx", "runs/RUN_SYN/out/RateIndex.xlsx",
-                  "runs/RUN_SYN/out/TreatyFeed.xlsx"):
+                  "runs/RUN_SYN/out/TreatyFeed.xlsx", "runs/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx"):
             load_workbook(run / f).close()
         add("generated workbooks open", True, "openpyxl load ok")
     except Exception as ex:  # noqa: BLE001
