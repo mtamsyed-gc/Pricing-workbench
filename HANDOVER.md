@@ -21,8 +21,13 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
   AgeAtInception, NewRenewal, Distribution, WrittenLY/Prem, EarnedLY/Prem; no co-pay field. Merit itself is not changed by this repo.
 - ete-dashboard / side_tools/treaty_tool (treatymodel 2.0, master in PBM): P&L by scenario; fed by `TreatyFeed` (premium change %,
   LR adjustment per treaty book) and `OptionTerms`. Do not edit it here.
-- Owner's existing product benchmarking tool (separate repo): input to WS2 (market benchmark) and to the benefit taxonomy
-  reconciliation; attach read-only when WS2 starts.
+- Owner's product benchmarking tool: **SME Product Benchmarking Tool v3.1**, repo `mtamsyed-gc/PBM`, branch
+  `claude/keen-babbage-efpwps` (not the default branch), folder `sme_benchmarking/`. Input to WS2 and to the benefit
+  taxonomy reconciliation; attach read-only. Key parts: `build/taxonomy.py` (levers, add-ons, networks CN/GN/RN/RN2/RN3/VN,
+  reference factor basis - SYNTHETIC placeholder, DHA minimums), intake template `SME-INTAKE v2.4` (one Excel file per plan,
+  EXPORT sheet), 40 shipped plans in `intake_shipped/` (synthetic / anonymised), `qa/reprice.py` (independent re-pricer),
+  `lenai/` companion. `data/nas_dxb/` holds the NAS Dubai industry burning cost **as received (authentic)**: never copy it,
+  or the shipped intake files, into this repo; read them at run time from the PBM clone or the run folder.
 
 ## Status
 | WS | Scope | Status | Laptop check | Next step |
