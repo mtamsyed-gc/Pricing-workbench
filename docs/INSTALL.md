@@ -5,7 +5,7 @@
   in `RELEASE.json`, in every run manifest (`versions.pricing_workbench`) and in the Parquet metadata of every output.
 - Scheme (owner, 25 Oct 2026): development releases count up by 0.0.1 and a digit never exceeds 9, so 0.0.9 is
   followed by 0.1.0 (and 0.1.9 by 0.2.0). Only official GC test releases move to 1.0.0 and beyond. 0.0.2 is the first
-  integrated release (WS4); the WS0–WS5 development line carried 0.1.0-ws0. Enforced by `tests/test_release.py`.
+  integrated release (WS4); 0.0.3 adds the Windows file-lock retry found on the GC work laptop; 0.0.4 adds the B2 comparison on the Merit cuts (CR #24); the WS0–WS5 development line carried 0.1.0-ws0. Enforced by `tests/test_release.py`.
 - A release is built from a commit on `main` whose laptop check passed; `RELEASE.json` and `COMMIT.txt` record it.
 
 ## What the zip holds

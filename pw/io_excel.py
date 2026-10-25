@@ -219,4 +219,23 @@ def make_reproducible(path: Path, when: _dt.datetime | None = None):
             zi.compress_type = zipfile.ZIP_DEFLATED
             zi.external_attr = 0o600 << 16
             z.writestr(zi, data)
-    tmp.replace(path)
+    replace_file(tmp, path)
+
+
+# Windows: an antivirus / indexer may hold a just-written file open for a moment, so the swap of the rewritten
+# workbook over the original can fail with PermissionError (WinError 5 / 32). Seen on the GC work laptop (25 Oct 2026).
+REPLACE_RETRY_DELAYS = (0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2)     # ~6.4 s in total, then the error is raised
+
+
+def replace_file(src: Path, dst: Path, delays=None):
+    """Path(src).replace(dst), retried on PermissionError with a growing delay; re-raises the last error."""
+    import time
+    delays = REPLACE_RETRY_DELAYS if delays is None else delays
+    for d in (*delays, None):
+        try:
+            Path(src).replace(dst)
+            return
+        except PermissionError:
+            if d is None:
+                raise
+            time.sleep(d)
