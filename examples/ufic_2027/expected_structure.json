@@ -172,21 +172,9 @@
    "Ind Rates - DXB-NE": {
     "groups": {
      "NEXTCARE, NAS, MEDNET": {
-      "factor_tables": [
-       "f_copay_op_diag",
-       "f_ded_consult",
-       "f_copay_pharmacy",
-       "f_network_option",
-       "f_nationality",
-       "f_tpa"
-      ],
+      "factor_tables": [],
       "riders": [],
-      "plan_defaults": [
-       "copay_op_diag",
-       "ded_consult",
-       "copay_pharmacy",
-       "network_option"
-      ],
+      "plan_defaults": [],
       "plans": 7
      },
      "AAFIYA": {
@@ -200,7 +188,7 @@
       "plans": 3
      }
     },
-    "factor_rows": 37,
+    "factor_rows": 3,
     "rider_rows": 0,
     "benefit_codes": 37
    },

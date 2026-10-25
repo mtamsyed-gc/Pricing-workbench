@@ -231,123 +231,6 @@
    "scope_id": "IND_DXBNE",
    "factor_tables": [
     {
-     "component_id": "f_copay_op_diag",
-     "family": "copay_op_diag",
-     "options": [
-      "0%",
-      "10%",
-      "20%",
-      "AED 10",
-      "AED 20",
-      "AED 50",
-      "AED 100"
-     ],
-     "reference": "0%",
-     "tpas": [
-      "NEXTCARE",
-      "NAS",
-      "MEDNET"
-     ]
-    },
-    {
-     "component_id": "f_ded_consult",
-     "family": "ded_consult",
-     "options": [
-      "Nil",
-      "AED 20",
-      "AED 50 (standard)",
-      "AED 100",
-      "20% up to AED 20",
-      "20% up to AED 50 (standard)",
-      "20% up to AED 75",
-      "20% up to AED 100",
-      "10% up to AED 20",
-      "10% up to AED 50",
-      "10% up to AED 75",
-      "10% up to AED 100",
-      "10% flat"
-     ],
-     "reference": "20% up to AED 50 (standard)",
-     "tpas": [
-      "NEXTCARE",
-      "NAS",
-      "MEDNET"
-     ]
-    },
-    {
-     "component_id": "f_copay_pharmacy",
-     "family": "copay_pharmacy",
-     "options": [
-      "0%",
-      "10%",
-      "20%",
-      "30%"
-     ],
-     "reference": "0%",
-     "tpas": [
-      "NEXTCARE",
-      "NAS",
-      "MEDNET"
-     ]
-    },
-    {
-     "component_id": "f_network_option",
-     "family": "network_option",
-     "key_dim": "plan",
-     "rows": [
-      {
-       "key": "ANY",
-       "option": "Option 1"
-      },
-      {
-       "key": "B",
-       "option": "Option 2"
-      },
-      {
-       "key": "C",
-       "option": "Option 2"
-      }
-     ],
-     "reference": "Option 1",
-     "tpas": [
-      "NEXTCARE",
-      "NAS",
-      "MEDNET"
-     ]
-    },
-    {
-     "component_id": "f_nationality",
-     "family": "nationality",
-     "option_dim": "nationality_group",
-     "options": [
-      "ISC",
-      "PHL",
-      "LEVANT_EGY",
-      "OTHER"
-     ],
-     "reference": "OTHER",
-     "tpas": [
-      "NEXTCARE",
-      "NAS",
-      "MEDNET"
-     ]
-    },
-    {
-     "component_id": "f_tpa",
-     "family": "tpa",
-     "options": [
-      "NEXTCARE",
-      "NAS",
-      "MEDNET"
-     ],
-     "reference": "NAS",
-     "tpas": [
-      "NEXTCARE",
-      "NAS",
-      "MEDNET"
-     ]
-    },
-    {
      "component_id": "f_aafiya_copay",
      "family": "copay_op_diag",
      "options": [
@@ -362,10 +245,7 @@
     }
    ],
    "plan_defaults": [
-    "copay_op_diag",
-    "ded_consult",
-    "copay_pharmacy",
-    "network_option"
+    "copay_op_diag"
    ],
    "benefits": [
     "aml",
@@ -1778,21 +1658,22 @@
   "spare_rows": 15,
   "notes": [
    "Source: the cedant's product catalogue V10 14.1. Enter values in a copy under runs\\<RunID>\\ only.",
-   "Individual DXB-NE (NC / NAS / Mednet): base at OP diagnostic 0%, consultation '20% up to AED 50 (standard)', pharmacy 0%, network Option 1; co-pay, deductible, pharmacy, network option, nationality and TPA factors from Factors-Individual. No AML factor for Individual (fixed by the ToB, SPEC §8.4).",
+   "Individual DXB-NE (NC / NAS / Mednet): no factor tables for now (owner, 25 Oct 2026: Factors-Individual switched off pending clarity). Enter the base at OP diagnostic 0%, consultation '20% up to AED 50 (standard)', pharmacy 0%, network Option 1, before any TPA or nationality factor.",
    "Individual DXB-NE Aafiya (F3): Nil base; the Aafiya 10% / 20% co-pay blocks are flat multipliers of the Nil rate (table f_aafiya_copay).",
    "Individual AUH: Nil block = base. The 10% / 20% blocks are flat multipliers per TPA source table (NC & Mednet share theirs: enter it on both keys). F2: enter the NC / Mednet and NAS multipliers with the 10% and 20% labels swapped (10% gives the smaller discount, as Aafiya). F6: NAS 20% uses the derived multiplier, not the 13 erroneous source cells.",
+   "Nationality groups (SME): ISC = India / Bangladesh / Pakistan; PHL = Philippines; LEVANT_EGY = Egypt, Jordan, Syria, Palestine, Lebanon; OTHER = all others.",
    "SME: AML reference (factor 1.0) per plan: the plan letter selects the AML column (Key on shows the column). Maternity columns per the provisional shift (SPEC §12): plan C = RNE, D = RN, E = RN2, F = RN3/PCP; the 'Annual Limit' row is not entered. Dental / optical: plans D-F take the 'Plan 4-6' column.",
-   "Nationality groups: ISC = India / Bangladesh / Pakistan; PHL = Philippines; LEVANT_EGY = Egypt, Jordan, Syria, Palestine, Lebanon; OTHER = all others.",
    "F4: consultation deductible '10% flat' is entered as in the source (flagged).",
    "AUH Basic: GROSS basis (F7); the rate table before loadings."
   ],
   "provisional": [
-   "Individual DXB-NE Aafiya families (only its co-pay block table; family read as copay_op_diag) - owner to confirm",
-   "Individual TPA factor table (NC / NAS / Mednet, reference NAS) - work order says 'TPA = 1.0'; owner to confirm",
    "No Individual maternity rider - owner to confirm",
    "SME consultation deductible options taken from Factors-Individual; SME DXB-NE IP / day-case co-pay present; 'AUH IP deductible' = the AED 200 option of the IP table - owner to confirm",
    "SME AML reference per plan (A 1.5m, B 1m, C 500k, D-F 250k) - owner to confirm",
    "Network option 2 (DXB plans B, C) kept in the expiring catalogue; SME plan B 'GN excl. named hospitals' kept as a network option (HANDOVER open item 3)"
+  ],
+  "decided": [
+   "Owner 25 Oct 2026: Factors-Individual (OP diagnostic co-pay, consultation deductible, pharmacy co-pay, network option, nationality, TPA) switched off for every Individual DXB-NE TPA until clarified; Aafiya DXB-NE keeps only its co-pay block factors (F3)."
   ]
  }
 }

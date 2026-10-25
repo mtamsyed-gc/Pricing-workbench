@@ -160,10 +160,11 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
 6. Scorecard (SPEC silent): when all single options have the same value on a criterion there is no scale and everyone,
    panels included, scores 100 (e.g. a panel's larger capacity gets no credit if every option offers the same share).
    Keep, or give panels a fixed credit there?
-7. WS5 TPA-scoped factor tables (F3): the long tables carry a TPA group column (not in the work order's list). Which
-   families apply to Aafiya DXB Individual? Provisional: only its Nil / 10% / 20% block table, read as `copay_op_diag`.
-8. WS5 "TPA = 1.0" for Individual: provisional TPA factor table on NC / NAS / Mednet (reference NAS; GC enters the
-   values). Confirm, or drop the family for Individual.
+7. WS5 — DECIDED (owner, 25 Oct): Factors-Individual is switched off for every Individual DXB-NE TPA until clarified
+   (no OP diagnostic / consultation / pharmacy / network option / nationality / TPA factor tables); Aafiya DXB-NE keeps
+   only its co-pay block factors. The long tables keep the TPA group column (needed for this split).
+8. WS5 — DECIDED with 7: no Individual TPA factor table. To restore later: add the tables back to
+   `examples/ufic_2027/template_spec.json` (sheet "Ind Rates - DXB-NE") and regenerate the cedant workbook.
 9. WS5 reference row ≠ 1.0: the read stops (SPEC "Y = 1.0"). Confirm.
 10. WS5 Individual maternity rider: none provisionally (WS5 lists the maternity column shift under SME). Products,
     keys and plan G column if one is wanted.
