@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (GC work laptop check of release 0.0.2 @ 847f6bc: 41/42 — environment and every tool / run check PASS on pinned Py 3.12.10; one test failed on a Windows file lock (WinError 5 in make_reproducible). Fix: retrying file swap, release 0.0.3, branch fix-win-replace-retry; GC laptop re-check PENDING).
+Last updated: 2026-10-25 (release 0.0.4 = 0.0.3 Windows file-lock retry (PR #15) + OD4 / CR #24 (PR #16): B2 compares on the Merit cuts — base + maternity, non-Merit options at reference, RiderIndex, TreatyFeed on the headline relativity. GC work laptop check of 0.0.2 was 41/42 (file lock only); re-check of 0.0.4 on the GC laptop PENDING).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -184,7 +184,7 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
    25 Oct, release 0.0.2 @ 847f6bc from C:\pw: LAPTOP CHECK FAIL 41/42 (3 skipped). Python 3.12.10 and all 11 pins PASS; all
    tool checks, `run` x2 byte-identical and Excel PASS; the test suite failed only test_ws5_cedant.test_gate_failures_one_by_one
    (PermissionError WinError 5 on the .tmp -> .xlsx swap in io_excel.make_reproducible: a corporate antivirus / indexer
-   lock). Fixed in 0.0.3 (io_excel.replace_file retries ~6 s); re-run the check on the GC laptop from the 0.0.3 zip.
+   lock). Fixed in 0.0.3 (io_excel.replace_file retries ~6 s); re-run the check on the GC laptop from the 0.0.4 zip (0.0.3 + OD4).
    Owner (25 Oct): runs it once he is happy with the tool and the synthetic runs and testing here.
 2. UFIC confirmations (SPEC §12): SME maternity column labels (owner assumption: RNE = RN, RN = RN2, RN2 = RN3) — to
    confirm with UFIC; F4 consultation deductible "10%" = 1.085 (kept, flagged). DECIDED 25 Oct: the maternity "Annual
@@ -214,6 +214,12 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
 13. WS4 — CR #23 DECIDED (owner, 25 Oct): approved as proposed; applied in WS4 (TreatyScenarios.json, treaty.book_slots).
 14. WS4 — DECIDED (owner, 25 Oct): version 0.0.2; +0.0.1 per development release, never above 0.0.9 / 0.x.9 (then the next
     digit up, 0.1.0); only official GC test releases move to 1.0.0 and beyond.
+
+### OD4 notes (CR #24, owner 25 Oct 2026)
+- Merit's dim_life has no AML, limit, co-pay or deductible fields, so B2 compares only on the Merit cuts. `rate_index.b2_eval_options`: fill = reference for every option family plus `default_families` (evaluator option) for the headline riders, default `module_maternity` at the plan's catalogue default limit. Run config `b2`: basis MERIT_CUTS (default) | FULL (old behaviour), `headline_modules`.
+- Headline = base + maternity for every line (Individual's maternity sits in the Married-F rate). TPA (and nationality, where a catalogue has it) factors are Merit-keyed and apply. TreatyFeed rate factor = headline book relativity.
+- `RiderIndex` output (not scored): rider family x limit, eligible-lives weighted, not-quoted share; TOTAL and product x emirate. B1 (richness) unchanged and still uses catalogue defaults; V3 and the coverage report also unchanged (defaulted share stays informational).
+- UFIC: no nationality factor (removed from the SME structure); no nationality cut.
 
 ## Timeline driver
 UFIC reinsurer submissions due 5 Nov 2026. Priority order: UFIC data (WS5 merged: GC fills the
