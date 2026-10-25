@@ -424,7 +424,7 @@ Every work order is also subject to the laptop acceptance check (§13).
 | F6 | NAS AUH 20% block | 13 erroneous cells (known) | **Agreed:** V2 flags and uses the derived ×0.9734 values |
 | F7 | Premium basis | AUH Basic gross; NE and add-ons net | **Agreed:** declare per component; state the comparison basis in the template |
 | F8 | Incumbent references | Incumbent named in tables and rules | **Agreed:** template and outputs say "refer to the lead reinsurer"; no incumbent name in market-facing files |
-| — | SME maternity columns | Columns GN+, GN, RNE, RN, RN2, RN3/PCP-RN3; RNE is not in the master plan table | **Provisional (owner assumption):** column RNE = RN (plan C), RN = RN2 (D), RN2 = RN3 (E), RN3/PCP-RN3 = PCP-RN3 (F); "Annual Limit" row ignored for now. To confirm with UFIC |
+| — | SME maternity columns | Columns GN+, GN, RNE, RN, RN2, RN3/PCP-RN3; RNE is not in the master plan table | **Provisional (owner assumption):** column RNE = RN (plan C), RN = RN2 (D), RN2 = RN3 (E), RN3/PCP-RN3 = PCP-RN3 (F); "Annual Limit" row ignored (owner, 25 Oct 2026). Column shift to confirm with UFIC |
 | — | Network factor "GN excl. named hospitals" on Plan 2 (SME) | Network option not in the base | Kept as a network option (not offered in the base table) |
 
 Note for the rate index: because every co-pay adjustment is a flat multiplier fixed by UFIC, the cell-level rate ratio (option ÷ expiring) does not depend on members' co-pay options. Missing co-pay fields in Merit therefore matter only for V3 (premium reconciliation) and B1, not for B2, unless a reinsurer proposes different multipliers.
