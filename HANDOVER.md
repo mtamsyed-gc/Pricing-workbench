@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (WS4 integration and release 0.0.2 merged to main, PR #13 @ 7347fcc; laptop check from the installed release zip PASS (provisional) @ 1accbbb; before that: WS5 merged PR #9, OD2 PR #11, OD3 PR #12).
+Last updated: 2026-10-25 (GC work laptop check of release 0.0.2 @ 847f6bc: 41/42 — environment and every tool / run check PASS on pinned Py 3.12.10; one test failed on a Windows file lock (WinError 5 in make_reproducible). Fix: retrying file swap, release 0.0.3, branch fix-win-replace-retry; GC laptop re-check PENDING).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -181,6 +181,10 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, #12 amended, #13, #17–#21; SPEC v0.4 §4.3,
 §4.5, §5, §6, §7, §8.0, §8.4, §12). Still open:
 1. GC work laptop: run `py tools\laptop_check.py` (pinned Py 3.12) for the merged heads; personal-laptop PASSes are provisional.
+   25 Oct, release 0.0.2 @ 847f6bc from C:\pw: LAPTOP CHECK FAIL 41/42 (3 skipped). Python 3.12.10 and all 11 pins PASS; all
+   tool checks, `run` x2 byte-identical and Excel PASS; the test suite failed only test_ws5_cedant.test_gate_failures_one_by_one
+   (PermissionError WinError 5 on the .tmp -> .xlsx swap in io_excel.make_reproducible: a corporate antivirus / indexer
+   lock). Fixed in 0.0.3 (io_excel.replace_file retries ~6 s); re-run the check on the GC laptop from the 0.0.3 zip.
    Owner (25 Oct): runs it once he is happy with the tool and the synthetic runs and testing here.
 2. UFIC confirmations (SPEC §12): SME maternity column labels (owner assumption: RNE = RN, RN = RN2, RN2 = RN3) — to
    confirm with UFIC; F4 consultation deductible "10%" = 1.085 (kept, flagged). DECIDED 25 Oct: the maternity "Annual
