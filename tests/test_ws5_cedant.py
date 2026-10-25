@@ -224,8 +224,6 @@ def test_gate_failures_one_by_one():
          "key 'ANY' has no reference row")
     case("two reference rows", set_factor("Reference", "Y", Family="tpa", Option="TPA_BLUE"), "reference",
          "has 2 reference rows")
-    case("reference factor not 1.0", set_factor("Factor", 1.02, Family="aml", Key="N_GOLD", Option="1250000"),
-         "reference", "must read 1.0")
     case("bad reference flag", set_factor("Reference", "maybe", Family="ded_consult", Option="D60"), "reference",
          "must be Y or blank")
 
@@ -297,6 +295,20 @@ def test_gate_failures_one_by_one():
         # a reinsurer template is not a cedant workbook
         cat, rep = read_cedant(FIX / "T_ALPHA" / "template.xlsx", _spec())
         assert cat is None and any(p["check"] == "mode" for p in rep.problems)
+
+
+def test_reference_factor_not_one_warns_and_is_kept():
+    """Owner 25 Oct 2026: a reference row that is not 1.0 is a warning, not a stop; the value is kept as entered."""
+    def f(wb):
+        ws = wb[FACTORS]
+        r, h = _find(ws, Family="aml", Key="N_GOLD", Option="1250000")
+        ws.cell(r, h["Factor"]).value = 1.02
+    with tmpdir() as d:
+        cat, rep = _mutated(d, f)
+        assert rep.status == "PASS" and any("not 1.0 - kept as entered" in w for w in rep.warnings), rep.warnings
+        aml = next(c for c in cat.scopes[0].components if c.component_id == "f_aml")
+        row = next(r for r in aml.rows if r["key"] == {"network": "N_GOLD", "aml": "1250000"})
+        assert row["value"] == 1.02 and aml.reference_level_by_key["N_GOLD"] == "1250000"
 
 
 def test_spare_rows_extend_existing_tables():

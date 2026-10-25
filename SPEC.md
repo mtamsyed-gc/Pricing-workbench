@@ -52,7 +52,7 @@ Out of scope for WS0: market data collection, claims re-adjudication (B1 level 2
 | `network_option` | cat | OPT1, OPT2 (split IP/OP), … | not in Merit → default reference | |
 | `age` | int 0–120 | single year | `AgeAtInception` | Bands mapped per table |
 | `gender` | cat | M, F | `Gender` | |
-| `marital` | cat | SINGLE, MARRIED | `Marital Status` | AUH M/SF vs Married-F = (gender, marital) |
+| `marital` | cat | SINGLE, MARRIED | `Marital Status` | Individual M/SF vs Married-F = (gender, marital) |
 | `member_category` | cat, hierarchical | EMPLOYEE, SMALL_INVESTOR, DEP_OF_EMPLOYEE, DEP_OF_INDIVIDUAL, SPOUSE, CHILD, PARENT, DOMESTIC_NONUAE_SPONSOR, DOMESTIC_UAE_SPONSOR, PARTNER_INVESTOR | `Relation` + catalogue rules | Parent groups: PRINCIPAL / DEPENDANT / DOMESTIC |
 | `maternity_eligible` | bool | Y/N | `Gender Group` (F 18–45) or catalogue rule | Drives maternity module eligibility |
 | `nationality_group` | cat | ISC, PHL, LEVANT_EGY, OTHER, … | `Nationality Group` | Factor key (UFIC Individual DXB) |
@@ -88,7 +88,7 @@ Catalogue(catalogue_id, owner, kind[EXPIRING|SUBMISSION|MARKET|PROPOSED], versio
 
 | Type | Key dims (any subset) | Value | Example (UFIC) |
 |---|---|---|---|
-| `BASE_TABLE` | plan, age(band), gender, marital, member_category, tpa_set, … | AED per member | Ind DXB-NE base rates 7 plans × 15 bands × 2 genders |
+| `BASE_TABLE` | plan, age(band), gender, marital, member_category, tpa_set, … | AED per member | Ind DXB-NE base rates 7 plans × 15 bands × M/SF, Married-F |
 | `FACTOR_TABLE` | any dims incl. co-pay families, plus `reference_level` | multiplier | OP diagnostic co-pay; AML factor by AML × network tier (2-D); TPA factor (NC 0.90); nationality factor; network option factor by plan |
 | `BLOCK_SET` | co-pay level → separate base tables | AED | AUH Individual Nil/10%/20% blocks; normalised to BASE_TABLE (Nil) + implied FACTOR_TABLE, with block-consistency check (§6 V2) |
 | `MODULE` | plan, limit option, eligibility filter, unit[PER_MEMBER|PER_ELIGIBLE_FEMALE|PER_FAMILY] | AED additive, or multiplier | SME dental/optical by plan × limit; maternity per eligible female by plan × IP limit |
@@ -307,8 +307,8 @@ Blocks under §8.0:
 
 | Product | Emirate | TPA blocks | Plans / networks | Ages × columns |
 |---|---|---|---|---|
-| Individual | DXB-NE | NC, NAS, Mednet | 7 each (A–G) | 15 bands × M/F |
-| Individual | DXB-NE | Aafiya | 3 (plans E–G) | 15 bands × M/F |
+| Individual | DXB-NE | NC, NAS, Mednet | 7 each (A–G) | 15 bands × M/SF, Married-F |
+| Individual | DXB-NE | Aafiya | 3 (plans E–G) | 15 bands × M/SF, Married-F |
 | Individual | AUH | NC, Mednet, NAS | 6 each (A–F) | Employee/SI (7 bands, no under-18 row) + Dependant (8 bands) × M/SF, Married-F |
 | Individual | AUH | Aafiya | 2 (plans E–F) | as above |
 | SME | DXB-NE | NAS, NC, Mednet | 6 each (A–F) | 9 bands × M/F |
@@ -324,6 +324,7 @@ Reference sheets: Existing Rates (expiring catalogue in the same blocks, with de
 - Individual AML is fixed by the table of benefits: no AML factor for Individual. SME AML reference (factor 1.0) per network column, and the SME AML / maternity column of a NAS or Mednet plan is taken through its plan letter (A GN+, B GN, C RN, D RN2, E RN3, F PCP-RN3).
 - Network options: Option 1 only (Option 2 for DXB Plan B / C switched off for Individual and SME; "RN3 Open" left off).
 - Riders (dental, optical, maternity) are quotable (`addons = "FILL"`); NE Basic bands read 0–64 / 65+.
+- **Owner 25 Oct 2026 (WS5):** every Individual TPA block is priced M/SF and Married-F (DXB-NE corrected from M/F); the Married-F rate includes the maternity load, so Individual has no maternity rider. Factors-Individual is switched off until clarified (Aafiya DXB-NE keeps its co-pay block multipliers, F3). SME network options are switched off. In the cedant workbook a reference factor that is not 1.0 is a warning (value kept).
 
 Acceptance check: the generated UFIC template has exactly the blocks, plans, bands and columns above. Its round-trip test (V4) passes.
 

@@ -25,7 +25,7 @@ and run it again.
 | Sheet | Enter | Rule |
 |---|---|---|
 | Rate sheets (one block per product × emirate × TPA) | Annual premium per member, every yellow cell | **Nil / 0% co-pay base** at the reference options stated under the sheet title. **Before the TPA factor.** Grey cells are referred (not priced). |
-| Factors | `Factor` per row | One row per option (and per key where the factor varies by network, plan or TPA, else `ANY`). The row with `Reference = Y` is the option the base assumes. It must read **1.0**, and there must be exactly one per key. A key without its own reference row uses the `ANY` row's. |
+| Factors | `Factor` per row | One row per option (and per key where the factor varies by network, plan or TPA, else `ANY`). The row with `Reference = Y` is the option the base assumes. It should read **1.0**; another value is kept as entered and warned (owner, 25 Oct 2026). There must be exactly one per key. A key without its own reference row uses the `ANY` row's. |
 | Riders | `Rate` per row | Rider premium per limit option and key, in the unit shown (per member / per eligible female); a multiplier where the unit says so. `Key on` shows which source column a plan takes where the spec says so. |
 | Plan defaults | `Option` (list) | The option each plan is sold with (catalogue default, SPEC §3.4). It is used where the exposure does not carry the option. Riders: `NONE` = not purchased. |
 | Benefits | `Value`, `Condition text` | As the benefit code needs: amount, number, Y / N, or a listed value. Keep the source wording in Condition text. Value blank + text = MANUAL_REVIEW; whole row blank = benefit not applicable. |
@@ -64,7 +64,7 @@ cannot create a new table. Add the table to the template spec and regenerate ins
 The read stops on any of the following:
 - a blank, non-numeric or ≤ 0 mandatory rate, factor or rider rate;
 - a factor table key with no reference row, or with more than one;
-- a reference row that is not 1.0, or a reference flag other than Y / blank;
+- a reference flag other than Y / blank (a reference row that is not 1.0 is only a warning);
 - a plan default that is blank, or names an option its table lacks;
 - an unknown benefit code, ladder value or Y / N value;
 - a duplicate row in a long table;

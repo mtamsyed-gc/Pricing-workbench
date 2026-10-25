@@ -200,8 +200,8 @@ def _cover_lines(nspec: dict, model: dict) -> list:
                           "do not build the TPA difference into the block as well. A TPA whose source table is shared with "
                           "another TPA gets the same values in its own block."),
             ("Factors", "One row per option (and per key where the factor varies by network / plan / TPA, else ANY). Enter "
-                        "the factor; the row marked Reference = Y is the option the base assumes and must read 1.0, exactly "
-                        "one per key (a key without its own reference row uses the ANY row's)."),
+                        "the factor; the row marked Reference = Y is the option the base assumes and should read 1.0 (another "
+                        "value is kept and warned), exactly one per key (a key without its own reference row uses the ANY row's)."),
             ("Riders", "Rider (add-on) premium per limit option and key, in the unit shown (per member / per eligible "
                        "female); a multiplier where the unit says so."),
             ("Plan defaults", "The option each plan is sold with (catalogue default, SPEC §3.4): used where the exposure does "
@@ -736,9 +736,10 @@ def _read(path, wb_f, wb_v, nspec, model, lay, meta, rep, reg, catalogue_id, own
                     elif not refs and not inh:
                         rep.add(nm, "", "reference", f"{shn} / {fam} ({tl}): key '{k}' has no reference row (Reference = Y)")
                     for r in refs:
-                        if abs(r["value"] - 1.0) > _EPS:
-                            rep.add(nm, r["ref"].split("!")[1], "reference",
-                                    f"{shn} / {fam} ({tl}): reference row {k}/{r['option']} must read 1.0", r["value"])
+                        if abs(r["value"] - 1.0) > _EPS:     # owner 25 Oct 2026: warn, keep the value as entered
+                            rep.warnings.append(f"{r['ref']}: {shn} / {fam} ({tl}): reference row {k}/{r['option']} reads "
+                                                f"{r['value']:g}, not 1.0 - kept as entered (check the reference option or "
+                                                "the base rates)")
                 if not tb["rows"]:
                     rep.add(nm, "", "missing", f"{shn} / {fam} ({tl}): no rows")
         else:

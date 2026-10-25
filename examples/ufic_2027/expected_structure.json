@@ -219,7 +219,6 @@
        "f_pharmacy_limit",
        "f_copay_pharmacy",
        "f_aml",
-       "f_network_option",
        "f_nationality",
        "f_tpa"
       ],
@@ -235,7 +234,6 @@
        "pharmacy_limit",
        "copay_pharmacy",
        "aml",
-       "network_option",
        "module_dental",
        "module_optical",
        "module_maternity"
@@ -243,7 +241,7 @@
       "plans": 6
      }
     },
-    "factor_rows": 75,
+    "factor_rows": 70,
     "rider_rows": 114,
     "benefit_codes": 21
    },
@@ -279,7 +277,7 @@
       "plans": 6
      }
     },
-    "factor_rows": 71,
+    "factor_rows": 72,
     "rider_rows": 114,
     "benefit_codes": 21
    },
