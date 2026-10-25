@@ -98,7 +98,43 @@ def tool_checks(run: Path):
         # WS3: scorecard on the same run (needs the index outputs above)
         ("score (D scorecard + pack)", PW + ["score", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "runs")],
          0, "recommendation pack"),
+        # WS5: cedant rate workbook (SPEC §8.5): generate, gated read-back (stop on blanks, PASS when filled), reinsurer
+        # template from the read-back catalogue, and the cedant example's cedant workbook
+        ("t cedant (fixture spec)", PW + ["t", "cedant", str(FIX / "C_ALPHA" / "template_spec.json"), "--out",
+                                          str(run / "cedant.xlsx")], 0, "structure hash"),
+        ("t cedant-read unfilled (expects the gate to stop)", PW + ["t", "cedant-read", str(run / "cedant.xlsx"), "--spec",
+                                                                    str(FIX / "C_ALPHA" / "template_spec.json"), "--out",
+                                                                    str(run / "cedant_empty" / "expiring.json")],
+         2, "blank mandatory rate"),
+        ("t cedant-read filled fixture", PW + ["t", "cedant-read", str(FIX / "C_ALPHA" / "filled.xlsx"), "--spec",
+                                               str(FIX / "C_ALPHA" / "template_spec.json"), "--out",
+                                               str(run / "cedant_read" / "expiring.json")], 0, "CEDANT READ PASS"),
+        ("t generate from the read-back", PW + ["t", "generate", str(FIX / "C_ALPHA" / "template_spec.json"), "--expiring",
+                                                str(run / "cedant_read" / "expiring.json"), "--out",
+                                                str(run / "template_from_readback.xlsx")], 0, "structure hash"),
+        ("t cedant cedant structure example", PW + ["t", "cedant", str(REPO / "examples" / "ufic_2027" / "template_spec.json"),
+                                                    "--out", str(run / "example_cedant.xlsx")], 0, "structure hash"),
     ]
+
+
+def excel_open(paths) -> tuple[bool, str]:
+    """Open each workbook read-only in Microsoft Excel (COM, invisible, via PowerShell): the WS5 acceptance 'opens in
+    Excel'. A workbook Excel would repair or cannot open fails the check."""
+    lines = ["$ErrorActionPreference = 'Stop'", "$x = New-Object -ComObject Excel.Application",
+             "$x.Visible = $false", "$x.DisplayAlerts = $false", "try {"]
+    for p in paths:
+        q = str(p).replace("'", "''")
+        lines += [f"  $wb = $x.Workbooks.Open('{q}', 0, $true)", f"  Write-Output ('OPEN ' + $wb.Worksheets.Count + ' {Path(p).name}')",
+                  "  $wb.Close($false)"]
+    lines += ["} finally { $x.Quit(); [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($x) }"]
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", "\n".join(lines)],
+                           capture_output=True, text=True, timeout=300)
+    except (OSError, subprocess.TimeoutExpired) as ex:
+        return False, f"Excel automation unavailable ({ex!r}): open the workbooks in the run folder by hand"
+    opened = [ln for ln in r.stdout.splitlines() if ln.startswith("OPEN ")]
+    ok = r.returncode == 0 and len(opened) == len(paths)
+    return ok, ("; ".join(opened) if ok else (r.stderr.strip().splitlines() or ["Excel did not open every workbook"])[-1])
 
 
 def main(argv=None):
@@ -152,12 +188,17 @@ def main(argv=None):
     # generated workbooks open with openpyxl
     try:
         from openpyxl import load_workbook
-        for f in ("template.xlsx", "example_template.xlsx", "runs/RUN_SYN/out/RateIndex.xlsx",
+        for f in ("template.xlsx", "example_template.xlsx", "cedant.xlsx", "example_cedant.xlsx", "template_from_readback.xlsx",
+                  "runs/RUN_SYN/out/RateIndex.xlsx",
                   "runs/RUN_SYN/out/TreatyFeed.xlsx", "runs/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx", "runs/RUN_SYN/out/ValueMap.xlsx"):
             load_workbook(run / f).close()
         add("generated workbooks open", True, "openpyxl load ok")
     except Exception as ex:  # noqa: BLE001
         add("generated workbooks open", False, repr(ex))
+    # WS5 acceptance: both cedant-example workbooks (cedant mode and reinsurer mode) open in Excel itself
+    if is_win:
+        ok, det = excel_open([run / "example_cedant.xlsx", run / "example_template.xlsx", run / "cedant.xlsx"])
+        add("workbooks open in Excel (cedant example: cedant + reinsurer; fixture cedant)", ok, det)
     # 4. path lengths
     longest = max((len(str(p)) for root in (REPO, run) for p in root.rglob("*")), default=0)
     add("path length < 260", longest < MAX_PATH, f"longest {longest} chars")

@@ -77,3 +77,6 @@ def test_every_cli_command_has_a_laptop_check():
         assert f'"{c}"' in src, f"no laptop check for CLI command '{c}'"
     for g in ("v0", "v1", "v2", "v3", "v4"):
         assert f'"{g}"' in src, g
+    acts = re.search(r'p\.add_argument\("action", choices=\[("generate"[^\]]*)\]\)', cli).group(1)
+    for t in re.findall(r'"([a-z-]+)"', acts):
+        assert f'"t", "{t}"' in src, f"no laptop check for CLI command 't {t}'"

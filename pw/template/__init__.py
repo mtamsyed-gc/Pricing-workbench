@@ -7,5 +7,6 @@ KEYS_SHEET = "_KEYS"
 META_SHEET = "_META"
 TEMPLATE_SPEC_VERSION = "1"
 GENERATOR_VERSION = "ws0-1"
-KINDS = ("RATE", "ADDON", "MULTIPLIER", "TERM")
+KINDS = ("RATE", "ADDON", "MULTIPLIER", "TERM",                       # tender template
+         "FACTOR", "RIDER", "DEFAULT", "BENEFIT", "BENEFIT_TEXT")        # cedant workbook (SPEC §8.5)
 KEYS_HEADER = ["cell_key", "ref", "kind", "mandatory", "key_json", "issued_sheet", "issued_address"]

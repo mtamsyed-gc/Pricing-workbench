@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (OD1 merged, PR #7: HANDOVER items 1–21 decided, SPEC v0.4. Owner 25 Oct: the expiring catalogue comes in through our own cedant rate workbook — SPEC §8.5, work order WS5, next).
+Last updated: 2026-10-25 (WS5 cedant rate workbook, PR #9 open, laptop check PASS (provisional, personal laptop) @ 21003ca; owner decisions on WS5 items 7–12 applied, SPEC §8.4 corrected: Individual M/SF + Married-F).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -10,7 +10,8 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | SPEC.md | Canonical model, registries, catalogue/benefit/exposure models, evaluator and gates V1–V5, output contracts, tender template generator, fixtures, work-order summary, UFIC source flags F1–F8 |
 | docs/workorders/WS0.md | Full work order for the first session (core + contracts + generator core + other work orders) |
 | docs/CHANGE_REQUESTS.md | Contract change requests (all decided; CR #17 = work order WS7) |
-| docs/workorders/WS1–WS7 | Work orders (WS5: cedant rate workbook, next; WS7: structured benefit proposals, CR #17) |
+| docs/workorders/WS1–WS7 | Work orders (WS5: cedant rate workbook, PR open; WS7: structured benefit proposals, CR #17) |
+| docs/cedant_workbook_guide.md | WS5 fill guide for GC: what goes where, Nil-base rule, TPA basis, source flags, gate |
 | tools/laptop_check.py | SPEC §13 laptop acceptance: run `py tools\laptop_check.py` on the laptop after every change |
 | reference/ufic/UFIC_Medical_Reinsurance_Reference.md | TEMPORARY GC material: UFIC catalogue V10 14.1 reference (ToB, factors, rate-table structure, UW rules). Structure only — see CLAUDE.md data boundary |
 | requirements-native.txt | Runtime pins (same as ete-dashboard) |
@@ -36,11 +37,42 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | WS3 + WS6 next (WS2 in parallel); answer WS1 open items 11–14 |
 | WS2 | A market benchmark | Merged to main (PR #6, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ e54e4b7; GC work laptop run outstanding | Done; CR #13 and items 19–21 applied in the owner-decisions batch |
 | OD1 | Owner decisions on HANDOVER items 1–21 (SPEC v0.4; UFIC example; riders; B2 split; B1; V5; scorecard; benchmark) | Merged to main (PR #7, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 32e7a31; GC work laptop run outstanding | Done |
-| WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Ready — **next** (UFIC deadline 5 Nov) | — | docs/workorders/WS5.md |
+| WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Built on branch `ws5-cedant-workbook`, PR #9 open (UFIC deadline 5 Nov) | **PASS (25 Oct, provisional)** — functional PASS on owner's personal laptop @ 21003ca (Win 11, Py 3.14.6): suite 112/112, every tool check, UFIC cedant + reinsurer workbooks and the fixture cedant workbook open in Excel; only environment lines fail (Py 3.14 not 3.12, unpinned packages). GC work laptop run outstanding | Merge PR #9; then GC fills the UFIC copy in `runs\` |
 | WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC; answer WS3 open items 15–17 |
 | WS4 | Integration, release | Blocked on WS1–WS3 | — | docs/workorders/WS4.md |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready after OD1 merges | — | docs/workorders/WS7.md |
+
+### WS5 notes for the next sessions
+- `pw/template/cedant.py`: `generate_cedant_workbook` (`t cedant`), `read_cedant` / `read_cedant_workbook` (`t cedant-read`,
+  report `<out>_read_report.csv`, exit 2 and no catalogue on any problem), `fill_from_catalogue` (fixtures / migration).
+  Sheets: Cover, the tender's rate sheets (shared `write_rate_sheets`), Factors, Riders, Plan defaults, Benefits,
+  hidden `_LISTS` (dropdown sources), `_KEYS` (kinds FACTOR / RIDER / DEFAULT / BENEFIT / BENEFIT_TEXT beside RATE),
+  `_META` (`mode = CEDANT`). Long tables are read by header scan, so spare rows and inserted rows are read too.
+- Template spec (structure only), per sheet: `factor_tables`, `riders`, `plan_defaults`, `benefits`, plus
+  `scope_id`, `formula`, `premium_basis`, `key_labels`; top level `cedant_workbook` (catalogue_id, version, notes,
+  spare_rows, provisional). `spec.cedant_model` normalises and validates them (one implementation for generator and
+  reader). These fields are excluded from `spec_hash`, so adding them never changes the issued reinsurer template.
+- Read-back scopes: one per sheet × TPA group (TPAs sharing the same factor tables and riders; tables may carry
+  `tpas`); the base table keeps `tpa` as a key. Reference levels: one reference option → `reference_level`, else
+  `reference_level_by` the key dim; a key without its own reference row inherits the ANY row's.
+- Deviation from the work order's column list: Factors / Riders / Plan defaults / Benefits carry a `TPAs` column (TPA
+  group) and Factors / Riders a `Key on` column (needed where tables differ by TPA, e.g. F3). Owner item 7.
+- Not carried by the workbook (pricing at loading 0 unaffected): LOADING caps, FEE, REFER components, rules, plan
+  attributes, benefit co-pay structure objects. `cedant_spec_from_catalogue` lists them in `not_carried`.
+- Fixture `fixtures/C_ALPHA` (spec authored from CAT_ALPHA, empty and filled workbooks, read-back `expiring.json`),
+  built by `tools/build_submissions.py`. Proven: EXPO_SYN prices cell for cell as CAT_ALPHA (defaults, seeded explicit
+  options, fill = reference; traces equal); the reinsurer template from the read-back is byte-identical to T_ALPHA;
+  V5 on SUB_Y identical; every gate tested (`tests/test_ws5_cedant.py`); UFIC structure in `tests/test_ws5_ufic.py`.
+- Independent review (25 Oct) found 6 defects, all fixed with regression tests: plan defaults checked per key (plan /
+  network / TPA); inherited ANY references written per key (fill = reference); formula min / max / refer rules and
+  component default_option carried (different formulas on one sheet raise ProposalRequired); `_META.cedant_spec_hash`
+  stops a read against a different spec; missing Benefits sheet stops; renamed long-table sheets followed via `_KEYS`;
+  negative benefit amounts stop. Known, as in the tender parser: two `_KEYS` formulas swapped by hand swap values
+  (only 'moved' warnings).
+- UFIC: `examples/ufic_2027/template_spec.json` carries the cedant sections (labels only; Cover notes for F2 / F3 /
+  F4 / F6 / F7, AML and maternity column shift, nationality groups). Choices pending the owner are listed in its
+  `cedant_workbook.provisional` and items 7–12 below; each is a small JSON edit.
 
 ### Owner-decisions batch (OD1) notes for the next sessions
 - Riders: `reference_sheets.addons = "FILL"` makes the Add-ons sheet quotable; a blank rider is NOT QUOTED (parser sets the
@@ -121,14 +153,28 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
 1. GC work laptop: run `py tools\laptop_check.py` (pinned Py 3.12) for the merged heads; personal-laptop PASSes are provisional.
 2. UFIC confirmations (SPEC §12): SME maternity column labels (owner assumption: RNE = RN, RN = RN2, RN2 = RN3); the
    maternity "Annual Limit" row (ignored for now); F4 consultation deductible "10%" = 1.085 (kept, flagged).
-3. "GN excl. named hospitals" network factor on Plan 2 (SME): read as an available network option, not in the base —
-   owner to confirm or switch off.
+3. "GN excl. named hospitals" network factor on Plan 2 (SME): switched off for now (owner, 25 Oct; see item 12).
 4. Real scorecard weights for UFIC (examples/scorecard_weights.json is fictional).
 5. F2 swap and F3 multipliers are applied in the run's expiring UFIC catalogue spec (outside the repo, runs/).
 6. Scorecard (SPEC silent): when all single options have the same value on a criterion there is no scale and everyone,
    panels included, scores 100 (e.g. a panel's larger capacity gets no credit if every option offers the same share).
    Keep, or give panels a fixed credit there?
+7. WS5 — DECIDED (owner, 25 Oct): Factors-Individual is switched off for every Individual DXB-NE TPA until clarified
+   (no OP diagnostic / consultation / pharmacy / network option / nationality / TPA factor tables); Aafiya DXB-NE keeps
+   only its co-pay block factors. The long tables keep the TPA group column (needed for this split).
+8. WS5 — DECIDED with 7: no Individual TPA factor table. To restore later: add the tables back to
+   `examples/ufic_2027/template_spec.json` (sheet "Ind Rates - DXB-NE") and regenerate the cedant workbook.
+9. WS5 — DECIDED (owner, 25 Oct): a reference row ≠ 1.0 is a WARNING, the value is kept as entered (SPEC §8.4 note).
+10. WS5 — DECIDED (owner, 25 Oct): no Individual maternity rider; every Individual TPA block is M/SF + Married-F (Married-F
+    includes the maternity load). SPEC §8.4 corrected (DXB-NE Individual was M/F); the UFIC tender template changes
+    accordingly (not issued yet).
+11. WS5 — DECIDED (owner, 25 Oct, from the Factors-SME sheet): SME has its own consultation deductible table (Individual
+    none); IP / day-case co-pay is one family, 0–30% on both emirates, NIL / AED 200 deductible rows Abu Dhabi only.
+12. WS5 — DECIDED (owner, 25 Oct): the AML-by-network table is SME's (references 1.5m / 1m / 500k / 250k per column,
+    confirmed); Individual AML is fixed by the ToB. SME network options (Option 2, "GN excl. named hospitals") switched
+    off for now — closes item 3 as "off". Note: reference/ §3.2 labels that AML table as Individual; it is SME's.
 
 ## Timeline driver
-UFIC reinsurer submissions due 5 Nov 2026. Priority order: WS5 (cedant workbook; GC fills UFIC current rates; reinsurer
-template issued) → WS4 (integration, release on GC laptops) → WS6 (Merit as-if, other repo, can run in parallel) → WS7.
+UFIC reinsurer submissions due 5 Nov 2026. Priority order: WS5 (PR open: laptop check; then GC fills the
+UFIC copy in `runs\`, reads it back, and the reinsurer template is generated with `--expiring`) → WS4 (integration,
+release on GC laptops) → WS6 (Merit as-if, other repo, can run in parallel) → WS7.

@@ -43,7 +43,7 @@
    "rating_region": "DXB_NE",
    "mandatory": true,
    "age_bands": "DXB15",
-   "column_set": "MF",
+   "column_set": "MSF_MF",
    "copay_basis": {
     "copay_op_diag": "0%",
     "ded_consult": "20% up to AED 50 (standard)",
@@ -227,6 +227,64 @@
       }
      ]
     }
+   ],
+   "scope_id": "IND_DXBNE",
+   "factor_tables": [
+    {
+     "component_id": "f_aafiya_copay",
+     "family": "copay_op_diag",
+     "options": [
+      "Nil",
+      "10%",
+      "20%"
+     ],
+     "reference": "Nil",
+     "tpas": [
+      "AAFIYA"
+     ]
+    }
+   ],
+   "plan_defaults": [
+    "copay_op_diag"
+   ],
+   "benefits": [
+    "aml",
+    "room_type",
+    "territory",
+    "days_abroad",
+    "pec_cover",
+    "pec_waiting",
+    "emergency_ambulance",
+    "emergency_dental",
+    "emergency_vision_hearing",
+    "consult_deductible",
+    "op_diag_copay",
+    "pharmacy_copay",
+    "physio_sessions",
+    "physio_copay",
+    "specialist_direct_access",
+    "gp_referral",
+    "telehealth",
+    "day_care",
+    "parent_accom",
+    "companion_accom",
+    "prosthesis",
+    "mat_ip_limit",
+    "mat_ip_coins",
+    "mat_op_visits",
+    "mat_scans",
+    "newborn_days",
+    "organ_transplant",
+    "alt_medicine_limit",
+    "repatriation",
+    "intl_assistance",
+    "dental_limit",
+    "dental_copay",
+    "cancer_psp",
+    "hepatitis",
+    "vaccinations",
+    "preventive",
+    "reimb_out_network"
    ]
   },
   {
@@ -433,6 +491,56 @@
       "member_section": true
      }
     }
+   ],
+   "scope_id": "IND_AUH",
+   "factor_tables": [
+    {
+     "component_id": "f_copay_ip",
+     "family": "copay_ip",
+     "key_dim": "tpa",
+     "options": [
+      "Nil",
+      "10%",
+      "20%"
+     ],
+     "key_values": [
+      "NEXTCARE",
+      "MEDNET",
+      "NAS",
+      "AAFIYA"
+     ],
+     "reference": "Nil"
+    }
+   ],
+   "plan_defaults": [
+    "copay_ip"
+   ],
+   "benefits": [
+    "aml",
+    "territory",
+    "days_abroad",
+    "pec_cover",
+    "pec_waiting",
+    "room_type",
+    "ip_copay",
+    "day_care",
+    "physio_sessions",
+    "companion_accom",
+    "consult_deductible",
+    "op_diag_copay",
+    "pharmacy_copay",
+    "specialist_direct_access",
+    "gp_referral",
+    "telehealth",
+    "mat_ip_limit",
+    "emergency_dental",
+    "emergency_vision_hearing",
+    "organ_transplant",
+    "alt_medicine_limit",
+    "repatriation",
+    "cancer_psp",
+    "vaccinations",
+    "preventive"
    ]
   },
   {
@@ -445,11 +553,12 @@
    "age_bands": "SME_DXBNE9",
    "column_set": "MF",
    "copay_basis": {
+    "copay_ip": "0%",
     "copay_op_diag": "0%",
-    "copay_ip": "Nil",
-    "pharmacy_limit": "AML (unlimited)",
     "copay_pharmacy": "0%",
-    "network_option": "Option 1"
+    "ded_consult": "20% up to AED 50",
+    "network_option": "Option 1",
+    "pharmacy_limit": "AML (unlimited)"
    },
    "blocks": [
     {
@@ -584,6 +693,265 @@
       }
      ]
     }
+   ],
+   "scope_id": "SME_DXBNE",
+   "factor_tables": [
+    {
+     "component_id": "f_copay_op_diag",
+     "family": "copay_op_diag",
+     "options": [
+      "0%",
+      "10%",
+      "20%",
+      "AED 10",
+      "AED 20",
+      "AED 50",
+      "AED 100",
+      "10% up to AED 50",
+      "20% up to AED 50"
+     ],
+     "reference": "0%"
+    },
+    {
+     "component_id": "f_copay_ip",
+     "family": "copay_ip",
+     "options": [
+      "0%",
+      "10%",
+      "20%",
+      "30%"
+     ],
+     "reference": "0%"
+    },
+    {
+     "component_id": "f_ded_consult",
+     "family": "ded_consult",
+     "options": [
+      "Nil",
+      "AED 20",
+      "AED 50",
+      "AED 100",
+      "20% up to AED 20",
+      "20% up to AED 50",
+      "20% up to AED 75",
+      "20% up to AED 100",
+      "10% up to 20",
+      "10% up to 50",
+      "10% up to 75",
+      "10% up to 100",
+      "10%"
+     ],
+     "reference": "20% up to AED 50"
+    },
+    {
+     "component_id": "f_pharmacy_limit",
+     "family": "pharmacy_limit",
+     "options": [
+      "AML (unlimited)",
+      "AED 5,000",
+      "AED 7,000"
+     ],
+     "reference": "AML (unlimited)"
+    },
+    {
+     "component_id": "f_copay_pharmacy",
+     "family": "copay_pharmacy",
+     "options": [
+      "0%",
+      "10%",
+      "20%",
+      "30%"
+     ],
+     "reference": "0%"
+    },
+    {
+     "component_id": "f_aml",
+     "family": "aml",
+     "key_dim": "plan",
+     "options": [
+      "AED 150,000",
+      "AED 250,000",
+      "AED 500,000",
+      "AED 1,000,000",
+      "AED 1,500,000"
+     ],
+     "key_values": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+     ],
+     "reference": {
+      "A": "AED 1,500,000",
+      "B": "AED 1,000,000",
+      "C": "AED 500,000",
+      "D": "AED 250,000",
+      "E": "AED 250,000",
+      "F": "AED 250,000"
+     },
+     "key_labels": {
+      "A": "GN+ column",
+      "B": "GN column",
+      "C": "RN column",
+      "D": "RN2 column",
+      "E": "RN3 column",
+      "F": "PCP-RN3 column"
+     }
+    },
+    {
+     "component_id": "f_nationality",
+     "family": "nationality",
+     "option_dim": "nationality_group",
+     "options": [
+      "ISC",
+      "PHL",
+      "LEVANT_EGY",
+      "OTHER"
+     ],
+     "reference": "OTHER"
+    },
+    {
+     "component_id": "f_tpa",
+     "family": "tpa",
+     "options": [
+      "NAS",
+      "NEXTCARE",
+      "MEDNET"
+     ],
+     "reference": "NAS"
+    }
+   ],
+   "riders": [
+    {
+     "component_id": "m_dental",
+     "family": "module_dental",
+     "key_dim": "plan",
+     "options": [
+      "AED 1,000",
+      "AED 2,000",
+      "AED 2,500",
+      "AED 3,000",
+      "AED 3,500",
+      "AED 5,000",
+      "AED 7,500",
+      "AED 10,000"
+     ],
+     "key_values": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+     ],
+     "unit": "PER_MEMBER",
+     "mode": "ADD",
+     "key_labels": {
+      "A": "Plan 1 column",
+      "B": "Plan 2 column",
+      "C": "Plan 3 column",
+      "D": "Plan 4-6 column",
+      "E": "Plan 4-6 column",
+      "F": "Plan 4-6 column"
+     }
+    },
+    {
+     "component_id": "m_optical",
+     "family": "module_optical",
+     "key_dim": "plan",
+     "options": [
+      "AED 300",
+      "AED 500",
+      "AED 750",
+      "AED 1,000",
+      "AED 1,500",
+      "AED 2,000",
+      "AED 2,500"
+     ],
+     "key_values": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+     ],
+     "unit": "PER_MEMBER",
+     "mode": "ADD",
+     "key_labels": {
+      "A": "Plan 1 column",
+      "B": "Plan 2 column",
+      "C": "Plan 3 column",
+      "D": "Plan 4-6 column",
+      "E": "Plan 4-6 column",
+      "F": "Plan 4-6 column"
+     }
+    },
+    {
+     "component_id": "m_maternity",
+     "family": "module_maternity",
+     "key_dim": "plan",
+     "options": [
+      "AED 10,000",
+      "AED 15,000",
+      "AED 20,000",
+      "AED 25,000"
+     ],
+     "key_values": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+     ],
+     "unit": "PER_ELIGIBLE_FEMALE",
+     "mode": "ADD",
+     "key_labels": {
+      "A": "GN+ column",
+      "B": "GN column",
+      "C": "RNE column",
+      "D": "RN column",
+      "E": "RN2 column",
+      "F": "RN3/PCP column"
+     }
+    }
+   ],
+   "plan_defaults": [
+    "copay_op_diag",
+    "copay_ip",
+    "ded_consult",
+    "pharmacy_limit",
+    "copay_pharmacy",
+    "aml",
+    "module_dental",
+    "module_optical",
+    "module_maternity"
+   ],
+   "benefits": [
+    "aml",
+    "territory",
+    "days_abroad",
+    "pec_cover",
+    "pec_waiting",
+    "room_type",
+    "ip_copay",
+    "physio_sessions",
+    "companion_accom",
+    "consult_deductible",
+    "op_diag_copay",
+    "pharmacy_limit",
+    "pharmacy_copay",
+    "specialist_direct_access",
+    "gp_referral",
+    "telehealth",
+    "dental_limit",
+    "dental_copay",
+    "optical_limit",
+    "optical_copay",
+    "mat_ip_limit"
    ]
   },
   {
@@ -595,10 +963,11 @@
    "mandatory": true,
    "column_set": "MF",
    "copay_basis": {
+    "copay_ip": "NIL",
     "copay_op_diag": "0%",
-    "copay_ip": "Nil",
-    "pharmacy_limit": "AML (unlimited)",
-    "copay_pharmacy": "0%"
+    "copay_pharmacy": "0%",
+    "ded_consult": "20% up to AED 50",
+    "pharmacy_limit": "AML (unlimited)"
    },
    "blocks": [
     {
@@ -749,6 +1118,267 @@
      },
      "age_bands": "SME_AUH4"
     }
+   ],
+   "scope_id": "SME_AUH",
+   "factor_tables": [
+    {
+     "component_id": "f_copay_op_diag",
+     "family": "copay_op_diag",
+     "options": [
+      "0%",
+      "10%",
+      "20%",
+      "AED 10",
+      "AED 20",
+      "AED 50",
+      "AED 100",
+      "10% up to AED 50",
+      "20% up to AED 50"
+     ],
+     "reference": "0%"
+    },
+    {
+     "component_id": "f_copay_ip",
+     "family": "copay_ip",
+     "options": [
+      "0%",
+      "10%",
+      "20%",
+      "30%",
+      "NIL",
+      "AED 200 deductible with annual cap of AED 500"
+     ],
+     "reference": "NIL"
+    },
+    {
+     "component_id": "f_ded_consult",
+     "family": "ded_consult",
+     "options": [
+      "Nil",
+      "AED 20",
+      "AED 50",
+      "AED 100",
+      "20% up to AED 20",
+      "20% up to AED 50",
+      "20% up to AED 75",
+      "20% up to AED 100",
+      "10% up to 20",
+      "10% up to 50",
+      "10% up to 75",
+      "10% up to 100",
+      "10%"
+     ],
+     "reference": "20% up to AED 50"
+    },
+    {
+     "component_id": "f_pharmacy_limit",
+     "family": "pharmacy_limit",
+     "options": [
+      "AML (unlimited)",
+      "AED 5,000",
+      "AED 7,000"
+     ],
+     "reference": "AML (unlimited)"
+    },
+    {
+     "component_id": "f_copay_pharmacy",
+     "family": "copay_pharmacy",
+     "options": [
+      "0%",
+      "10%",
+      "20%",
+      "30%"
+     ],
+     "reference": "0%"
+    },
+    {
+     "component_id": "f_aml",
+     "family": "aml",
+     "key_dim": "plan",
+     "options": [
+      "AED 150,000",
+      "AED 250,000",
+      "AED 500,000",
+      "AED 1,000,000",
+      "AED 1,500,000"
+     ],
+     "key_values": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+     ],
+     "reference": {
+      "A": "AED 1,500,000",
+      "B": "AED 1,000,000",
+      "C": "AED 500,000",
+      "D": "AED 250,000",
+      "E": "AED 250,000",
+      "F": "AED 250,000"
+     },
+     "key_labels": {
+      "A": "GN+ column",
+      "B": "GN column",
+      "C": "RN column",
+      "D": "RN2 column",
+      "E": "RN3 column",
+      "F": "PCP-RN3 column"
+     }
+    },
+    {
+     "component_id": "f_nationality",
+     "family": "nationality",
+     "option_dim": "nationality_group",
+     "options": [
+      "ISC",
+      "PHL",
+      "LEVANT_EGY",
+      "OTHER"
+     ],
+     "reference": "OTHER"
+    },
+    {
+     "component_id": "f_tpa",
+     "family": "tpa",
+     "options": [
+      "NAS",
+      "NEXTCARE",
+      "MEDNET"
+     ],
+     "reference": "NAS"
+    }
+   ],
+   "riders": [
+    {
+     "component_id": "m_dental",
+     "family": "module_dental",
+     "key_dim": "plan",
+     "options": [
+      "AED 1,000",
+      "AED 2,000",
+      "AED 2,500",
+      "AED 3,000",
+      "AED 3,500",
+      "AED 5,000",
+      "AED 7,500",
+      "AED 10,000"
+     ],
+     "key_values": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+     ],
+     "unit": "PER_MEMBER",
+     "mode": "ADD",
+     "key_labels": {
+      "A": "Plan 1 column",
+      "B": "Plan 2 column",
+      "C": "Plan 3 column",
+      "D": "Plan 4-6 column",
+      "E": "Plan 4-6 column",
+      "F": "Plan 4-6 column"
+     }
+    },
+    {
+     "component_id": "m_optical",
+     "family": "module_optical",
+     "key_dim": "plan",
+     "options": [
+      "AED 300",
+      "AED 500",
+      "AED 750",
+      "AED 1,000",
+      "AED 1,500",
+      "AED 2,000",
+      "AED 2,500"
+     ],
+     "key_values": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+     ],
+     "unit": "PER_MEMBER",
+     "mode": "ADD",
+     "key_labels": {
+      "A": "Plan 1 column",
+      "B": "Plan 2 column",
+      "C": "Plan 3 column",
+      "D": "Plan 4-6 column",
+      "E": "Plan 4-6 column",
+      "F": "Plan 4-6 column"
+     }
+    },
+    {
+     "component_id": "m_maternity",
+     "family": "module_maternity",
+     "key_dim": "plan",
+     "options": [
+      "AED 10,000",
+      "AED 15,000",
+      "AED 20,000",
+      "AED 25,000"
+     ],
+     "key_values": [
+      "A",
+      "B",
+      "C",
+      "D",
+      "E",
+      "F"
+     ],
+     "unit": "PER_ELIGIBLE_FEMALE",
+     "mode": "ADD",
+     "key_labels": {
+      "A": "GN+ column",
+      "B": "GN column",
+      "C": "RNE column",
+      "D": "RN column",
+      "E": "RN2 column",
+      "F": "RN3/PCP column"
+     }
+    }
+   ],
+   "plan_defaults": [
+    "copay_op_diag",
+    "copay_ip",
+    "ded_consult",
+    "pharmacy_limit",
+    "copay_pharmacy",
+    "aml",
+    "module_dental",
+    "module_optical",
+    "module_maternity"
+   ],
+   "benefits": [
+    "aml",
+    "territory",
+    "days_abroad",
+    "pec_cover",
+    "pec_waiting",
+    "room_type",
+    "ip_copay",
+    "physio_sessions",
+    "companion_accom",
+    "consult_deductible",
+    "op_diag_copay",
+    "pharmacy_limit",
+    "pharmacy_copay",
+    "specialist_direct_access",
+    "gp_referral",
+    "telehealth",
+    "dental_limit",
+    "dental_copay",
+    "optical_limit",
+    "optical_copay",
+    "mat_ip_limit"
    ]
   },
   {
@@ -817,6 +1447,21 @@
       }
      ]
     }
+   ],
+   "scope_id": "BASIC_AUH",
+   "premium_basis": "GROSS",
+   "benefits": [
+    "aml",
+    "territory",
+    "pec_cover",
+    "room_type",
+    "ip_copay",
+    "consult_deductible",
+    "op_diag_copay",
+    "pharmacy_limit",
+    "pharmacy_copay",
+    "mat_ip_limit",
+    "dental_limit"
    ]
   },
   {
@@ -926,6 +1571,37 @@
       }
      ]
     }
+   ],
+   "scope_id": "NE",
+   "benefits": [
+    "aml",
+    "ip_sublimit",
+    "ip_per_admission_limit",
+    "op_sublimit",
+    "territory",
+    "room_type",
+    "ip_copay",
+    "consult_deductible",
+    "op_diag_copay",
+    "physio_sessions",
+    "physio_copay",
+    "pharmacy_limit",
+    "pharmacy_copay",
+    "pharmacy_formulary",
+    "pec_cover",
+    "pec_waiting",
+    "gp_referral",
+    "telehealth",
+    "reimb_out_network",
+    "mat_ip_limit",
+    "dental_limit",
+    "cancer_psp",
+    "hiv",
+    "hepatitis",
+    "vaccinations",
+    "work_injury",
+    "emergency_vision_hearing",
+    "newborn_days"
    ]
   }
  ],
@@ -952,5 +1628,32 @@
   "F7",
   "F8"
  ],
- "pending": []
+ "pending": [],
+ "cedant_workbook": {
+  "catalogue_id": "UFIC_EXPIRING_2026",
+  "version": "V10 14.1",
+  "spare_rows": 15,
+  "notes": [
+   "Source: the cedant's product catalogue V10 14.1. Enter values in a copy under runs\\<RunID>\\ only.",
+   "Individual DXB-NE (NC / NAS / Mednet): no factor tables for now (owner, 25 Oct 2026: Factors-Individual switched off pending clarity). Enter the base at OP diagnostic 0%, consultation '20% up to AED 50 (standard)', pharmacy 0%, network Option 1, before any TPA or nationality factor.",
+   "Individual DXB-NE Aafiya (F3): Nil base; the Aafiya 10% / 20% co-pay blocks are flat multipliers of the Nil rate (table f_aafiya_copay).",
+   "Individual AUH: Nil block = base. The 10% / 20% blocks are flat multipliers per TPA source table (NC & Mednet share theirs: enter it on both keys). F2: enter the NC / Mednet and NAS multipliers with the 10% and 20% labels swapped (10% gives the smaller discount, as Aafiya). F6: NAS 20% uses the derived multiplier, not the 13 erroneous source cells.",
+   "SME (Factors-SME): AML factor by network column with 1.0 at AED 1.5m (GN+), 1m (GN), 500k (RN), 250k (RN2 / RN3 / PCP-RN3); the plan letter selects the column (Key on shows it). Consultation deductible, OP diagnostic, pharmacy limit and pharmacy co-pay from Factors-SME. IP / day-case: 0% / 10% / 20% / 30% on both emirates; the NIL / AED 200 deductible rows are Abu Dhabi only (one family). Maternity columns per the provisional shift (SPEC §12): plan C = RNE, D = RN, E = RN2, F = RN3/PCP; the 'Annual Limit' row is not entered. Dental / optical: plans D-F take the 'Plan 4-6' column.",
+   "Nationality groups (SME): ISC = India / Bangladesh / Pakistan; PHL = Philippines; LEVANT_EGY = Egypt, Jordan, Syria, Palestine, Lebanon; OTHER = all others.",
+   "F4: consultation deductible '10% flat' is entered as in the source (flagged).",
+   "AUH Basic: GROSS basis (F7); the rate table before loadings."
+  ],
+  "provisional": [
+   "SME maternity column shift (plan C = RNE, D = RN, E = RN2, F = RN3/PCP) and the 'Annual Limit' row - to confirm with the cedant (HANDOVER item 2)"
+  ],
+  "decided": [
+   "Owner 25 Oct 2026: Factors-Individual (OP diagnostic co-pay, consultation deductible, pharmacy co-pay, network option, nationality, TPA) switched off for every Individual DXB-NE TPA until clarified; Aafiya DXB-NE keeps only its co-pay block factors (F3).",
+   "Owner 25 Oct 2026: a reference row that is not 1.0 is a warning; the value is kept as entered.",
+   "Owner 25 Oct 2026: no Individual maternity rider; every Individual TPA block is priced M/SF and Married-F, the Married-F rate including the maternity load (SPEC §8.4 corrected: DXB-NE Individual was M/F).",
+   "Owner 25 Oct 2026: SME has its own consultation deductible table (Factors-SME); Individual has none.",
+   "Owner 25 Oct 2026: SME IP / day-case co-pay is one family: 0-30% on both emirates, NIL / AED 200 deductible rows Abu Dhabi only.",
+   "Owner 25 Oct 2026: the AML-by-network table is SME's (Individual AML is fixed by the ToB); references confirmed per column.",
+   "Owner 25 Oct 2026: SME network options (Option 2 on plans B / C, 'GN excl. named hospitals' on plan B) switched off for now."
+  ]
+ }
 }

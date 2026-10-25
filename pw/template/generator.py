@@ -171,69 +171,7 @@ def generate_template(spec: dict, out_path: Path, expiring=None) -> GeneratedTem
     ws_meta = wb.add_worksheet(META_SHEET)
 
     # ---- rate sheets
-    er_pos = {}
-    er_row = TITLE_ROWS
-    for rs in lay.rate_sheets:
-        ws = rate_ws[rs["sheet"]]
-        sh = rs["spec"]
-        ws.write(0, 0, sh.get("title") or rs["sheet"], f.title)
-        basis = ", ".join(f"{k} = {v}" for k, v in sorted((sh.get("copay_basis") or {}).items()))
-        ws.write(1, 0, f"Base rates only ({nspec['currency']}, {nspec['premium_basis']} basis, annual per member). "
-                       f"Reference options: {basis or 'as per Factor Tables'}. Fill the yellow cells.", f.sub)
-        ws.set_column(0, 0, 16)
-        ws.set_column(1, 1, 14)
-        maxc = LABEL_COLS
-        for bl in rs["blocks"]:
-            b = bl["block"]
-            r0 = bl["origin_row"]
-            title = f"{b['label']} - {sh['product_type']} {sh.get('rating_region') or ''}".strip()
-            if b.get("comment"):
-                title += f"  [{b['comment']}]"
-            ws.write(r0, 0, title, f.block)
-            ws.write(r0 + 1, 0, "Section", f.hdr)
-            ws.write(r0 + 1, 1, "Age band", f.hdr)
-            ws.write(r0 + 2, 0, "", f.hdr)
-            ws.write(r0 + 2, 1, "", f.hdr)
-            for pi, p in enumerate(b["plans"]):
-                c0 = LABEL_COLS + pi * bl["ncols"]
-                lab = p["label"] + (f" ({p['network']})" if p.get("network") else "")
-                if bl["ncols"] > 1:
-                    ws.merge_range(r0 + 1, c0, r0 + 1, c0 + bl["ncols"] - 1, lab, f.hdr)
-                else:
-                    ws.write(r0 + 1, c0, lab, f.hdr)
-                for ci, col in enumerate(b["columns"]):
-                    ws.write(r0 + 2, c0 + ci, col["label"], f.hdr)
-            for ri, row in enumerate(b["rows"]):
-                ws.write(bl["data_row"] + ri, 0, row.get("section") or "", f.lab)
-                ws.write(bl["data_row"] + ri, 1, row["label"] + (" *" if row.get("placeholder") else ""), f.lab)
-            maxc = max(maxc, LABEL_COLS + len(b["plans"]) * bl["ncols"])
-            last_r = bl["data_row"] + len(b["rows"]) - 1
-            last_c = LABEL_COLS + len(b["plans"]) * bl["ncols"] - 1
-            ws.data_validation(bl["data_row"], LABEL_COLS, last_r, last_c,
-                               {"validate": "decimal", "criteria": ">", "value": 0, "ignore_blank": True,
-                                "error_title": "Rate", "error_message": "Enter a rate greater than 0."})
-            er_pos[b["block_id"]] = er_row + (bl["data_row"] - bl["origin_row"])
-            if opts.get("outlier_shading") and ws_er is not None and expiring is not None:
-                lo, hi = opts["outlier_band"]
-                tl = a1(er_pos[b["block_id"]] + 1, LABEL_COLS + 1)
-                ws.conditional_format(bl["data_row"], LABEL_COLS, last_r, last_c,
-                                      {"type": "formula", "format": f.outlier,
-                                       "criteria": f"=AND(ISNUMBER({a1(bl['data_row'] + 1, LABEL_COLS + 1)}),"
-                                                   f"ISNUMBER('Existing Rates'!{tl}),"
-                                                   f"OR({a1(bl['data_row'] + 1, LABEL_COLS + 1)}/'Existing Rates'!{tl}<{lo},"
-                                                   f"{a1(bl['data_row'] + 1, LABEL_COLS + 1)}/'Existing Rates'!{tl}>{hi}))"})
-            er_row += (bl["data_row"] - bl["origin_row"]) + len(b["rows"]) + BLOCK_GAP
-        ws.set_column(LABEL_COLS, maxc, 12)
-        if protect:
-            ws.protect("", {"format_columns": True, "format_rows": True, "select_locked_cells": True,
-                            "select_unlocked_cells": True})
-    for c in lay.cells:
-        ws = rate_ws[c.sheet]
-        if c.refer:
-            b = next(bl["block"] for rs in lay.rate_sheets for bl in rs["blocks"] if bl["block"]["block_id"] == c.block_id)
-            ws.write_string(c.row, c.col, b["refer_text"], f.refer)
-        else:
-            ws.write_blank(c.row, c.col, None, f.inp)
+    er_pos = write_rate_sheets(wb, f, lay, nspec, rate_ws, protect, ws_er=ws_er, expiring=expiring)
 
     # ---- existing rates
     v2 = None
@@ -321,8 +259,24 @@ def generate_template(spec: dict, out_path: Path, expiring=None) -> GeneratedTem
         ws_cover.protect()
 
     # ---- _KEYS / _META
-    ws_keys.write_row(0, 0, KEYS_HEADER)
     krows = lay.keys_rows()
+    allc = [r for r in krows if r[1] != "REFER"]
+    refer_c = [r for r in krows if r[1] == "REFER"]
+    meta = [("tender_id", nspec["tender_id"]), ("cedant", nspec["cedant"]), ("structure_hash", shash),
+            ("spec_hash", sphash), ("template_spec_version", nspec["template_spec_version"]),
+            ("generator_version", GENERATOR_VERSION), ("issue_date", nspec.get("issue_date") or ""),
+            ("currency", nspec["currency"]), ("premium_basis", nspec["premium_basis"]),
+            ("allow_proposed_multipliers", str(opts["allow_proposed_multipliers"])),
+            ("n_inputs", str(len(allc))), ("n_refer", str(len(refer_c)))]
+    write_keys_meta(ws_keys, ws_meta, krows, meta, protect)
+    wb.close()
+    return GeneratedTemplate(path=out_path, structure_hash=shash, spec_hash=sphash, n_inputs=len(allc),
+                             n_refer=len(refer_c), layout=lay)
+
+
+def write_keys_meta(ws_keys, ws_meta, krows: list, meta: list, protect: bool):
+    """Hidden _KEYS (one row per input cell with its live reference formula) and _META (SPEC §8.2)."""
+    ws_keys.write_row(0, 0, KEYS_HEADER)
     for i, (ckey, kind, mand, kj, sheet, addr) in enumerate(krows):
         ws_keys.write_string(1 + i, 0, ckey)
         rr, cc = parse_a1(addr)
@@ -332,15 +286,7 @@ def generate_template(spec: dict, out_path: Path, expiring=None) -> GeneratedTem
         ws_keys.write_string(1 + i, 4, kj)
         ws_keys.write_string(1 + i, 5, sheet)
         ws_keys.write_string(1 + i, 6, addr)
-    allc = [r for r in krows if r[1] != "REFER"]
-    refer_c = [r for r in krows if r[1] == "REFER"]
     ws_keys.hide()
-    meta = [("tender_id", nspec["tender_id"]), ("cedant", nspec["cedant"]), ("structure_hash", shash),
-            ("spec_hash", sphash), ("template_spec_version", nspec["template_spec_version"]),
-            ("generator_version", GENERATOR_VERSION), ("issue_date", nspec.get("issue_date") or ""),
-            ("currency", nspec["currency"]), ("premium_basis", nspec["premium_basis"]),
-            ("allow_proposed_multipliers", str(opts["allow_proposed_multipliers"])),
-            ("n_inputs", str(len(allc))), ("n_refer", str(len(refer_c)))]
     ws_meta.write_row(0, 0, ["key", "value"])
     for i, (k, v) in enumerate(meta):
         ws_meta.write_string(1 + i, 0, k)
@@ -349,9 +295,84 @@ def generate_template(spec: dict, out_path: Path, expiring=None) -> GeneratedTem
     if protect:
         ws_keys.protect()
         ws_meta.protect()
-    wb.close()
-    return GeneratedTemplate(path=out_path, structure_hash=shash, spec_hash=sphash, n_inputs=len(allc),
-                             n_refer=len(refer_c), layout=lay)
+
+
+def default_rate_subtitle(sh: dict, nspec: dict) -> str:
+    basis = ", ".join(f"{k} = {v}" for k, v in sorted((sh.get("copay_basis") or {}).items()))
+    return (f"Base rates only ({nspec['currency']}, {nspec['premium_basis']} basis, annual per member). "
+            f"Reference options: {basis or 'as per Factor Tables'}. Fill the yellow cells.")
+
+
+def write_rate_sheets(wb, f, lay: Layout, nspec: dict, rate_ws: dict, protect: bool, subtitle=None, ws_er=None,
+                      expiring=None) -> dict:
+    """Rate sheets (shared by the tender template and the cedant workbook, SPEC §8.2 / §8.5): one block per
+    product x rating region x TPA, yellow keyed input cells, numeric validation, REFER cells. Returns the Existing
+    Rates row position per block (tender template)."""
+    opts = nspec["options"]
+    subtitle = subtitle or default_rate_subtitle
+    er_pos = {}
+    er_row = TITLE_ROWS
+    for rs in lay.rate_sheets:
+        ws = rate_ws[rs["sheet"]]
+        sh = rs["spec"]
+        ws.write(0, 0, sh.get("title") or rs["sheet"], f.title)
+        ws.write(1, 0, subtitle(sh, nspec), f.sub)
+        ws.set_column(0, 0, 16)
+        ws.set_column(1, 1, 14)
+        maxc = LABEL_COLS
+        for bl in rs["blocks"]:
+            b = bl["block"]
+            r0 = bl["origin_row"]
+            title = f"{b['label']} - {sh['product_type']} {sh.get('rating_region') or ''}".strip()
+            if b.get("comment"):
+                title += f"  [{b['comment']}]"
+            ws.write(r0, 0, title, f.block)
+            ws.write(r0 + 1, 0, "Section", f.hdr)
+            ws.write(r0 + 1, 1, "Age band", f.hdr)
+            ws.write(r0 + 2, 0, "", f.hdr)
+            ws.write(r0 + 2, 1, "", f.hdr)
+            for pi, p in enumerate(b["plans"]):
+                c0 = LABEL_COLS + pi * bl["ncols"]
+                lab = p["label"] + (f" ({p['network']})" if p.get("network") else "")
+                if bl["ncols"] > 1:
+                    ws.merge_range(r0 + 1, c0, r0 + 1, c0 + bl["ncols"] - 1, lab, f.hdr)
+                else:
+                    ws.write(r0 + 1, c0, lab, f.hdr)
+                for ci, col in enumerate(b["columns"]):
+                    ws.write(r0 + 2, c0 + ci, col["label"], f.hdr)
+            for ri, row in enumerate(b["rows"]):
+                ws.write(bl["data_row"] + ri, 0, row.get("section") or "", f.lab)
+                ws.write(bl["data_row"] + ri, 1, row["label"] + (" *" if row.get("placeholder") else ""), f.lab)
+            maxc = max(maxc, LABEL_COLS + len(b["plans"]) * bl["ncols"])
+            last_r = bl["data_row"] + len(b["rows"]) - 1
+            last_c = LABEL_COLS + len(b["plans"]) * bl["ncols"] - 1
+            ws.data_validation(bl["data_row"], LABEL_COLS, last_r, last_c,
+                               {"validate": "decimal", "criteria": ">", "value": 0, "ignore_blank": True,
+                                "error_title": "Rate", "error_message": "Enter a rate greater than 0."})
+            er_pos[b["block_id"]] = er_row + (bl["data_row"] - bl["origin_row"])
+            if opts.get("outlier_shading") and ws_er is not None and expiring is not None:
+                lo, hi = opts["outlier_band"]
+                tl = a1(er_pos[b["block_id"]] + 1, LABEL_COLS + 1)
+                ws.conditional_format(bl["data_row"], LABEL_COLS, last_r, last_c,
+                                      {"type": "formula", "format": f.outlier,
+                                       "criteria": f"=AND(ISNUMBER({a1(bl['data_row'] + 1, LABEL_COLS + 1)}),"
+                                                   f"ISNUMBER('Existing Rates'!{tl}),"
+                                                   f"OR({a1(bl['data_row'] + 1, LABEL_COLS + 1)}/'Existing Rates'!{tl}<{lo},"
+                                                   f"{a1(bl['data_row'] + 1, LABEL_COLS + 1)}/'Existing Rates'!{tl}>{hi}))"})
+            er_row += (bl["data_row"] - bl["origin_row"]) + len(b["rows"]) + BLOCK_GAP
+        ws.set_column(LABEL_COLS, maxc, 12)
+        if protect:
+            ws.protect("", {"format_columns": True, "format_rows": True, "select_locked_cells": True,
+                            "select_unlocked_cells": True})
+    for c in lay.cells:
+        ws = rate_ws[c.sheet]
+        if c.refer:
+            b = next(bl["block"] for rs in lay.rate_sheets for bl in rs["blocks"] if bl["block"]["block_id"] == c.block_id)
+            ws.write_string(c.row, c.col, b["refer_text"], f.refer)
+        else:
+            ws.write_blank(c.row, c.col, None, f.inp)
+
+    return er_pos
 
 
 # ------------------------------------------------------------------------------------------------------------------
