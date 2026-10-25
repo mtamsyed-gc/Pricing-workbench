@@ -12,6 +12,7 @@ from pw.template.parser import fill_template, parse_submission, to_catalogue
 from pw.template.spec import load_template_spec, normalise
 
 EX = REPO / "examples" / "ufic_2027"
+REQUIRES = ("examples/ufic_2027",)          # repo only: not shipped in a release zip
 
 
 def _check(ns, expected):

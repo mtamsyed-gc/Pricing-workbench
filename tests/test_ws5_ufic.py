@@ -14,6 +14,7 @@ from pw.template.parser import fill_template, synthetic_value
 from pw.template.spec import cedant_model, load_template_spec, spec_hash
 
 EX = REPO / "examples" / "ufic_2027"
+REQUIRES = ("examples/ufic_2027",)          # repo only: not shipped in a release zip
 
 
 def _spec():

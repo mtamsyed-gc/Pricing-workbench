@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (WS5 cedant rate workbook merged to main, PR #9 @ de85828, laptop check PASS (provisional, personal laptop) @ 21003ca; owner decisions on WS5 items 7–12 applied, SPEC §8.4 corrected: Individual M/SF + Married-F).
+Last updated: 2026-10-25 (WS4 integration and release 0.2.0 on branch ws4-integration, PR open, laptop check PENDING; before that: WS5 merged PR #9, OD2 PR #11, OD3 PR #12).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -12,7 +12,9 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | docs/CHANGE_REQUESTS.md | Contract change requests (all decided; CR #17 = work order WS7) |
 | docs/workorders/WS1–WS7 | Work orders (WS5: cedant rate workbook, PR open; WS7: structured benefit proposals, CR #17) |
 | docs/cedant_workbook_guide.md | WS5 fill guide for GC: what goes where, Nil-base rule, TPA basis, source flags, gate |
-| tools/laptop_check.py | SPEC §13 laptop acceptance: run `py tools\laptop_check.py` on the laptop after every change |
+| tools/laptop_check.py | SPEC §13 laptop acceptance: run `py tools\laptop_check.py` on the laptop after every change; since WS4 also the release gate (end-to-end `run` twice, byte-identical), runnable from the installed release zip |
+| docs/INSTALL.md | WS4: release contents, versioning, install on a GC laptop, running a tender end to end |
+| contracts/treaty_feed_contract.json | WS4: TreatyFeed / OptionTerms columns and types checked on every run; treatymodel 2.0 findings and gaps G1–G4 (CR #23) |
 | reference/ufic/UFIC_Medical_Reinsurance_Reference.md | TEMPORARY GC material: UFIC catalogue V10 14.1 reference (ToB, factors, rate-table structure, UW rules). Structure only — see CLAUDE.md data boundary |
 | requirements-native.txt | Runtime pins (same as ete-dashboard) |
 
@@ -39,9 +41,33 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | OD1 | Owner decisions on HANDOVER items 1–21 (SPEC v0.4; UFIC example; riders; B2 split; B1; V5; scorecard; benchmark) | Merged to main (PR #7, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 32e7a31; GC work laptop run outstanding | Done |
 | WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Merged to main (PR #9, 25 Oct) | **PASS (25 Oct, provisional)** — functional PASS on owner's personal laptop @ 21003ca (Win 11, Py 3.14.6): suite 112/112, every tool check, UFIC cedant + reinsurer workbooks and the fixture cedant workbook open in Excel; only environment lines fail (Py 3.14 not 3.12, unpinned packages). GC work laptop run outstanding | GC fills the UFIC cedant workbook in `runs\`, `t cedant-read` to PASS, then `t generate --expiring` and issue (UFIC deadline 5 Nov) |
 | WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC (open item 4); items 15–17 decided 24 Oct (OD1) |
-| WS4 | Integration, release | Ready (WS1–WS3, OD1, WS5 merged) — **next** | — | docs/workorders/WS4.md |
+| WS4 | Integration, release: `pw run` end to end, manifest gates, treaty contract check, release zip 0.2.0, laptop check as release gate | Branch ws4-integration, PR open | **PENDING** — from the installed release zip: `py tools\package.py` then unzip and `RUN_LAPTOP_CHECK.bat` (or `py tools\laptop_check.py` in `pricing-workbench-0.2.0\`) | Owner: laptop check from the release zip; decide CR #23 (treaty tool gaps) and the version number |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
+
+### WS4 notes for the next sessions
+- `pw/pipeline.py` `run_all` (CLI `run <run_config.json> [--runs-root] [--hashes]`): catalogue specs (V1 on the expiring,
+  the benchmark's market catalogue specs and `gates.v1_catalogues`; a read-back catalogue.json is NOT_APPLICABLE) and
+  V2 → exposure (V0, coverage gate, `gates.coverage_threshold` default 0.95) → V3 (report) → V4 on each issued template
+  spec (`gates.v4`, default on) → T ingest + V5 per `submissions[]` (option_id, owner, file, template_spec, issued) →
+  `run_b2` (B1, B2, TreatyFeed, OptionTerms; reuses the gated exposure) → treaty contract check → benchmark → scorecard.
+- The run owns and clears `run_manifest.json, options.json, options/, gates/, out/, v4/` in the run folder at the start
+  (anything else, e.g. a cedant read-back expiring.json, is kept). Manifest: `versions`, `inputs.files` (sha256 of
+  every file the config names, paths as written in it, plus each spec's source workbook), `gates` (V0, V1 per
+  catalogue, V2, V3, V4, V5 per option, COVERAGE, TREATY_CONTRACT), `run` (status COMPLETE / STOPPED, steps, error).
+  Gate details in `gates/`. A stopping gate (V0, V1, coverage, V4, treaty contract) ends the run, exit code 2.
+- Byte-identical on a second run (different run roots too), tested in `tests/test_ws4_run.py` and in the laptop check.
+- `run_b2(cfg, runs_root, exposure=None, coverage=None)`: optional pre-built exposure / coverage (no behaviour change).
+- Treaty tool: `pw/treaty_contract.py` checks TreatyFeed / OptionTerms (Parquet + Excel view) against
+  `contracts/treaty_feed_contract.json` (SPEC §7 columns, types, nulls, finiteness, keys) and warns beyond the tool's
+  slots (8 books, 6 reinsurers). Compared with treatymodel 2.0 (PBM, project sync source): gaps G1–G4, CR #23 pending.
+- Release: version `pw.__version__` = 0.2.0 (single source). `tools/package.py` writes RELEASE.json + COMMIT.txt into
+  `pricing-workbench-<version>/` and RUN_LAPTOP_CHECK.bat (finds the folder by pattern) at the root, in both modes.
+  Release excludes reference/, examples/ufic_2027/, runs/, out/ (tests/test_boundary.py, tests/test_release.py).
+- Tests that need repo-only content carry `REQUIRES = (...)` (module) or `@requires(...)` (tests/_util.py). In an
+  installed release (RELEASE.json at the root) they are SKIPPED and listed; in a clone a missing path FAILS. The
+  laptop check from a release reports the cedant-example tool checks as SKIP and checks the release contents.
+- Run config `fixtures/RUN_SYN/run_config.json` gained `submissions` and `gates` (built by tools/build_fixtures.py).
 
 ### WS5 notes for the next sessions
 - `pw/template/cedant.py`: `generate_cedant_workbook` (`t cedant`), `read_cedant` / `read_cedant_workbook` (`t cedant-read`,
@@ -176,6 +202,11 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
 12. WS5 — DECIDED (owner, 25 Oct): the AML-by-network table is SME's (references 1.5m / 1m / 500k / 250k per column,
     confirmed); Individual AML is fixed by the ToB. SME network options (Option 2, "GN excl. named hospitals") switched
     off for now — closes item 3 as "off". Note: reference/ §3.2 labels that AML table as Individual; it is SME's.
+
+13. WS4 — CR #23 (pending): treatymodel 2.0 takes fractions, one premium change per scenario plus per-book volume,
+    structured reinsurer terms and per-book shares; TreatyFeed is in percent per book and OptionTerms is free text.
+    Decide whether to add a `TreatyPaste` view and a structured terms input (proposal in CR #23).
+14. WS4 — release version 0.2.0 proposed (first integrated release; 0.1.0-ws0 before). Owner to confirm.
 
 ## Timeline driver
 UFIC reinsurer submissions due 5 Nov 2026. Priority order: UFIC data (WS5 merged: GC fills the

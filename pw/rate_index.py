@@ -272,6 +272,7 @@ def load_run_config(path) -> dict:
     p = Path(path).resolve()
     cfg = json.loads(p.read_text(encoding="utf-8"))
     cfg["_base"] = str(p.parent)
+    cfg["_file"] = p.name
     return cfg
 
 
@@ -332,9 +333,10 @@ def run_benefit(cfg: dict, runs_root=None, exposure=None):
     return bd, bf
 
 
-def run_b2(cfg: dict, runs_root=None) -> dict:
+def run_b2(cfg: dict, runs_root=None, exposure=None, coverage=None) -> dict:
     """Exposure (V0 + coverage report) -> B1 level 1 -> RateFactors / RateIndex (+ sensitivities) -> TreatyFeed ->
-    OptionTerms, written to runs/<RunID>/out with the manifest."""
+    OptionTerms, written to runs/<RunID>/out with the manifest. `exposure` / `coverage` may be passed in by the
+    end-to-end run (pw.pipeline) so the exposure is built and gated once."""
     import json
     from .benefit_value import plan_ratio
     from .exposure import build_exposure, coverage_report
@@ -348,11 +350,11 @@ def run_b2(cfg: dict, runs_root=None) -> dict:
     ec = cfg["exposure"]
     if not ec.get("snapshot_date"):
         raise ProposalRequired("exposure.snapshot_date is required for the standard mix (lives in force, SPEC §5)")
-    ex = build_exposure(_path(cfg, ec["dim_life"]), _path(cfg, ec["maps"]),
-                        _path(cfg, ec["manifest"]) if ec.get("manifest") else None,
-                        contract_version=ec.get("contract_version"), snapshot_date=ec["snapshot_date"], strict=False)
+    ex = exposure if exposure is not None else build_exposure(
+        _path(cfg, ec["dim_life"]), _path(cfg, ec["maps"]), _path(cfg, ec["manifest"]) if ec.get("manifest") else None,
+        contract_version=ec.get("contract_version"), snapshot_date=ec["snapshot_date"], strict=False)
     eopts = {**(cfg.get("eval_options") or {}), **({"duckdb": cfg["duckdb"]} if cfg.get("duckdb") else {})}
-    cov = coverage_report(expiring, ex, eopts)
+    cov = coverage if coverage is not None else coverage_report(expiring, ex, eopts)
     bd, bf = run_benefit(cfg, runs_root, exposure=ex)
     rf, ri = run_index(expiring, opts, ex.cells, cfg.get("cuts"), plan_ratio(bf), eopts)
     out = rd / "out"

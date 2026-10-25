@@ -4,7 +4,7 @@ import json
 
 import numpy as np
 import pandas as pd
-from _util import REPO, raises, tmpdir
+from _util import REPO, raises, requires, tmpdir
 from openpyxl import load_workbook
 
 from pw import SpecError
@@ -62,6 +62,7 @@ def test_share_direction_cannot_be_reversed():
     assert directions({"SHARE": "HIGHER"})["SHARE"] == "HIGHER"
 
 
+@requires("examples/ufic_2027")
 def test_cedant_example_weights_file():
     w = json.loads((REPO / "examples" / "ufic_2027" / "scorecard_weights.json").read_text(encoding="utf-8"))["weights"]
     validate_weights(w)

@@ -1,7 +1,7 @@
 """Pricing Workbench core package (SPEC.md is the source of truth)."""
 from pathlib import Path
 
-__version__ = "0.1.0-ws0"
+__version__ = "0.2.0"
 
 PKG_DIR = Path(__file__).resolve().parent
 REPO_DIR = PKG_DIR.parent

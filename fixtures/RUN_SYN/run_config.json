@@ -21,6 +21,31 @@
    1.3
   ]
  },
+ "submissions": [
+  {
+   "option_id": "SUB_X",
+   "owner": "Reinsurer X",
+   "file": "../SUB_X/submission.xlsx",
+   "template_spec": "../T_ALPHA/template_spec.json",
+   "issued": "../T_ALPHA/template.xlsx"
+  },
+  {
+   "option_id": "SUB_Y",
+   "owner": "Reinsurer Y",
+   "file": "../SUB_Y/submission.xlsx",
+   "template_spec": "../T_ALPHA/template_spec.json",
+   "issued": "../T_ALPHA/template.xlsx"
+  }
+ ],
+ "gates": {
+  "v1_catalogues": [
+   "../CAT_BETA/spec.json",
+   "../CAT_DELTA/spec.json",
+   "../CAT_RETIREE/spec.json"
+  ],
+  "coverage_threshold": 0.95,
+  "v4": true
+ },
  "benefit_overrides": [],
  "benchmark": {
   "market_folders": [

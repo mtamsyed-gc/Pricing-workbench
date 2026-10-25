@@ -854,6 +854,11 @@ def build_run_syn(out: Path):
            "treaty": {"book_map": "treaty_book_map.csv", "experience": "experience.csv",
                       "lapse": {"BOOK_IND_GREEN": 0.06, "BOOK_IND_OTHER": 0.04}},
            "v5": {"outlier_band": [0.7, 1.3]},
+           "submissions": [{"option_id": o, "owner": f"Reinsurer {o[-1]}", "file": f"../{o}/submission.xlsx",
+                            "template_spec": "../T_ALPHA/template_spec.json", "issued": "../T_ALPHA/template.xlsx"}
+                           for o in ("SUB_X", "SUB_Y")],
+           "gates": {"v1_catalogues": ["../CAT_BETA/spec.json", "../CAT_DELTA/spec.json", "../CAT_RETIREE/spec.json"],
+                     "coverage_threshold": 0.95, "v4": True},
            "benefit_overrides": [],
            "benchmark": {"market_folders": ["../MARKET_SYN/intake"],
                          "market_catalogues": ["../CAT_GAMMA/spec.json", "../CAT_IPMI/spec.json"],

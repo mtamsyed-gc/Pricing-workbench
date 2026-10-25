@@ -59,5 +59,18 @@ def _match(row_v, cell_v):
     return row_v == cell_v
 
 
+RELEASE_ONLY_MISSING = ("examples/ufic_2027",)   # client-derived structure: in the repo, never in a release zip
+
+
+def requires(*rel_paths):
+    """Mark a test as needing repo-only content (e.g. the structure-only cedant example). In an installed release
+    (RELEASE.json at the root) such a test is reported SKIPPED when the content is absent; in a repo clone a missing
+    path is a failure (tests/run_all.py)."""
+    def deco(fn):
+        fn.requires = tuple(rel_paths)
+        return fn
+    return deco
+
+
 def load_json(p):
     return json.loads(Path(p).read_text(encoding="utf-8"))

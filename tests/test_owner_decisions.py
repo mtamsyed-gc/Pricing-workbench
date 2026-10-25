@@ -6,7 +6,7 @@ import json
 
 import numpy as np
 import pandas as pd
-from _util import FIX, REPO, catalogue, tmpdir
+from _util import FIX, REPO, catalogue, requires, tmpdir
 from openpyxl import load_workbook
 
 from pw.benefit_value import benefit_diff, module_values
@@ -56,6 +56,10 @@ def test_cover_states_tpa_basis_and_rider_mode():
         assert "BEFORE the TPA factor" in text and "a blank cell means not quoted" in text
         assert "submitted" in [c.value for c in wb["Add-ons"][4]] or any(
             c.value == "submitted" for row in wb["Add-ons"].iter_rows() for c in row)
+
+
+@requires("examples/ufic_2027")
+def test_cedant_example_quotes_riders():
     ufic = json.loads((REPO / "examples" / "ufic_2027" / "template_spec.json").read_text(encoding="utf-8"))
     assert ufic["reference_sheets"]["addons"] == "FILL"
 

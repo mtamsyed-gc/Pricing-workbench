@@ -1,0 +1,129 @@
+{
+ "contract": "workbench -> treaty tool scenario feed",
+ "target": "see treatymodel_version.txt",
+ "source": "SPEC §7 (TreatyFeed, OptionTerms) with CR #5-#7; units: premium_change_pct and lr_adjustment_pts in percent points",
+ "treatymodel_verified": false,
+ "treatymodel_note": "Compared on 25 Oct 2026 with treatymodel 2.0 (PBM treatymodel/spec.py and build.py, branch claude/inspiring-rubin-7ncppi). The treaty tool has no file import: scenario inputs are typed or pasted into its Scenarios library. Gaps G1-G4 below are open (CR #23); treatymodel_verified stays false until the owner decides them.",
+ "tables": {
+  "TreatyFeed": {
+   "key": [
+    "option_id",
+    "treaty_book"
+   ],
+   "columns": [
+    {
+     "name": "option_id",
+     "type": "string",
+     "nullable": false
+    },
+    {
+     "name": "treaty_book",
+     "type": "string",
+     "nullable": false
+    },
+    {
+     "name": "premium_change_pct",
+     "type": "float",
+     "nullable": false,
+     "finite": true
+    },
+    {
+     "name": "lr_adjustment_pts",
+     "type": "float",
+     "nullable": false,
+     "finite": true
+    },
+    {
+     "name": "basis_note",
+     "type": "string",
+     "nullable": false
+    }
+   ],
+   "extra_columns_allowed": [
+    "rate_factor",
+    "lapse",
+    "experience_lr",
+    "asif_lr"
+   ]
+  },
+  "OptionTerms": {
+   "key": [
+    "option_id"
+   ],
+   "columns": [
+    {
+     "name": "option_id",
+     "type": "string",
+     "nullable": false
+    },
+    {
+     "name": "reinsurer",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "share_by_book",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "premium_basis",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "commission",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "corridor",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "cap",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "profit_share",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "conditions",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "validity",
+     "type": "string",
+     "nullable": true
+    }
+   ],
+   "extra_columns_allowed": [
+    "comments"
+   ]
+  }
+ },
+ "treatymodel_findings": {
+  "inputs": {
+   "scenario_general": "prem_chg 'Premium change % (all books)' and lr_chg 'Loss ratio change (+/- pts, all books)': fractions (cell format +0.0%, 0.02 = +2 pts)",
+   "per_book": "volume 'Volume factor (x experience premium)' fraction, default 1.0; lr_adj 'LR adjustment (+/- pts)' fraction; er_ovr; ff_rate",
+   "per_reinsurer": "RI_TERMS: basis (Net/Gross premium), comm_type (None/Flat/Sliding), comm_flat, comm_max, comm_lr_max, comm_min, comm_lr_min, fee_rate, fee_base, corr_from, corr_to, cap, ps_type (Tiered/Margin share/None), ps_exp, ms_share, tiers t1-t4 (u, s, f), lr_basis, ps_base, lr_override; all percentages as fractions",
+   "share_matrix": "share of each book per reinsurer (fraction, total per book <= 100%)",
+   "slots": {
+    "books": 8,
+    "reinsurers": 6,
+    "scenarios": 12
+   }
+  },
+  "gaps": {
+   "G1_units": "TreatyFeed premium_change_pct and lr_adjustment_pts are in percent (CR #7); the tool takes fractions: divide by 100 on entry",
+   "G2_premium_change_level": "TreatyFeed gives a premium change per treaty book; the tool has one premium change per scenario (all books) and a per-book volume factor. Per-book entry would be volume = 1 + premium_change_pct / 100 (rate factor x (1 - lapse)): owner to confirm",
+   "G3_terms_structure": "OptionTerms carries the Terms sheet as free text; the tool needs structured terms (commission type and rates, corridor from / to, cap, profit share type and tiers) and a share per book. Numeric commission / profit share / corridor / cap / share exist only in terms_scores.csv (scorecard input)",
+   "G4_book_names": "treaty_book values (treaty_book_map.csv) must equal the tool's Setup book names; at most 8 books, 6 reinsurers (options) and 12 scenarios per workbook"
+  }
+ }
+}
