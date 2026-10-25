@@ -13,6 +13,10 @@
   "lapse": {
    "BOOK_IND_GREEN": 0.06,
    "BOOK_IND_OTHER": 0.04
+  },
+  "book_slots": {
+   "BOOK_IND_GREEN": 1,
+   "BOOK_IND_OTHER": 2
   }
  },
  "v5": {

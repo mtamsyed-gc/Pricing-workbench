@@ -244,6 +244,7 @@ def cmd_index(a):
     print(tot[["option_id", "lives", "index", "index_benefit_adj", "unpriced_share"]].to_string(index=False))
     if r["TreatyFeed"] is not None:
         print(r["TreatyFeed"][["option_id", "treaty_book", "premium_change_pct", "lr_adjustment_pts"]].to_string(index=False))
+        print(f"treaty tool scenarios: {r['dir'] / 'out' / 'TreatyScenarios.json'}")
 
 
 def cmd_benefit(a):

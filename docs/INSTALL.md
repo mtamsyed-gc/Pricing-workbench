@@ -38,7 +38,11 @@ their own, never in the repo; outputs go to `runs\<RunID>\` under the release fo
    `py tools\pw.py t cedant-read <filled.xlsx> --spec <template_spec.json> --out <run>\expiring.json` (must PASS).
 2. `py tools\pw.py t generate <template_spec.json> --expiring <run>\expiring.json --out <run>\Tender_Rates_<...>.xlsx`; issue it.
 3. Run config (template: `fixtures\RUN_SYN\run_config.json`): `expiring`, `exposure` (Merit dim_life, maps, manifest,
-   snapshot date), `submissions` (option_id, owner, file, template_spec, issued template), `treaty`, `v5`, `gates`,
+   snapshot date), `submissions` (option_id, owner, file, template_spec, issued template), `treaty` (book map, lapse,
+   experience, `book_slots`: treaty book -> treaty-tool slot 1-8), `v5`, `gates`,
    `benchmark`, `scorecard`; paths relative to the config.
 4. `py tools\pw.py run <run_config.json>`: every gate and every output in `runs\<RunID>\` (manifest:
    `run_manifest.json`, status COMPLETE or STOPPED with the gate that stopped it; exit code 2 when stopped).
+5. Treaty tool: `out\TreatyScenarios.json` holds one scenario per option in the tool's config schema (per-book volume
+   and LR adjustment); add the reinsurer terms and merge it into the tool's config, or type the values into its
+   Scenarios sheet.

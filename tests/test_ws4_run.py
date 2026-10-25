@@ -153,6 +153,73 @@ def test_treaty_feed_contract_check():
         assert any("Excel view" in p for p in check_treaty_outputs(d)["problems"])
 
 
+
+def test_treaty_scenarios_unit_and_gates():
+    """CR #23: TreatyFeed in the treaty tool's config schema (fractions, per-book volume / lr_adj by slot)."""
+    from _util import raises
+    from pw import MappingRequired, ProposalRequired, SpecError
+    from pw.rate_index import treaty_scenarios
+    tf = pd.DataFrame({"option_id": ["B", "A", "A"], "treaty_book": ["K1", "K2", "K1"],
+                       "premium_change_pct": [3.0, -2.5, 10.0], "lr_adjustment_pts": [-1.5, 2.0, -6.25]})
+    d = treaty_scenarios(tf, {"K1": 3, "K2": 1})
+    assert [x["name"] for x in d["scenarios"]] == ["A", "B"]
+    a = d["scenarios"][0]
+    assert a["prem_chg"] == 0.0 and a["lr_chg"] == 0.0 and "ri" not in a
+    assert a["books"]["volume"] == [0.975, 1.0, 1.1, 1.0, 1.0, 1.0, 1.0, 1.0]
+    assert a["books"]["lr_adj"] == [0.02, 0.0, -0.0625, 0.0, 0.0, 0.0, 0.0, 0.0]
+    assert d["scenarios"][1]["books"]["volume"][2] == 1.03 and d["scenarios"][1]["books"]["lr_adj"][0] == 0.0
+    raises(ProposalRequired, treaty_scenarios, tf, None)
+    raises(MappingRequired, treaty_scenarios, tf, {"K1": 1})
+    raises(SpecError, treaty_scenarios, tf, {"K1": 1, "K2": 1})
+    raises(SpecError, treaty_scenarios, tf, {"K1": 1, "K2": 9})
+    raises(SpecError, treaty_scenarios, tf, {"K1": 1, "K2": "2"})
+
+
+def test_treaty_scenarios_reproduce_the_asif_in_the_tool_engine():
+    """The tool's engine: premium = experience x volume x (1 + prem_chg); claims = premium x (LR + lr_adj + lr_chg).
+    With the run's TreatyScenarios the tool's premium is experience x rate factor x (1 - lapse) and its claims are
+    experience claims x (1 - lapse): the workbench as-if."""
+    r1 = _two_runs()[0]
+    out = r1["dir"] / "out"
+    tf = pd.read_parquet(out / "TreatyFeed.parquet")
+    ts = json.loads((out / "TreatyScenarios.json").read_text(encoding="utf-8"))
+    xp = pd.read_csv(FIX / "RUN_SYN" / "experience.csv").set_index("treaty_book")
+    slots = ts["meta"]["book_slots"]
+    assert slots == {"BOOK_IND_GREEN": 1, "BOOK_IND_OTHER": 2} and len(ts["scenarios"]) == tf["option_id"].nunique()
+    for r in tf.itertuples(index=False):
+        sc = next(x for x in ts["scenarios"] if x["name"] == r.option_id)
+        i = slots[r.treaty_book] - 1
+        vol, adj = sc["books"]["volume"][i], sc["books"]["lr_adj"][i]
+        prem, clm = float(xp.loc[r.treaty_book, "earned_prem"]), float(xp.loc[r.treaty_book, "ultimate_claims"])
+        tool_prem = prem * vol * (1 + sc["prem_chg"])
+        tool_clm = tool_prem * (clm / prem + adj + sc["lr_chg"])
+        assert abs(tool_prem - prem * r.rate_factor * (1 - r.lapse)) < 1e-6 * prem
+        assert abs(tool_clm - clm * (1 - r.lapse)) < 1e-6 * clm
+    m = json.loads((r1["dir"] / "run_manifest.json").read_text(encoding="utf-8"))
+    assert m["outputs"]["TreatyScenarios"]["scenarios"] == 2 and m["gates"]["TREATY_CONTRACT"]["treatymodel_verified"]
+
+
+def test_treaty_scenarios_contract_check_catches_schema_errors():
+    import shutil
+    out = _two_runs()[0]["dir"] / "out"
+    with tmpdir() as d:
+        for f in out.glob("*"):
+            shutil.copy(f, d / f.name)
+        good = json.loads((d / "TreatyScenarios.json").read_text(encoding="utf-8"))
+        assert check_treaty_outputs(d)["status"] == "PASS"
+        for mutate, text in ((lambda x: x["scenarios"][0].update(prem_chg=0.05), "prem_chg"),
+                             (lambda x: x["scenarios"][0]["books"]["volume"].pop(), "books.volume"),
+                             (lambda x: x["scenarios"][0]["books"]["lr_adj"].__setitem__(0, float("nan")), "books.lr_adj"),
+                             (lambda x: x["scenarios"][0].update(ri=[]), "keys"),
+                             (lambda x: x["scenarios"][1].update(name=x["scenarios"][0]["name"]), "unique")):
+            bad = json.loads(json.dumps(good))
+            mutate(bad)
+            (d / "TreatyScenarios.json").write_text(json.dumps(bad), encoding="utf-8")
+            r = check_treaty_outputs(d)
+            assert r["status"] == "FAIL" and any(text in p for p in r["problems"]), (text, r["problems"])
+        (d / "TreatyScenarios.json").unlink()
+        assert any("missing" in p for p in check_treaty_outputs(d)["problems"])
+
 def test_zz_cleanup():
     import shutil
     shutil.rmtree(_KEEP, ignore_errors=True)

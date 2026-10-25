@@ -76,6 +76,46 @@ def check_table(name: str, out_dir: Path, spec: dict) -> list[str]:
     return probs
 
 
+def check_scenarios(path: Path, spec: dict, slots: dict) -> tuple[list, list]:
+    """TreatyScenarios.json (CR #23) against the treaty tool's config schema: keys, one value per book slot, finite
+    numbers, volume > 0, prem_chg / lr_chg 0, no reinsurer terms; warn beyond the tool's 12 scenario slots."""
+    probs, warns = [], []
+    if not path.exists():
+        return [f"{path.name} missing"], []
+    try:
+        d = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as ex:
+        return [f"{path.name}: not JSON ({ex})"], []
+    nb = slots.get("books", 8)
+    scs = d.get("scenarios")
+    if not isinstance(scs, list) or not scs:
+        return [f"{path.name}: no scenarios"], []
+    names = [s.get("name") for s in scs]
+    if len(set(names)) != len(names) or not all(isinstance(n, str) and n for n in names):
+        probs.append(f"{path.name}: scenario names must be unique and non-empty")
+    for s in scs:
+        n = s.get("name")
+        if set(s) != set(spec["scenario_keys"]):
+            probs.append(f"{path.name} [{n}]: keys {sorted(s)} != {sorted(spec['scenario_keys'])}")
+            continue
+        if s["prem_chg"] != 0 or s["lr_chg"] != 0:
+            probs.append(f"{path.name} [{n}]: prem_chg / lr_chg must be 0 (the change is carried per book)")
+        b = s["books"]
+        if not isinstance(b, dict) or set(b) != set(spec["book_keys"]):
+            probs.append(f"{path.name} [{n}]: books keys must be {spec['book_keys']}")
+            continue
+        for k in spec["book_keys"]:
+            v = b[k]
+            if not isinstance(v, list) or len(v) != nb or not all(isinstance(x, (int, float)) and not isinstance(x, bool)
+                                                                   and math.isfinite(x) for x in v):
+                probs.append(f"{path.name} [{n}]: books.{k} must be {nb} finite numbers")
+        if all(isinstance(x, (int, float)) for x in b.get("volume") or []) and any(x <= 0 for x in b["volume"]):
+            probs.append(f"{path.name} [{n}]: books.volume must be > 0")
+    if len(scs) > slots.get("scenarios", len(scs)):
+        warns.append(f"{len(scs)} scenarios > {slots['scenarios']} scenario slots of the treaty tool")
+    return probs, warns
+
+
 def check_treaty_outputs(out_dir: Path, contract_path: Path | None = None) -> dict:
     c = load_contract(contract_path)
     probs = []
@@ -92,6 +132,11 @@ def check_treaty_outputs(out_dir: Path, contract_path: Path | None = None) -> di
             warns.append(f"{nb} treaty books > {slots['books']} book slots of the treaty tool")
         if no > slots.get("reinsurers", no):
             warns.append(f"{no} options > {slots['reinsurers']} reinsurer slots of the treaty tool")
+    sf = c.get("scenarios_file")
+    if sf and tf_p.exists():
+        p_, w_ = check_scenarios(Path(out_dir) / sf["name"], sf, slots)
+        probs += p_
+        warns += w_
     return {"status": "PASS" if not probs else "FAIL", "problems": probs, "warnings": warns, "treatymodel_target": target,
             "treatymodel_verified": bool(c.get("treatymodel_verified")),
             "note": None if c.get("treatymodel_verified") else c.get("treatymodel_note")}

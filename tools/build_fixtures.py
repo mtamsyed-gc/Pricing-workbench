@@ -852,7 +852,8 @@ def build_run_syn(out: Path):
            "exposure": {"dim_life": "../EXPO_SYN/dim_life.csv", "maps": "../EXPO_SYN/maps",
                         "manifest": "../EXPO_SYN/run_manifest.csv", "snapshot_date": "2025-07-01"},
            "treaty": {"book_map": "treaty_book_map.csv", "experience": "experience.csv",
-                      "lapse": {"BOOK_IND_GREEN": 0.06, "BOOK_IND_OTHER": 0.04}},
+                      "lapse": {"BOOK_IND_GREEN": 0.06, "BOOK_IND_OTHER": 0.04},
+                      "book_slots": {"BOOK_IND_GREEN": 1, "BOOK_IND_OTHER": 2}},
            "v5": {"outlier_band": [0.7, 1.3]},
            "submissions": [{"option_id": o, "owner": f"Reinsurer {o[-1]}", "file": f"../{o}/submission.xlsx",
                             "template_spec": "../T_ALPHA/template_spec.json", "issued": "../T_ALPHA/template.xlsx"}

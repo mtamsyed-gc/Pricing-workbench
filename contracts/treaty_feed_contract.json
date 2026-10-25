@@ -2,8 +2,8 @@
  "contract": "workbench -> treaty tool scenario feed",
  "target": "see treatymodel_version.txt",
  "source": "SPEC §7 (TreatyFeed, OptionTerms) with CR #5-#7; units: premium_change_pct and lr_adjustment_pts in percent points",
- "treatymodel_verified": false,
- "treatymodel_note": "Compared on 25 Oct 2026 with treatymodel 2.0 in PBM (treatymodel/, branch claude/inspiring-rubin-7ncppi) and its vendored copy ete-dashboard side_tools/treaty_tool/ (VERSION = commit a07c945, same as treatymodel_version.txt). Gaps G1-G4 are open (CR #23); treatymodel_verified stays false until the owner decides them.",
+ "treatymodel_verified": true,
+ "treatymodel_note": "Compared on 25 Oct 2026 with treatymodel 2.0 in PBM (treatymodel/, branch claude/inspiring-rubin-7ncppi) and its vendored copy ete-dashboard side_tools/treaty_tool/ (VERSION = commit a07c945, same as treatymodel_version.txt). CR #23 approved (owner, 25 Oct 2026): the run writes TreatyScenarios.json in the tool's config schema; TreatyFeed and OptionTerms unchanged.",
  "tables": {
   "TreatyFeed": {
    "key": [
@@ -126,6 +126,35 @@
    "G4_book_names": "treaty_book values (treaty_book_map.csv) must equal the tool's Setup book names; at most 8 books, 6 reinsurers (options) and 12 scenarios per workbook"
   },
   "interface": "config JSON (configs/treaty_template_example.json schema, treatymodel.config.normalise); scenarios[].books.volume / lr_adj are lists by book slot; scenarios[].ri are owner inputs (tool README section 4). The Excel Scenarios library is the manual route.",
-  "engine": "book premium = experience premium x volume x (1 + prem_chg); claims = net premium x (experience LR + lr_adj + lr_chg)"
+  "engine": "book premium = experience premium x volume x (1 + prem_chg); claims = net premium x (experience LR + lr_adj + lr_chg)",
+  "resolution": {
+   "G1": "fractions in TreatyScenarios.json",
+   "G2": "per-book volume and lr_adj by book slot (run input treaty.book_slots)",
+   "G3": "reinsurer terms stay owner inputs in the tool (its README section 4); OptionTerms stays reference text",
+   "G4": "warnings beyond 8 books, 6 options (reinsurer slots), 12 scenarios"
+  }
+ },
+ "scenarios_file": {
+  "name": "TreatyScenarios.json",
+  "schema": "treatymodel 2.0 config 'scenarios' (configs/treaty_template_example.json; treatymodel.config.normalise)",
+  "scenario_keys": [
+   "name",
+   "description",
+   "prem_chg",
+   "lr_chg",
+   "books"
+  ],
+  "book_keys": [
+   "volume",
+   "lr_adj"
+  ],
+  "rules": [
+   "volume[slot] = 1 + premium_change_pct / 100",
+   "lr_adj[slot] = lr_adjustment_pts / 100",
+   "prem_chg = lr_chg = 0",
+   "lists have one value per book slot (8)",
+   "volume > 0, values finite",
+   "ri (reinsurer terms) not written: owner inputs"
+  ]
  }
 }

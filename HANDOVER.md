@@ -41,7 +41,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | OD1 | Owner decisions on HANDOVER items 1–21 (SPEC v0.4; UFIC example; riders; B2 split; B1; V5; scorecard; benchmark) | Merged to main (PR #7, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 32e7a31; GC work laptop run outstanding | Done |
 | WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Merged to main (PR #9, 25 Oct) | **PASS (25 Oct, provisional)** — functional PASS on owner's personal laptop @ 21003ca (Win 11, Py 3.14.6): suite 112/112, every tool check, UFIC cedant + reinsurer workbooks and the fixture cedant workbook open in Excel; only environment lines fail (Py 3.14 not 3.12, unpinned packages). GC work laptop run outstanding | GC fills the UFIC cedant workbook in `runs\`, `t cedant-read` to PASS, then `t generate --expiring` and issue (UFIC deadline 5 Nov) |
 | WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC (open item 4); items 15–17 decided 24 Oct (OD1) |
-| WS4 | Integration, release: `pw run` end to end, manifest gates, treaty contract check, release zip 0.2.0, laptop check as release gate | Branch ws4-integration, PR open | **PENDING** — from the installed release zip: `py tools\package.py` then unzip and `RUN_LAPTOP_CHECK.bat` (or `py tools\laptop_check.py` in `pricing-workbench-0.2.0\`) | Owner: laptop check from the release zip; decide CR #23 (treaty tool gaps) and the version number |
+| WS4 | Integration, release: `pw run` end to end, manifest gates, treaty contract check, release zip 0.2.0, laptop check as release gate | Branch ws4-integration, PR open | **PENDING** — from the installed release zip: `py tools\package.py` then unzip and `RUN_LAPTOP_CHECK.bat` (or `py tools\laptop_check.py` in `pricing-workbench-0.2.0\`) | Owner: laptop check from the release zip; confirm the version number (CR #23 approved and applied) |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
 
@@ -62,7 +62,9 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
   `contracts/treaty_feed_contract.json` (SPEC §7 columns, types, nulls, finiteness, keys) and warns beyond the tool's
   slots (8 books, 6 reinsurers). Compared with treatymodel 2.0 (PBM treatymodel/ and the vendored copy in ete-dashboard
   side_tools/treaty_tool/, same commit a07c945): its machine interface is the config JSON (scenarios[].books.volume /
-  lr_adj by book slot; reinsurer terms are owner inputs). Gaps G1–G4 and the proposed TreatyScenarios.json: CR #23 pending.
+  lr_adj by book slot; reinsurer terms are owner inputs). CR #23 APPROVED and applied: `run_b2` writes
+  `out/TreatyScenarios.json` (`rate_index.treaty_scenarios`; run input `treaty.book_slots` required with a treaty
+  section), checked by the treaty contract (`treatymodel_verified` true); engine reproduction tested.
 - Release: version `pw.__version__` = 0.2.0 (single source). `tools/package.py` writes RELEASE.json + COMMIT.txt into
   `pricing-workbench-<version>/` and RUN_LAPTOP_CHECK.bat (finds the folder by pattern) at the root, in both modes.
   Release excludes reference/, examples/ufic_2027/, runs/, out/ (tests/test_boundary.py, tests/test_release.py).
@@ -205,9 +207,7 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
     confirmed); Individual AML is fixed by the ToB. SME network options (Option 2, "GN excl. named hospitals") switched
     off for now — closes item 3 as "off". Note: reference/ §3.2 labels that AML table as Individual; it is SME's.
 
-13. WS4 — CR #23 (pending): treatymodel 2.0 takes fractions and per-book volume / lr_adj (config JSON or Scenarios
-    sheet); TreatyFeed is in percent. Proposal: write `TreatyScenarios.json` per run in the tool's config schema
-    (volume = 1 + premium_change_pct / 100, lr_adj = lr_adjustment_pts / 100 per book slot; reinsurer terms stay owner inputs).
+13. WS4 — CR #23 DECIDED (owner, 25 Oct): approved as proposed; applied in WS4 (TreatyScenarios.json, treaty.book_slots).
 14. WS4 — release version 0.2.0 proposed (first integrated release; 0.1.0-ws0 before). Owner to confirm.
 
 ## Timeline driver
