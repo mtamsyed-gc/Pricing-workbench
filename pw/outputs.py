@@ -61,6 +61,37 @@ def _file_hash(p: Path) -> str:
     return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
 
+# Excel view (WS8): one number format and one width per column, from the column's own values, so the view opens
+# readable (no ##### at default zoom). Parquet is unaffected.
+VIEW_FORMATS = {"int": "#,##0", "year": "0", "amount": "#,##0.00", "ratio": "0.0000"}
+VIEW_WIDTH = (8, 60)                     # min / max column width (characters)
+
+
+def _num_kind(name: str, vals: list[float]) -> str:
+    if not vals:
+        return "ratio"
+    if all(float(v).is_integer() for v in vals):
+        return "year" if ("uwy" in name.lower() or "year" in name.lower()) else "int"
+    return "amount" if max(abs(v) for v in vals) >= 1000 else "ratio"
+
+
+def _shown(v, kind: str) -> str:
+    return {"int": f"{v:,.0f}", "year": f"{v:.0f}", "amount": f"{v:,.2f}", "ratio": f"{v:.4f}"}[kind]
+
+
+def view_layout(df: pd.DataFrame) -> list[tuple[str | None, int]]:
+    """(number-format kind or None for text, width) per column."""
+    out = []
+    for c in df.columns:
+        vals = [v for v in df[c].tolist() if v is not None and not (isinstance(v, float) and v != v)]
+        nums = [float(v) for v in vals if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        kind = _num_kind(str(c), nums) if nums and len(nums) == len(vals) else None
+        lens = [len(_shown(v, kind)) for v in nums] if kind else [len(str(v)) for v in vals]
+        w = max([len(str(c)) + 3, *(x + 2 for x in lens)])      # +3: room for the autofilter arrow
+        out.append((kind, int(min(max(w, VIEW_WIDTH[0]), VIEW_WIDTH[1]))))
+    return out
+
+
 def write_table(name: str, df: pd.DataFrame, out_dir: Path, sort_by: list | None = None, contract: bool = True,
                 extra_ok: tuple = ()) -> dict:
     if contract and name in CONTRACTS:
@@ -82,7 +113,10 @@ def write_table(name: str, df: pd.DataFrame, out_dir: Path, sort_by: list | None
     wb = new_workbook(xl_path, title=name)
     ws = wb.add_worksheet(name[:31])
     hdr = wb.add_format({"bold": True, "bg_color": "#F2F2F2", "border": 1})
-    num = wb.add_format({"num_format": "#,##0.0000"})
+    fmts = {k: wb.add_format({"num_format": f}) for k, f in VIEW_FORMATS.items()}
+    lay = view_layout(df)
+    for j, (kind, w) in enumerate(lay):
+        ws.set_column(j, j, w)
     ws.write_row(0, 0, list(df.columns), hdr)
     for i, row in enumerate(df.itertuples(index=False), start=1):
         for j, v in enumerate(row):
@@ -91,7 +125,7 @@ def write_table(name: str, df: pd.DataFrame, out_dir: Path, sort_by: list | None
             if isinstance(v, bool):
                 ws.write_boolean(i, j, v)
             elif isinstance(v, (int, float)):
-                ws.write_number(i, j, float(v), num)
+                ws.write_number(i, j, float(v), fmts[lay[j][0] or _num_kind(str(df.columns[j]), [float(v)])])
             else:
                 ws.write_string(i, j, str(v))
     ws.freeze_panes(1, 0)

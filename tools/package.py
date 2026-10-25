@@ -1,8 +1,8 @@
 """Build a release zip of the workbench.   py tools\\package.py [--out <zip>] [--check-bundle]
 
 Release (default): pricing-workbench-<version>/ with the code, registry, contracts, specs, synthetic fixtures, tests,
-tools and docs, plus RELEASE.json (version, commit, exclusions) and COMMIT.txt in that folder and RUN_LAPTOP_CHECK.bat
-at the zip root. Install notes: docs/INSTALL.md. The version is pw.__version__ (single source).
+tools and docs, plus RELEASE.json (version, commit, exclusions) and COMMIT.txt in that folder; at the zip root
+RUN_LAPTOP_CHECK.bat, TENDER_TEMPLATE/ (blank tender folder) and TRAINING_TENDER/ (synthetic) - pw/tender_kit.py. Install notes: docs/INSTALL.md. The version is pw.__version__ (single source).
 
 --check-bundle: the laptop-acceptance bundle for the GC work laptop (SPEC §13): release contents plus the
 structure-only examples/ (the cedant example checks need them), COMMIT.txt and RUN_LAPTOP_CHECK.bat at the root.
@@ -74,6 +74,10 @@ def build(out: Path, check_bundle: bool = False) -> list[str]:
         extra = {f"pricing-workbench-{__version__}/COMMIT.txt": (commit + "\n").encode(),
                  f"pricing-workbench-{__version__}/RELEASE.json": (json.dumps(info, indent=1, sort_keys=True) + "\n").encode(),
                  "RUN_LAPTOP_CHECK.bat": (HERE / "RUN_LAPTOP_CHECK.bat").read_bytes()}
+        from pw.tender_kit import TEMPLATE_NAME, TRAINING_NAME, template_files, training_files
+        for root, fs in ((TEMPLATE_NAME, template_files()), (TRAINING_NAME, training_files())):
+            for rel, data in sorted(fs.items()):
+                extra[f"{root}/{rel}"] = data
         if True:
             for arc, data in extra.items():
                 zi = zipfile.ZipInfo(arc, date_time=(1980, 1, 1, 0, 0, 0))
