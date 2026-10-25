@@ -1,6 +1,10 @@
 """Laptop acceptance check (SPEC §13): run on the owner's laptop after every change, before the PR is merged.
 
-    py tools\\laptop_check.py [--quick]
+    py tools\\laptop_check.py [--quick] [--console <file>]
+
+One check at a time (WS8): a lock in runs/laptop_check/RUNNING.lock; a second start exits 3 (a lock older than
+LOCK_STALE_HOURS is stale). Every result line is printed as it is found and, with --console, appended to that file
+(RUN_LAPTOP_CHECK.bat writes laptop_check_console.txt beside itself this way, so the window is never blank).
 
 1. Environment: CPython 3.12 64-bit, Windows, every pin in requirements-native.txt installed at the pinned version.
 2. Full test suite (tests/run_all.py).
@@ -19,6 +23,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import platform
 import struct
 import subprocess
@@ -34,6 +39,44 @@ FIX = REPO / "fixtures"
 PY = sys.executable
 PW = [PY, str(HERE / "pw.py")]
 MAX_PATH = 260
+LOCK_STALE_HOURS = 3
+EXIT_LOCKED = 3
+_CONSOLE: list = []                         # [Path] when --console is given
+
+
+def say(msg: str = "", progress: bool = False):
+    """Print now (flushed); results also go to the console file. progress=True: screen only."""
+    print(msg, flush=True)
+    if _CONSOLE and not progress:
+        with _CONSOLE[0].open("a", encoding="utf-8") as f:
+            f.write(msg + "\n")
+
+
+def acquire_lock(lock: Path) -> str | None:
+    """Create the lock (exclusive). Returns None when acquired, else a message describing the running check."""
+    import os
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    for _ in range(2):
+        try:
+            fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            try:
+                age_h = (time.time() - lock.stat().st_mtime) / 3600
+                info = lock.read_text(encoding="utf-8").strip()
+            except OSError:
+                continue
+            if age_h > LOCK_STALE_HOURS:
+                try:
+                    lock.unlink()
+                except OSError:
+                    pass
+                continue
+            return (f"Another laptop check is already running ({info}, {age_h * 60:.0f} min ago). Let it finish "
+                    f"(close this window), or, if no other check window is open, delete {lock} and start again.")
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(f"started {dt.datetime.now().strftime('%Y-%m-%d %H:%M')} pid {os.getpid()}\n")
+        return None
+    return f"Could not create the lock {lock}"
 
 
 def _run(cmd, cwd, expect_rc=0, must_contain=None, timeout=900):
@@ -46,8 +89,32 @@ def _run(cmd, cwd, expect_rc=0, must_contain=None, timeout=900):
     return ok, f"rc={r.returncode} ({time.time() - t:.1f}s)", tail
 
 
+def step_commands(tender: Path) -> list[list[str]]:
+    """The pw.py arguments of each step file in a tender folder, read from the .bat itself (WS8)."""
+    out = []
+    for bat in sorted(tender.glob("[1-4]_*.bat")):
+        for ln in bat.read_text(encoding="ascii").splitlines():
+            if ln.startswith('%PY% "%PWDIR%\\tools\\pw.py" '):
+                # the .bat holds Windows separators; os.sep is "\\" on Windows (no change) and "/" elsewhere
+                out.append([x.replace("\\", os.sep) for x in ln.split(" ", 2)[2].split()])
+    return out
+
+
+def tender_checks(run: Path):
+    """WS8: tender new (blank, training) and the training tender's four steps, run from the tender folder as the
+    step files run them (commands read from the .bat files)."""
+    t = run / "tenders" / "TRAINING"
+    checks = [("tender new (blank folder)", PW + ["tender", "new", str(run / "tenders" / "NEW_TENDER")], 0, "blank tender folder"),
+              ("tender new --training", PW + ["tender", "new", str(t), "--training"], 0, "training tender")]
+    for i, (name, text) in enumerate(zip(("step 1 cedant workbook", "step 2 cedant read-back", "step 3 tender template",
+                                          "step 4 evaluation"), ("structure hash", "CEDANT READ PASS", "structure hash",
+                                                                 "RUN COMPLETE"))):
+        checks.append((f"training tender {name}", ("STEP", i), 0, text, t))
+    return checks
+
+
 def tool_checks(run: Path):
-    """(name, command, expected rc, text that must appear). Add one line per new tool / command."""
+    """(name, command, expected rc, text that must appear[, cwd]). Add one line per new tool / command."""
     a = FIX / "CAT_ALPHA" / "spec.json"
     e = FIX / "EXPO_SYN"
     tender = run / "tender.json"
@@ -122,6 +189,7 @@ def tool_checks(run: Path):
                                             "--hashes", str(run / "e2e1_hashes.json")], 0, "RUN COMPLETE"),
         ("run again (second run)", PW + ["run", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "e2e2"),
                                          "--hashes", str(run / "e2e2_hashes.json")], 0, "RUN COMPLETE"),
+        *tender_checks(run),
     ]
 
 
@@ -161,7 +229,26 @@ def excel_open(paths) -> tuple[bool, str]:
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--quick", action="store_true", help="skip the full test suite (tool checks only)")
+    ap.add_argument("--console", help="also append every result line to this file (started empty)")
     a = ap.parse_args(argv)
+    if a.console:
+        _CONSOLE[:] = [Path(a.console)]
+        _CONSOLE[0].write_text("", encoding="utf-8")
+    lock = REPO / "runs" / "laptop_check" / "RUNNING.lock"
+    busy = acquire_lock(lock)
+    if busy:
+        say(busy)
+        return EXIT_LOCKED
+    try:
+        return _main(a)
+    finally:
+        try:
+            lock.unlink()
+        except OSError:
+            pass
+
+
+def _main(a):
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run = REPO / "runs" / "laptop_check" / stamp
     run.mkdir(parents=True, exist_ok=True)
@@ -171,7 +258,7 @@ def main(argv=None):
     def add(name, ok, detail, tail=None, status=None):
         st = status or ("PASS" if ok else "FAIL")
         results.append({"check": name, "status": st, "detail": detail, "tail": tail or []})
-        print(f"{st}  {name}  {detail}")
+        say(f"{st}  {name}  {detail}")
 
     rel = release_info()
     if rel is not None:
@@ -182,6 +269,9 @@ def main(argv=None):
         add("installed release contents", not shipped and rel.get("version") == __version__,
             f"release {rel.get('version')} @ {rel.get('commit')} (pw {__version__}); "
             + (f"must not ship: {shipped}" if shipped else "no reference/ or client example"))
+        kits = {k: len(step_commands(REPO.parent / k)) for k in ("TENDER_TEMPLATE", "TRAINING_TENDER")}
+        add("release tender folders beside the tool", all(v == 4 for v in kits.values()),
+            ", ".join(f"{k}: {v} step files" for k, v in kits.items()))
 
     # 1. environment
     is_win = platform.system() == "Windows"
@@ -201,10 +291,18 @@ def main(argv=None):
         add(f"pin {name}", got == ver, f"installed {got}, pinned {ver}")
     # 2. test suite
     if not a.quick:
+        say("....  test suite (the longest step: 10 to 25 minutes on a laptop)", progress=True)
         ok, det, tail = _run([PY, str(REPO / "tests" / "run_all.py"), "-q"], cwd, timeout=3600)
         add("test suite", ok, det, tail)
     # 3. tools
-    for name, cmd, rc, text in tool_checks(run):
+    for name, cmd, rc, text, *ccwd in tool_checks(run):
+        ccwd = ccwd[0] if ccwd else cwd
+        if isinstance(cmd, tuple) and cmd[0] == "STEP":           # a training tender step file's command
+            steps = step_commands(ccwd) if ccwd.exists() else []
+            if len(steps) != 4:
+                add(name, False, f"{len(steps)} step file command(s) found in {ccwd}")
+                continue
+            cmd = PW + steps[cmd[1]]
         if name == "catalogue parse (all fixtures)":
             outs = [_run(PW + ["catalogue", "parse", str(FIX / c / "spec.json"), "--out", str(run / f"{c}.json")], cwd)
                     for c in ("CAT_ALPHA", "CAT_BETA", "CAT_GAMMA", "CAT_DELTA", "CAT_RETIREE", "CAT_IPMI")]
@@ -218,7 +316,8 @@ def main(argv=None):
         if rel is not None and needs_example(cmd) and not (REPO / "examples" / "ufic_2027").exists():
             add(name, True, "not in the release (repo-only cedant example)", status="SKIP")
             continue
-        ok, det, tail = _run(cmd, cwd, expect_rc=rc, must_contain=text)
+        say(f"....  {name}", progress=True)
+        ok, det, tail = _run(cmd, ccwd, expect_rc=rc, must_contain=text)
         add(name, ok, det, tail)
     # WS4 acceptance: the second end-to-end run reproduces every output byte for byte
     try:
@@ -236,7 +335,9 @@ def main(argv=None):
                   "runs/RUN_SYN/out/RateIndex.xlsx",
                   "runs/RUN_SYN/out/TreatyFeed.xlsx", "runs/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx", "runs/RUN_SYN/out/ValueMap.xlsx",
                   "e2e1/RUN_SYN/out/TreatyFeed.xlsx", "e2e1/RUN_SYN/out/OptionTerms.xlsx",
-                  "e2e1/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx"):
+                  "e2e1/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx", "tenders/TRAINING/work/tender_template.xlsx",
+                  "tenders/TRAINING/runs/TRAINING/out/RateIndex.xlsx",
+                  "tenders/TRAINING/runs/TRAINING/out/Recommendation_Pack_TRAINING.xlsx"):
             if f.startswith("example_") and rel is not None and not (run / f).exists():
                 continue                                     # repo-only example, skipped above
             load_workbook(run / f).close()
@@ -280,7 +381,7 @@ def main(argv=None):
         for r in fails:
             md += ["", f"### {r['check']}", "```", *r["tail"], "```"]
     (run / "laptop_check_report.md").write_text("\n".join(md) + "\n", encoding="utf-8")
-    print(f"\n{summary}\nreport: {run / 'laptop_check_report.md'}")
+    say(f"\n{summary}\nreport: {run / 'laptop_check_report.md'}")
     return 0 if not n_fail else 1
 
 

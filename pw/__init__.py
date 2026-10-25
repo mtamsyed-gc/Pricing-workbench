@@ -1,7 +1,7 @@
 """Pricing Workbench core package (SPEC.md is the source of truth)."""
 from pathlib import Path
 
-__version__ = "0.0.4"   # scheme: docs/INSTALL.md (owner, 25 Oct 2026)
+__version__ = "0.0.5"   # scheme: docs/INSTALL.md (owner, 25 Oct 2026)
 
 PKG_DIR = Path(__file__).resolve().parent
 REPO_DIR = PKG_DIR.parent

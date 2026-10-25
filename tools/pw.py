@@ -23,6 +23,8 @@
   benefit <run_config.json>        B1 level 1 only: BenefitDiff, BenefitFactors
   benchmark <run_config.json>      A market benchmark: ValueMap, GapRegister, TaxonomyReconciliation
   score <run_config.json>          D scorecard: ScoreInputs, Scorecard, Ranking, weight sensitivity, recommendation pack
+  tender new <folder> [--training]  a tender folder (WS8): the four step files, README and input folders; --training
+                                   fills it with the synthetic training tender
   fixtures build
 
 Paths are resolved from this script's location for repo resources; arguments are taken as given (or relative to
@@ -280,6 +282,14 @@ def cmd_benchmark(a):
         print(g["assessment"].value_counts().to_string())
 
 
+def cmd_tender(a):
+    from pw.tender_kit import write_folder
+    files = write_folder(Path(a.folder), training=a.training)
+    kind = "training tender (synthetic)" if a.training else "blank tender folder"
+    print(f"{kind}: {len(files)} files -> {Path(a.folder).resolve()}")
+    print("Keep it next to the pricing-workbench-<version> folder and double-click the step files in order.")
+
+
 def cmd_fixtures(a):
     import subprocess
     for s in ("build_fixtures.py", "build_submissions.py"):
@@ -360,6 +370,11 @@ def main(argv=None):
     p.add_argument("run_config")
     p.add_argument("--runs-root")
     p.set_defaults(fn=cmd_score)
+    p = sub.add_parser("tender")
+    p.add_argument("action", choices=["new"])
+    p.add_argument("folder")
+    p.add_argument("--training", action="store_true")
+    p.set_defaults(fn=cmd_tender)
     p = sub.add_parser("fixtures")
     p.add_argument("action", choices=["build"])
     p.set_defaults(fn=cmd_fixtures)

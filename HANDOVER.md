@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (release 0.0.4 = 0.0.3 Windows file-lock retry (PR #15) + OD4 / CR #24 (PR #16): B2 compares on the Merit cuts — base + maternity, non-Merit options at reference, RiderIndex, TreatyFeed on the headline relativity. GC work laptop check of 0.0.2 was 41/42 (file lock only); re-check of 0.0.4 on the GC laptop PENDING).
+Last updated: 2026-10-25 (release 0.0.5 = 0.0.4 + WS8 release hardening from the first full laptop dry run of 0.0.4: TENDER_TEMPLATE and TRAINING_TENDER folders with step files in the release, readable Excel views, one-at-a-time live laptop check. 0.0.4 = file-lock retry (PR #15) + OD4 / CR #24 B2 on the Merit cuts (PR #16). GC work laptop check of 0.0.5 PENDING; then 1.0.0).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -10,7 +10,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | SPEC.md | Canonical model, registries, catalogue/benefit/exposure models, evaluator and gates V1–V5, output contracts, tender template generator, fixtures, work-order summary, UFIC source flags F1–F8 |
 | docs/workorders/WS0.md | Full work order for the first session (core + contracts + generator core + other work orders) |
 | docs/CHANGE_REQUESTS.md | Contract change requests (all decided; CR #17 = work order WS7) |
-| docs/workorders/WS1–WS7 | Work orders (WS5: cedant rate workbook, PR open; WS7: structured benefit proposals, CR #17) |
+| docs/workorders/WS1–WS8 | Work orders (WS7: structured benefit proposals, CR #17; WS8: release hardening, 0.0.5) |
 | docs/cedant_workbook_guide.md | WS5 fill guide for GC: what goes where, Nil-base rule, TPA basis, source flags, gate |
 | tools/laptop_check.py | SPEC §13 laptop acceptance: run `py tools\laptop_check.py` on the laptop after every change; since WS4 also the release gate (end-to-end `run` twice, byte-identical), runnable from the installed release zip |
 | docs/INSTALL.md | WS4: release contents, versioning, install on a GC laptop, running a tender end to end |
@@ -44,6 +44,20 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS4 | Integration, release: `pw run` end to end, manifest gates, treaty contract check, release zip 0.0.2, laptop check as release gate | Merged to main (PR #13, 25 Oct) | **PASS (25 Oct, provisional)** — from the installed release zip 0.0.2 @ 1accbbb on the owner's personal laptop (Win 11, Py 3.14.6): release contents, test suite, every tool check, `run` twice byte-identical (46 files), pack and TreatyFeed open in Excel; 3 cedant-example checks SKIP (not in release); only environment lines fail. Launched with a default-`py` copy of RUN_LAPTOP_CHECK.bat (the shipped one requires Py 3.12). GC work laptop run outstanding | Done; release a GC test version (1.0.0) from main after the GC work laptop check passes |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
+| WS8 | Release hardening (0.0.5): tender folders + step files in the release, `tender new`, readable Excel views, laptop check lock + live console | PR open (branch ws8-release-hardening) | PENDING | Owner: laptop check from the 0.0.5 release zip on the GC work laptop; if PASS, merge and cut 1.0.0 |
+
+### WS8 notes for the next sessions
+- Found by the first full dry run of release 0.0.4 on the owner's personal laptop (25 Oct 2026; synthetic UFIC-shaped
+  tender kept outside the repo; user guide published as a private artifact): the release had no step files or tender
+  folder, output Excel views opened with ##### columns, and a double-click started two laptop checks with a blank window.
+- `pw/tender_kit.py` is the single source of the step files, READMEs and run config template; `tools/package.py` writes
+  TENDER_TEMPLATE/ and TRAINING_TENDER/ at the zip root, `py tools\pw.py tender new` writes them anywhere. The training
+  tender is the fixture cedant spec C_ALPHA (its template has the same structure hash as T_ALPHA, so the SUB_X / SUB_Y
+  quotes ingest against the step-3 template) + EXPO_SYN + RUN_SYN treaty inputs; no benchmark section.
+- The laptop check reads each step's command from the .bat itself and runs the training tender's four steps from the
+  tender folder (SPEC §13 coverage). Lock: runs/laptop_check/RUNNING.lock (stale after 3 h); exit 3 when locked.
+- Excel views (`pw/outputs.write_table`): per-column width (header / formatted values, 8-60) and number format (whole
+  numbers `#,##0`, year columns `0`, |x| ≥ 1,000 `#,##0.00`, else `0.0000`). Parquet unchanged; still byte-identical.
 
 ### WS4 notes for the next sessions
 - `pw/pipeline.py` `run_all` (CLI `run <run_config.json> [--runs-root] [--hashes]`): catalogue specs (V1 on the expiring,

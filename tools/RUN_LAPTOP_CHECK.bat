@@ -16,9 +16,11 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-py -3.12 tools\laptop_check.py > "%~dp0laptop_check_console.txt" 2>&1
+echo Laptop check running. Results appear below as they are found; the test suite step takes 10 to 25 minutes.
+echo Leave Excel alone while it runs. Double-click this file only once.
+echo.
+py -3.12 tools\laptop_check.py --console "%~dp0laptop_check_console.txt"
 set RC=%ERRORLEVEL%
-type "%~dp0laptop_check_console.txt"
 echo.
 echo Exit code %RC%. Send the LAPTOP CHECK line (or laptop_check_console.txt) back to the session.
 pause
