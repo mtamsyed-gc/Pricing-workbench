@@ -156,11 +156,12 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
    confirm with UFIC; F4 consultation deductible "10%" = 1.085 (kept, flagged). DECIDED 25 Oct: the maternity "Annual
    Limit" row is ignored; SME has no TPA factor (none on the Factors-SME sheet; removed from the UFIC cedant structure).
 3. "GN excl. named hospitals" network factor on Plan 2 (SME): switched off for now (owner, 25 Oct; see item 12).
-4. Real scorecard weights for UFIC (examples/scorecard_weights.json is fictional). Owner (25 Oct): we propose.
+4. DECIDED (owner, 25 Oct, CR #22): UFIC scorecard weights in `examples/ufic_2027/scorecard_weights.json` (price and
+   quality 0.65, terms 0.35; CAP 0). terms_scores.csv records 'none' as 0. examples/scorecard_weights.json stays fictional.
 5. F2 swap and F3 multipliers are applied in the run's expiring UFIC catalogue spec (outside the repo, runs/).
 6. Scorecard (SPEC silent): when all single options have the same value on a criterion there is no scale and everyone,
    panels included, scores 100 (e.g. a panel's larger capacity gets no credit if every option offers the same share).
-   Keep, or give panels a fixed credit there? Owner (25 Oct): we propose.
+   DECIDED (owner, 25 Oct, CR #22): keep 100 and flag NO_SPREAD; SHARE on an absolute scale (share of the order filled).
 7. WS5 — DECIDED (owner, 25 Oct): Factors-Individual is switched off for every Individual DXB-NE TPA until clarified
    (no OP diagnostic / consultation / pharmacy / network option / nationality / TPA factor tables); Aafiya DXB-NE keeps
    only its co-pay block factors. The long tables keep the TPA group column (needed for this split).
