@@ -218,8 +218,7 @@
        "f_ded_consult",
        "f_pharmacy_limit",
        "f_copay_pharmacy",
-       "f_aml",
-       "f_nationality"
+       "f_aml"
       ],
       "riders": [
        "m_dental",
@@ -240,7 +239,7 @@
       "plans": 6
      }
     },
-    "factor_rows": 67,
+    "factor_rows": 63,
     "rider_rows": 114,
     "benefit_codes": 21
    },
@@ -253,8 +252,7 @@
        "f_ded_consult",
        "f_pharmacy_limit",
        "f_copay_pharmacy",
-       "f_aml",
-       "f_nationality"
+       "f_aml"
       ],
       "riders": [
        "m_dental",
@@ -275,7 +273,7 @@
       "plans": 6
      }
     },
-    "factor_rows": 69,
+    "factor_rows": 65,
     "rider_rows": 114,
     "benefit_codes": 21
    },

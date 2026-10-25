@@ -10,6 +10,8 @@ REFER cells return a null price with a reason. Matching: per component, the most
 
 Options:
   fill               "default" (catalogue default option per plan/scope/component, SPEC §3.4) | "reference"
+  default_families   families that take the catalogue default even when fill = "reference" (B2 headline basis,
+                     CR #24: e.g. ["module_maternity"] -> maternity at the plan's default limit, other riders NONE)
   trace              bool
   resolution         None (component's declared) | "DERIVED" | "SOURCE"  (BLOCK_SET cells, SPEC §6 V2)
   currency           output currency (default: catalogue currency)
@@ -165,8 +167,9 @@ def _option_families(scope: RatingScope) -> list[str]:
     return fams
 
 
-def _fill_options(scope: RatingScope, df: pd.DataFrame, fill: str) -> pd.DataFrame:
-    """Fill missing co-pay/module options: catalogue default (plan -> scope -> component) or reference level."""
+def _fill_options(scope: RatingScope, df: pd.DataFrame, fill: str, default_families=()) -> pd.DataFrame:
+    """Fill missing co-pay/module options: catalogue default (plan -> scope -> component) or reference level.
+    default_families take the catalogue default under fill = "reference" too (CR #24)."""
     defaulted = pd.Series([""] * len(df), index=df.index, dtype=object)
     for fam in _option_families(scope):
         comps = [c for c in scope.components if c.family == fam and c.type in ("FACTOR_TABLE", "MODULE")]
@@ -177,10 +180,11 @@ def _fill_options(scope: RatingScope, df: pd.DataFrame, fill: str) -> pd.DataFra
         if not miss.any():
             continue
         vals = []
+        mode = "default" if fam in default_families else fill
         for idx in df.index[miss]:
             plan_id = df.at[idx, "plan"]
             v = None
-            if fill == "reference":
+            if mode == "reference":
                 c0 = comps[0]
                 if c0.type == "MODULE":
                     v = NONE_OPTION
@@ -200,7 +204,7 @@ def _fill_options(scope: RatingScope, df: pd.DataFrame, fill: str) -> pd.DataFra
                 if v is None:
                     v = next((c.default_option for c in comps if c.default_option is not None), None)
             if v is None:
-                raise ProposalRequired(f"scope {scope.scope_id}: no {'reference' if fill == 'reference' else 'catalogue default'} "
+                raise ProposalRequired(f"scope {scope.scope_id}: no {'reference' if mode == 'reference' else 'catalogue default'} "
                                        f"option for '{fam}' (plan {plan_id}); declare it in the catalogue spec (SPEC §3.4)")
             vals.append(v)
         df.loc[miss, fam] = pd.Series(vals, index=df.index[miss], dtype=object)
@@ -293,7 +297,7 @@ def _evaluate_scope(con, cat, s: RatingScope, sub: pd.DataFrame, options, reg, t
         sub["__age_lookup"] = sub["entry_age"] if "entry_age" in sub.columns else np.nan
     else:
         sub["__age_lookup"] = sub["age"] if "age" in sub.columns else np.nan
-    sub = _fill_options(s, sub, fill)
+    sub = _fill_options(s, sub, fill, tuple(options.get("default_families") or ()))
     n = len(sub)
     ids = sub["cell_id"].to_numpy()
     st = pd.DataFrame({"cell_id": ids, "scope_id": s.scope_id, "status": "PRICED", "reason": "", "currency": out_ccy,

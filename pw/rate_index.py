@@ -1,16 +1,20 @@
 """B2 rate index (SPEC §0, §5, §7): standardised rate change of each option vs expiring, overall and by cut.
 
-Both catalogues are priced on the SAME exposure cells with catalogue default options (SPEC §3.4):
+Basis (owner, 25 Oct 2026, CR #24): the comparison is on the cuts of exposure the Merit extract provides. Both
+catalogues are priced on the SAME exposure cells (Merit fields only) at the Nil / reference options of every family
+Merit does not carry (co-pay, AML, deductible, pharmacy, network option: factor 1.0) and with the riders in
+`b2.headline_modules` (default maternity) at the plan's catalogue default limit; other riders are left out of the
+headline and compared separately in RiderIndex. Benefit options stay in B1 (richness). Run config
+"b2": {"basis": "MERIT_CUTS" (default) | "FULL" (pre-CR #24: all options at catalogue defaults), "headline_modules": [...]}.
     RateFactors  option x cell:  rate_expiring, rate_option, factor = rate_option / rate_expiring, priced_status
     RateIndex    option x cut:   lives = sum w, prem_x = sum w * rate_x over cells priced under both,
                                  index = prem_option / prem_expiring,
                                  index_benefit_adj = sum w * rate_option / ratio(plan) / prem_expiring
 Weights w (standard mix, SPEC §5): latest UWY, lives in force at the snapshot date. Sensitivities: written_ly
 weights, and the UWY-1 mix. REFER / UNMATCHED cells (under either catalogue) are excluded from the index and
-reported with their weight share. The headline index uses the full rated premium (base x factors + modules + fees);
-the split columns show the base-only change (base x rating factors, cells whose base prices under both) and the rider
-change (additive modules, cells fully priced under both) (owner decision 24 Oct 2026, HANDOVER item 11). The
-TreatyFeed stays on full premium.
+reported with their weight share. The headline index is on the basis above (base x Merit-keyed factors + headline
+riders); the split columns show the base-only change and the headline-rider (maternity) change. The TreatyFeed uses
+the headline relativity per treaty book (CR #24), so its LR adjustment is the as-if effect of that relativity.
 """
 from __future__ import annotations
 
@@ -22,6 +26,21 @@ from .evaluator import evaluate
 from .model import Catalogue
 
 STANDARD_WEIGHT = "lives_inforce"
+B2_DEFAULTS = {"basis": "MERIT_CUTS", "headline_modules": ["module_maternity"]}     # owner, 25 Oct 2026 (CR #24)
+
+
+def b2_eval_options(b2_cfg: dict | None, eval_options: dict | None = None) -> dict:
+    """Evaluator options for the B2 headline basis (CR #24)."""
+    b = {**B2_DEFAULTS, **(b2_cfg or {})}
+    if b["basis"] not in ("MERIT_CUTS", "FULL"):
+        raise SpecError(f"b2.basis must be MERIT_CUTS or FULL, got {b['basis']!r}")
+    mods = list(b.get("headline_modules") or [])
+    if any(not str(m).startswith("module_") for m in mods):
+        raise SpecError(f"b2.headline_modules must be rider families (module_*), got {mods}")
+    eo = dict(eval_options or {})
+    if b["basis"] == "FULL":
+        return {**eo, "fill": "default"}
+    return {**eo, "fill": "reference", "default_families": mods}
 CELL_KEY_COLS = ["product_type", "regulator", "rating_region", "tpa", "plan", "age", "gender", "marital", "member_category",
                  "maternity_eligible", "nationality_group", "group_size_band"]
 DEFAULT_CUTS = [[], ["product_type"], ["product_type", "rating_region"], ["product_type", "rating_region", "tpa"],
@@ -158,6 +177,69 @@ def rate_index(rf: pd.DataFrame, cuts=None, benefit_ratio: pd.DataFrame | None =
                                               "prem_expiring_base", "prem_option_base", "index_base",
                                               "prem_expiring_riders", "prem_option_riders", "index_riders"]
     return r[cols]
+
+
+def rider_index(expiring: Catalogue, options: dict, cells: pd.DataFrame, eval_options: dict | None = None,
+                cuts=None) -> pd.DataFrame:
+    """RiderIndex (CR #24, not scored): quoted vs expiring rider rates per rider family x limit, on the same Merit cells
+    and weights (eligible lives only: the evaluator applies each rider's eligibility, e.g. maternity per eligible
+    female). For each family and each limit the expiring catalogue prices, every cell takes that limit and every other
+    option its reference (other riders NONE); the rider premium is the evaluator's price_riders.
+        index = sum w * rider_option / sum w * rider_expiring over cells where both price the rider
+        not_quoted_share = weight share of cells (with an expiring rider premium) that the option leaves REFER / unpriced
+    cuts: [[], ["product_type", "rating_region"]] by default."""
+    cuts = [[], ["product_type", "rating_region"]] if cuts is None else cuts
+    eo = {**(eval_options or {}), "fill": "reference"}
+    eo.pop("default_families", None)
+    fams = {}
+    for s in expiring.scopes:
+        for c in s.components:
+            if c.type == "MODULE" and c.family in c.keys:
+                for r in c.rows:
+                    if r.get("value") is not None:
+                        fams.setdefault(c.family, set()).add(str(r["key"][c.family]))
+    keys = [c for c in CELL_KEY_COLS if c in cells.columns]
+    out = []
+    for fam in sorted(fams):
+        for lim in sorted(fams[fam]):
+            cc = cells.copy()
+            cc[fam] = lim
+            e, _ = evaluate(expiring, cc, eo)
+            e = e.set_index("cell_id")
+            for oid, cat in sorted(options.items()):
+                o, _ = evaluate(cat, cc, eo)
+                o = o.set_index("cell_id")
+                d = cells[["cell_id", "w"] + keys].set_index("cell_id").copy()
+                d["re"] = e["price_riders"].where(e["status"] == "PRICED")
+                d["ro"] = o["price_riders"].where(o["status"] == "PRICED")
+                d = d[d["re"].fillna(0) > 0]
+                if d.empty:
+                    continue
+                both = d["ro"].notna()
+                d["_we"] = np.where(both, d["w"] * d["re"], 0.0)
+                d["_wo"] = np.where(both, d["w"] * d["ro"].fillna(0.0), 0.0)
+                d["_wl"] = d["w"]
+                d["_wn"] = np.where(both, 0.0, d["w"])
+                for cut in cuts:
+                    g = d.groupby(list(cut), dropna=False) if cut else [((), d)]
+                    for k, gg in g:
+                        k = k if isinstance(k, tuple) else (k,)
+                        row = {"option_id": oid, "cut": "TOTAL" if not cut else "x".join(cut), "rider_family": fam,
+                               "limit": lim, "lives_eligible": float(gg["_wl"].sum()),
+                               "prem_expiring": float(gg["_we"].sum()), "prem_option": float(gg["_wo"].sum()),
+                               "not_quoted_share": float(gg["_wn"].sum() / gg["_wl"].sum()) if gg["_wl"].sum() else np.nan}
+                        for dname, v in zip(cut, k):
+                            row[dname] = v
+                        row["index"] = row["prem_option"] / row["prem_expiring"] if row["prem_expiring"] > 0 else np.nan
+                        out.append(row)
+    cols = ["option_id", "cut", "product_type", "rating_region", "rider_family", "limit", "lives_eligible",
+            "prem_expiring", "prem_option", "index", "not_quoted_share"]
+    df = pd.DataFrame(out)
+    for c in cols:
+        if c not in df.columns:
+            df[c] = None
+    return df[cols].sort_values(["option_id", "rider_family", "limit", "cut", "product_type", "rating_region"],
+                                kind="stable", na_position="first").reset_index(drop=True)
 
 
 def run_index(expiring: Catalogue, options: dict, exposure_cells: pd.DataFrame, cuts=None, benefit_ratio=None,
@@ -394,11 +476,15 @@ def run_b2(cfg: dict, runs_root=None, exposure=None, coverage=None) -> dict:
     eopts = {**(cfg.get("eval_options") or {}), **({"duckdb": cfg["duckdb"]} if cfg.get("duckdb") else {})}
     cov = coverage if coverage is not None else coverage_report(expiring, ex, eopts)
     bd, bf = run_benefit(cfg, runs_root, exposure=ex)
-    rf, ri = run_index(expiring, opts, ex.cells, cfg.get("cuts"), plan_ratio(bf), eopts)
+    b2opts = b2_eval_options(cfg.get("b2"), eopts)
+    rf, ri = run_index(expiring, opts, ex.cells, cfg.get("cuts"), plan_ratio(bf), b2opts)
+    mix, _ = select_mix(ex.cells)
+    rix = rider_index(expiring, opts, aggregate_cells(mix, STANDARD_WEIGHT), b2opts)
     out = rd / "out"
     keys = [c for c in CELL_KEY_COLS if c in rf.columns]
     m = {"RateFactors": write_table("RateFactors", rf, out, ["option_id"] + keys, extra_ok=RATE_FACTOR_EXTRAS),
-         "RateIndex": write_table("RateIndex", ri, out, None, extra_ok=RATE_INDEX_EXTRAS + ("scenario",))}
+         "RateIndex": write_table("RateIndex", ri, out, None, extra_ok=RATE_INDEX_EXTRAS + ("scenario",)),
+         "RiderIndex": write_table("RiderIndex", rix, out, None, contract=False)}
     tf = None
     if cfg.get("treaty"):
         t = cfg["treaty"]
@@ -422,5 +508,6 @@ def run_b2(cfg: dict, runs_root=None, exposure=None, coverage=None) -> dict:
                                                                      "matched_share": cov["matched_share"]}})
     update_manifest(rd, "inputs", {"expiring": {"catalogue_id": expiring.catalogue_id, "hash": expiring.content_hash()},
                                    "exposure": {"snapshot_date": ec["snapshot_date"], "cells": int(len(ex.cells))}})
-    return {"RateFactors": rf, "RateIndex": ri, "BenefitDiff": bd, "BenefitFactors": bf, "TreatyFeed": tf,
+    update_manifest(rd, "b2", {**B2_DEFAULTS, **(cfg.get("b2") or {})})
+    return {"RateFactors": rf, "RateIndex": ri, "RiderIndex": rix, "BenefitDiff": bd, "BenefitFactors": bf, "TreatyFeed": tf,
             "coverage": cov, "dir": rd}

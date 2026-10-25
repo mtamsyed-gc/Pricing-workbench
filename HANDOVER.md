@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (WS4 integration and release 0.0.2 merged to main, PR #13 @ 7347fcc; laptop check from the installed release zip PASS (provisional) @ 1accbbb; before that: WS5 merged PR #9, OD2 PR #11, OD3 PR #12).
+Last updated: 2026-10-25 (OD4 / CR #24 on branch od4-b2-merit-cuts: B2 compares on the Merit cuts — base + maternity, non-Merit options at reference, RiderIndex, TreatyFeed on the headline relativity; PR open, laptop check PENDING. Separately: release 0.0.3 file-lock fix, PR #15, GC laptop re-check pending; WS4 merged PR #13).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -210,6 +210,12 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
 13. WS4 — CR #23 DECIDED (owner, 25 Oct): approved as proposed; applied in WS4 (TreatyScenarios.json, treaty.book_slots).
 14. WS4 — DECIDED (owner, 25 Oct): version 0.0.2; +0.0.1 per development release, never above 0.0.9 / 0.x.9 (then the next
     digit up, 0.1.0); only official GC test releases move to 1.0.0 and beyond.
+
+### OD4 notes (CR #24, owner 25 Oct 2026)
+- Merit's dim_life has no AML, limit, co-pay or deductible fields, so B2 compares only on the Merit cuts. `rate_index.b2_eval_options`: fill = reference for every option family plus `default_families` (evaluator option) for the headline riders, default `module_maternity` at the plan's catalogue default limit. Run config `b2`: basis MERIT_CUTS (default) | FULL (old behaviour), `headline_modules`.
+- Headline = base + maternity for every line (Individual's maternity sits in the Married-F rate). TPA (and nationality, where a catalogue has it) factors are Merit-keyed and apply. TreatyFeed rate factor = headline book relativity.
+- `RiderIndex` output (not scored): rider family x limit, eligible-lives weighted, not-quoted share; TOTAL and product x emirate. B1 (richness) unchanged and still uses catalogue defaults; V3 and the coverage report also unchanged (defaulted share stays informational).
+- UFIC: no nationality factor (removed from the SME structure); no nationality cut.
 
 ## Timeline driver
 UFIC reinsurer submissions due 5 Nov 2026. Priority order: UFIC data (WS5 merged: GC fills the
