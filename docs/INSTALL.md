@@ -3,9 +3,9 @@
 ## Versioning
 - One version number, `pw.__version__` (pw/__init__.py), shown in the zip folder name `pricing-workbench-<version>/`,
   in `RELEASE.json`, in every run manifest (`versions.pricing_workbench`) and in the Parquet metadata of every output.
-- MAJOR.MINOR.PATCH: MINOR for a new work order or a contract change applied through docs/CHANGE_REQUESTS.md,
-  PATCH for fixes that change no contract. 0.1.0-ws0 was the WS0–WS5 development line; 0.2.0 is the first
-  integrated release (WS4).
+- Scheme (owner, 25 Oct 2026): development releases count up by 0.0.1 and a digit never exceeds 9, so 0.0.9 is
+  followed by 0.1.0 (and 0.1.9 by 0.2.0). Only official GC test releases move to 1.0.0 and beyond. 0.0.2 is the first
+  integrated release (WS4); the WS0–WS5 development line carried 0.1.0-ws0. Enforced by `tests/test_release.py`.
 - A release is built from a commit on `main` whose laptop check passed; `RELEASE.json` and `COMMIT.txt` record it.
 
 ## What the zip holds

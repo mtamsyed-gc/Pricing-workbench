@@ -56,3 +56,13 @@ def test_installed_release_skips_repo_only_tests_and_clone_does_not():
         (root / "RELEASE.json").unlink()                       # not a release any more: missing content is a failure
         p = subprocess.run(run, capture_output=True, text=True, cwd=str(d))
         assert p.returncode == 1 and "missing repo content" in p.stdout, p.stdout
+
+
+def test_version_follows_the_owner_scheme():
+    """Owner, 25 Oct 2026: 0.d.d while in development, no digit above 9 (0.0.9 -> 0.1.0); 1.0.0+ only for official GC
+    test releases, which this check then needs updating for."""
+    import re
+    m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", __version__)
+    assert m, __version__
+    major, minor, patch = map(int, m.groups())
+    assert major == 0 and minor <= 9 and patch <= 9, __version__
