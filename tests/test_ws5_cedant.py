@@ -36,6 +36,13 @@ def _cells():
     return build_exposure(d / "dim_life.csv", d / "maps", d / "run_manifest.csv", strict=False).cells
 
 
+def _content(p):
+    """Workbook content hash (canonical XML), as the fixture-rebuild test: xlsx bytes differ across platforms and
+    library builds (e.g. CPython 3.14 on Windows), content must not."""
+    from test_cli_and_fixtures import _content_hash
+    return _content_hash(p)
+
+
 def _h(p):
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
@@ -88,7 +95,7 @@ def test_generated_workbook_layout_keys_and_determinism():
         # no value is pre-filled anywhere an input lives (structure only)
         krows = list(wb["_KEYS"].iter_rows(min_row=2, values_only=True))
         assert all(wb[r[5]][r[6]].value in (None,) for r in krows if r[2] != "REFER")
-        assert _h(d / "a.xlsx") == _h(C / "cedant_workbook.xlsx")
+        assert _content(d / "a.xlsx") == _content(C / "cedant_workbook.xlsx")     # committed fixture: content, not bytes
 
 
 # ------------------------------------------------------------------------------------------------ round trip
@@ -146,10 +153,10 @@ def test_round_trip_prices_expo_syn_cell_for_cell():
 
 def test_reinsurer_template_from_the_read_back_equals_t_alpha():
     """Reinsurer mode unchanged: the tender template generated from the read-back catalogue (same spec, cedant
-    sections included) is byte-identical to T_ALPHA (Existing Rates, Factor Tables, Add-ons from the read-back)."""
+    sections included) has the same content as T_ALPHA (Existing Rates, Factor Tables, Add-ons from the read-back)."""
     with tmpdir() as d:
         generate_template(_spec(), d / "r.xlsx", expiring=Catalogue.read(C / "expiring.json"))
-        assert _h(d / "r.xlsx") == _h(FIX / "T_ALPHA" / "template.xlsx")
+        assert _content(d / "r.xlsx") == _content(FIX / "T_ALPHA" / "template.xlsx")
 
 
 def test_read_back_drives_v5_like_the_source_catalogue():
