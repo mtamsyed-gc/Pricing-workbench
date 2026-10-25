@@ -149,3 +149,18 @@ def test_laptop_check_lock_allows_one_check_at_a_time():
 def test_run_laptop_check_bat_streams_to_the_console_file():
     bat = (REPO / "tools" / "RUN_LAPTOP_CHECK.bat").read_text(encoding="ascii")
     assert '--console "%~dp0laptop_check_console.txt"' in bat and '> "%~dp0laptop_check_console.txt"' not in bat
+
+
+def test_a_refused_second_check_leaves_the_running_checks_console_file_alone():
+    """Found on the owner's laptop (25 Oct 2026): the refused start emptied the running check's console file."""
+    lc = _laptop_check()
+    lock = REPO / "runs" / "laptop_check" / "RUNNING.lock"
+    with tmpdir() as d:
+        con = d / "console.txt"
+        con.write_text("PASS  something\n", encoding="utf-8")
+        assert lc.acquire_lock(lock) is None
+        try:
+            assert lc.main(["--quick", "--console", str(con)]) == lc.EXIT_LOCKED
+        finally:
+            lock.unlink()
+        assert con.read_text(encoding="utf-8") == "PASS  something\n"

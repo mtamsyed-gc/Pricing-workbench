@@ -231,14 +231,14 @@ def main(argv=None):
     ap.add_argument("--quick", action="store_true", help="skip the full test suite (tool checks only)")
     ap.add_argument("--console", help="also append every result line to this file (started empty)")
     a = ap.parse_args(argv)
+    lock = REPO / "runs" / "laptop_check" / "RUNNING.lock"
+    busy = acquire_lock(lock)
+    if busy:                         # screen only: the running check owns the console file
+        print(busy, flush=True)
+        return EXIT_LOCKED
     if a.console:
         _CONSOLE[:] = [Path(a.console)]
         _CONSOLE[0].write_text("", encoding="utf-8")
-    lock = REPO / "runs" / "laptop_check" / "RUNNING.lock"
-    busy = acquire_lock(lock)
-    if busy:
-        say(busy)
-        return EXIT_LOCKED
     try:
         return _main(a)
     finally:
