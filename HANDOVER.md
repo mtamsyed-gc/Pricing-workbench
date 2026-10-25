@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (WS5 cedant rate workbook, PR #9 open, laptop check PASS (provisional, personal laptop) @ 21003ca; owner decisions on WS5 items 7–12 applied, SPEC §8.4 corrected: Individual M/SF + Married-F).
+Last updated: 2026-10-25 (WS5 cedant rate workbook merged to main, PR #9 @ de85828, laptop check PASS (provisional, personal laptop) @ 21003ca; owner decisions on WS5 items 7–12 applied, SPEC §8.4 corrected: Individual M/SF + Married-F).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -34,14 +34,14 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS | Scope | Status | Laptop check | Next step |
 |---|---|---|---|---|
 | WS0 | Core: registries, catalogue model + spec parser, evaluator, exposure builder, gates V0–V4 (V5 stub), fixtures, template generator core, work orders WS1–WS6, laptop check | Merged to main (PR #1, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 777c8e8 (Win 11, Py 3.14); GC work laptop (pinned Py 3.12) run outstanding | Run the check on the GC work laptop when available; answer open items below |
-| WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | WS3 + WS6 next (WS2 in parallel); answer WS1 open items 11–14 |
+| WS1 | B2 rate index, RateFactors, TreatyFeed; B1 level 1; T ingest + V5 | Merged to main (PR #3, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 50d1020; GC work laptop run outstanding | Done (open items 11–14 decided 24 Oct, OD1) |
 | WS2 | A market benchmark | Merged to main (PR #6, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ e54e4b7; GC work laptop run outstanding | Done; CR #13 and items 19–21 applied in the owner-decisions batch |
 | OD1 | Owner decisions on HANDOVER items 1–21 (SPEC v0.4; UFIC example; riders; B2 split; B1; V5; scorecard; benchmark) | Merged to main (PR #7, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 32e7a31; GC work laptop run outstanding | Done |
-| WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Built on branch `ws5-cedant-workbook`, PR #9 open (UFIC deadline 5 Nov) | **PASS (25 Oct, provisional)** — functional PASS on owner's personal laptop @ 21003ca (Win 11, Py 3.14.6): suite 112/112, every tool check, UFIC cedant + reinsurer workbooks and the fixture cedant workbook open in Excel; only environment lines fail (Py 3.14 not 3.12, unpinned packages). GC work laptop run outstanding | Merge PR #9; then GC fills the UFIC copy in `runs\` |
-| WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC; answer WS3 open items 15–17 |
-| WS4 | Integration, release | Blocked on WS1–WS3 | — | docs/workorders/WS4.md |
+| WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Merged to main (PR #9, 25 Oct) | **PASS (25 Oct, provisional)** — functional PASS on owner's personal laptop @ 21003ca (Win 11, Py 3.14.6): suite 112/112, every tool check, UFIC cedant + reinsurer workbooks and the fixture cedant workbook open in Excel; only environment lines fail (Py 3.14 not 3.12, unpinned packages). GC work laptop run outstanding | GC fills the UFIC cedant workbook in `runs\`, `t cedant-read` to PASS, then `t generate --expiring` and issue (UFIC deadline 5 Nov) |
+| WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC (open item 4); items 15–17 decided 24 Oct (OD1) |
+| WS4 | Integration, release | Ready (WS1–WS3, OD1, WS5 merged) — **next** | — | docs/workorders/WS4.md |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
-| WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready after OD1 merges | — | docs/workorders/WS7.md |
+| WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
 
 ### WS5 notes for the next sessions
 - `pw/template/cedant.py`: `generate_cedant_workbook` (`t cedant`), `read_cedant` / `read_cedant_workbook` (`t cedant-read`,
@@ -175,6 +175,6 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
     off for now — closes item 3 as "off". Note: reference/ §3.2 labels that AML table as Individual; it is SME's.
 
 ## Timeline driver
-UFIC reinsurer submissions due 5 Nov 2026. Priority order: WS5 (PR open: laptop check; then GC fills the
+UFIC reinsurer submissions due 5 Nov 2026. Priority order: UFIC data (WS5 merged: GC fills the
 UFIC copy in `runs\`, reads it back, and the reinsurer template is generated with `--expiring`) → WS4 (integration,
 release on GC laptops) → WS6 (Merit as-if, other repo, can run in parallel) → WS7.
