@@ -2,7 +2,10 @@
 
 Owner decisions (24 Oct 2026, WS3 thread):
   criteria   price, benefit-adjusted price, price robustness, commercial terms (no qualitative scores)
-  normalise  min-max per criterion to 0-100 (best = 100, worst = 0; all equal -> 100)
+  normalise  min-max per criterion to 0-100 (best = 100, worst = 0); when the single options show no spread every
+             option and panel scores 100 and the Scorecard / pack flag the criterion NO_SPREAD (owner, 25 Oct 2026, CR #22)
+  SHARE      absolute scale, not min-max: score = 100 x min(share, 100%) / 100% - the share of the order filled
+             (owner, 25 Oct 2026, CR #22), so a panel's capacity is credited up to a full placement
   terms      numeric terms from a structured run input terms_scores.csv (Terms sheet text kept beside for audit)
   panels     followers write at the lead's rates AND terms (owner, 24 Oct 2026, amends CR #12): a panel scores as
              its lead on every criterion except SHARE, which is the panel's capacity (sum of members' offered shares)
@@ -38,6 +41,8 @@ import pandas as pd
 
 from . import ProposalRequired, SpecError
 
+SCALES = {"SHARE": "ABSOLUTE"}            # criterion -> scale; others MINMAX (CR #22)
+SHARE_FULL = 100.0                          # share_pct of a full placement (100% of the order)
 CRITERIA = {
     "PRICE": ("index", "LOWER", "RateIndex STANDARD TOTAL"),
     "PRICE_BENEFIT_ADJ": ("index_benefit_adj", "LOWER", "RateIndex STANDARD TOTAL"),
@@ -78,6 +83,9 @@ def directions(cfg_dirs: dict | None = None) -> dict:
     for k, v in (cfg_dirs or {}).items():
         if k not in CRITERIA or v not in ("LOWER", "HIGHER"):
             raise SpecError(f"direction override {k}={v!r}: criterion must be known and direction LOWER/HIGHER")
+        if SCALES.get(k) == "ABSOLUTE" and v != CRITERIA[k][1]:
+            raise SpecError(f"direction override {k}={v!r}: {k} is scored on an absolute scale ({CRITERIA[k][1]} is "
+                            "better); it cannot be reversed")
         d[k] = v
     return d
 
@@ -177,6 +185,26 @@ def normalise(values: pd.Series, direction: str, ref: pd.Series | None = None) -
     return out
 
 
+def normalise_absolute(values: pd.Series, full: float = SHARE_FULL) -> pd.Series:
+    """Absolute scale (SHARE): 100 x min(value, full) / full; negative values score 0; NaN stays NaN."""
+    v = values.astype(float)
+    return (v.clip(lower=0.0, upper=full) / full * 100.0).where(v.notna())
+
+
+def scale_note(values: pd.Series, criterion: str, ref: pd.Series | None = None) -> str:
+    """ABSOLUTE for absolute-scale criteria; NO_SPREAD when the scale-setting (single) options all have the same value,
+    so the criterion separated nobody; '' otherwise."""
+    if SCALES.get(criterion) == "ABSOLUTE":
+        return "ABSOLUTE"
+    v = values.astype(float)
+    sc = v.notna() & (ref if ref is not None else True)
+    if not sc.any():
+        sc = v.notna()
+    if sc.any() and v[sc].max() - v[sc].min() <= 1e-15:
+        return "NO_SPREAD"
+    return ""
+
+
 def score(inputs: pd.DataFrame, weights: dict, dirs: dict | None = None, kinds: dict | None = None):
     """Returns (Scorecard long table, Ranking). kinds: option_id -> 'OPTION' | 'PANEL'."""
     w = validate_weights(weights)
@@ -188,14 +216,18 @@ def score(inputs: pd.DataFrame, weights: dict, dirs: dict | None = None, kinds: 
             wide[c] = np.nan
     wide = wide[used].sort_index()
     ref = pd.Series([(kinds or {}).get(o, "OPTION") == "OPTION" for o in wide.index], index=wide.index)
-    norm = pd.DataFrame({c: normalise(wide[c], d[c], ref) for c in used}, index=wide.index)
+    norm = pd.DataFrame({c: (normalise_absolute(wide[c]) if SCALES.get(c) == "ABSOLUTE" else normalise(wide[c], d[c], ref))
+                         for c in used}, index=wide.index)
+    notes = {c: scale_note(wide[c], c, ref) for c in used}
     long = []
     for oid in wide.index:
         for c in used:
             long.append({"option_id": oid, "criterion": c, "value": wide.loc[oid, c], "direction": d[c],
                          "normalised": norm.loc[oid, c], "weight": w[c],
-                         "contribution": norm.loc[oid, c] * w[c] if norm.loc[oid, c] == norm.loc[oid, c] else np.nan})
-    sc = pd.DataFrame(long, columns=["option_id", "criterion", "value", "direction", "normalised", "weight", "contribution"])
+                         "contribution": norm.loc[oid, c] * w[c] if norm.loc[oid, c] == norm.loc[oid, c] else np.nan,
+                         "scale_note": notes[c]})
+    sc = pd.DataFrame(long, columns=["option_id", "criterion", "value", "direction", "normalised", "weight", "contribution",
+                                     "scale_note"])
     rk = []
     for oid in wide.index:
         miss = [c for c in used if w[c] > 0 and not norm.loc[oid, c] == norm.loc[oid, c]]
@@ -402,16 +434,23 @@ def write_pack(path: Path, run_id, inputs, card, rank, oat, flips, gr, weights, 
     r = table(ws, 2, ["option", "kind", "score", "rank", "status", "reason"],
               [[label(x.option_id), x.kind, x.score, x.rank, x.status, x.reason] for x in rank.itertuples()],
               {"score": n2, "rank": None})
-    r = table(ws, r, ["criterion", "weight", "direction"],
-              [[c, w, directions(sc_cfg.get("directions"))[c]] for c, w in weights.items()], {"weight": pct})
+    notes = card.drop_duplicates("criterion").set_index("criterion")["scale_note"].to_dict() if "scale_note" in card else {}
+    r = table(ws, r, ["criterion", "weight", "direction", "scale_note"],
+              [[c, w, directions(sc_cfg.get("directions"))[c], notes.get(c, "")] for c, w in weights.items()],
+              {"weight": pct})
+    nospread = [c for c, n in notes.items() if n == "NO_SPREAD" and weights.get(c, 0) > 0]
+    if nospread:
+        ws.write(r, 0, "NO_SPREAD: every single option has the same value on " + ", ".join(nospread) + " - these "
+                       "weights add the same points to everyone and separate no one.", wb.add_format({"italic": True}))
+        r += 2
     ws.write(r, 0, "Nearest ranking flips (one-at-a-time)", wb.add_format({"bold": True}))
     table(ws, r + 1, ["criterion", "current_weight", "flip_weight", "leader_below", "leader_above"],
           [[f.criterion, f.current_weight, f.flip_weight, label(f.leader_below), label(f.leader_above)]
            for f in flips.head(10).itertuples()], {"current_weight": pct, "flip_weight": pct})
     ws = wb.add_worksheet("Scorecard")
     ws.set_column(0, 6, 16)
-    table(ws, 0, ["option", "criterion", "value", "direction", "normalised", "weight", "contribution"],
-          [[label(x.option_id), x.criterion, x.value, x.direction, x.normalised, x.weight, x.contribution]
+    table(ws, 0, ["option", "criterion", "value", "direction", "normalised", "weight", "contribution", "scale_note"],
+          [[label(x.option_id), x.criterion, x.value, x.direction, x.normalised, x.weight, x.contribution, x.scale_note]
            for x in card.itertuples()], {"value": n4, "normalised": n2, "weight": pct, "contribution": n2})
     ws = wb.add_worksheet("Inputs")
     ws.set_column(0, 5, 18)

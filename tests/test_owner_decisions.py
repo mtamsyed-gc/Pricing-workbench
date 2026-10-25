@@ -166,7 +166,7 @@ def test_scorecard_scale_set_by_single_options_and_panel_is_its_lead():
     for o in ("X", "Y", "Z"):
         for c in w:
             assert abs(a[(o, c)] - b[(o, c)]) < 1e-12                              # adding a panel moves nothing
-    assert abs(b[("P", "SHARE")] - (90 - 20) / (40 - 20) * 100) < 1e-9          # 350: above the options' scale
+    assert b[("P", "SHARE")] == 90.0      # CR #22 (25 Oct): SHARE absolute = 90% of the order (was min-max 350)
     assert b[("P", "PRICE")] == b[("Y", "PRICE")] == 100.0
 
 
