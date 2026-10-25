@@ -60,7 +60,9 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 - `run_b2(cfg, runs_root, exposure=None, coverage=None)`: optional pre-built exposure / coverage (no behaviour change).
 - Treaty tool: `pw/treaty_contract.py` checks TreatyFeed / OptionTerms (Parquet + Excel view) against
   `contracts/treaty_feed_contract.json` (SPEC §7 columns, types, nulls, finiteness, keys) and warns beyond the tool's
-  slots (8 books, 6 reinsurers). Compared with treatymodel 2.0 (PBM, project sync source): gaps G1–G4, CR #23 pending.
+  slots (8 books, 6 reinsurers). Compared with treatymodel 2.0 (PBM treatymodel/ and the vendored copy in ete-dashboard
+  side_tools/treaty_tool/, same commit a07c945): its machine interface is the config JSON (scenarios[].books.volume /
+  lr_adj by book slot; reinsurer terms are owner inputs). Gaps G1–G4 and the proposed TreatyScenarios.json: CR #23 pending.
 - Release: version `pw.__version__` = 0.2.0 (single source). `tools/package.py` writes RELEASE.json + COMMIT.txt into
   `pricing-workbench-<version>/` and RUN_LAPTOP_CHECK.bat (finds the folder by pattern) at the root, in both modes.
   Release excludes reference/, examples/ufic_2027/, runs/, out/ (tests/test_boundary.py, tests/test_release.py).
@@ -203,9 +205,9 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
     confirmed); Individual AML is fixed by the ToB. SME network options (Option 2, "GN excl. named hospitals") switched
     off for now — closes item 3 as "off". Note: reference/ §3.2 labels that AML table as Individual; it is SME's.
 
-13. WS4 — CR #23 (pending): treatymodel 2.0 takes fractions, one premium change per scenario plus per-book volume,
-    structured reinsurer terms and per-book shares; TreatyFeed is in percent per book and OptionTerms is free text.
-    Decide whether to add a `TreatyPaste` view and a structured terms input (proposal in CR #23).
+13. WS4 — CR #23 (pending): treatymodel 2.0 takes fractions and per-book volume / lr_adj (config JSON or Scenarios
+    sheet); TreatyFeed is in percent. Proposal: write `TreatyScenarios.json` per run in the tool's config schema
+    (volume = 1 + premium_change_pct / 100, lr_adj = lr_adjustment_pts / 100 per book slot; reinsurer terms stay owner inputs).
 14. WS4 — release version 0.2.0 proposed (first integrated release; 0.1.0-ws0 before). Owner to confirm.
 
 ## Timeline driver

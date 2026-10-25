@@ -3,7 +3,7 @@
  "target": "see treatymodel_version.txt",
  "source": "SPEC §7 (TreatyFeed, OptionTerms) with CR #5-#7; units: premium_change_pct and lr_adjustment_pts in percent points",
  "treatymodel_verified": false,
- "treatymodel_note": "Compared on 25 Oct 2026 with treatymodel 2.0 (PBM treatymodel/spec.py and build.py, branch claude/inspiring-rubin-7ncppi). The treaty tool has no file import: scenario inputs are typed or pasted into its Scenarios library. Gaps G1-G4 below are open (CR #23); treatymodel_verified stays false until the owner decides them.",
+ "treatymodel_note": "Compared on 25 Oct 2026 with treatymodel 2.0 in PBM (treatymodel/, branch claude/inspiring-rubin-7ncppi) and its vendored copy ete-dashboard side_tools/treaty_tool/ (VERSION = commit a07c945, same as treatymodel_version.txt). Gaps G1-G4 are open (CR #23); treatymodel_verified stays false until the owner decides them.",
  "tables": {
   "TreatyFeed": {
    "key": [
@@ -121,9 +121,11 @@
   },
   "gaps": {
    "G1_units": "TreatyFeed premium_change_pct and lr_adjustment_pts are in percent (CR #7); the tool takes fractions: divide by 100 on entry",
-   "G2_premium_change_level": "TreatyFeed gives a premium change per treaty book; the tool has one premium change per scenario (all books) and a per-book volume factor. Per-book entry would be volume = 1 + premium_change_pct / 100 (rate factor x (1 - lapse)): owner to confirm",
+   "G2_premium_change_level": "TreatyFeed is per treaty book. Entered per book as volume = 1 + premium_change_pct / 100 and lr_adj = lr_adjustment_pts / 100 it reproduces the workbench as-if (premium x rate factor x (1 - lapse), claims x (1 - lapse)); prem_chg and lr_chg then stay 0. Owner to confirm (CR #23)",
    "G3_terms_structure": "OptionTerms carries the Terms sheet as free text; the tool needs structured terms (commission type and rates, corridor from / to, cap, profit share type and tiers) and a share per book. Numeric commission / profit share / corridor / cap / share exist only in terms_scores.csv (scorecard input)",
    "G4_book_names": "treaty_book values (treaty_book_map.csv) must equal the tool's Setup book names; at most 8 books, 6 reinsurers (options) and 12 scenarios per workbook"
-  }
+  },
+  "interface": "config JSON (configs/treaty_template_example.json schema, treatymodel.config.normalise); scenarios[].books.volume / lr_adj are lists by book slot; scenarios[].ri are owner inputs (tool README section 4). The Excel Scenarios library is the manual route.",
+  "engine": "book premium = experience premium x volume x (1 + prem_chg); claims = net premium x (experience LR + lr_adj + lr_chg)"
  }
 }
