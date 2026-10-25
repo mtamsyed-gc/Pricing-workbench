@@ -811,16 +811,6 @@
       "OTHER"
      ],
      "reference": "OTHER"
-    },
-    {
-     "component_id": "f_tpa",
-     "family": "tpa",
-     "options": [
-      "NAS",
-      "NEXTCARE",
-      "MEDNET"
-     ],
-     "reference": "NAS"
     }
    ],
    "riders": [
@@ -1238,16 +1228,6 @@
       "OTHER"
      ],
      "reference": "OTHER"
-    },
-    {
-     "component_id": "f_tpa",
-     "family": "tpa",
-     "options": [
-      "NAS",
-      "NEXTCARE",
-      "MEDNET"
-     ],
-     "reference": "NAS"
     }
    ],
    "riders": [
@@ -1638,13 +1618,13 @@
    "Individual DXB-NE (NC / NAS / Mednet): no factor tables for now (owner, 25 Oct 2026: Factors-Individual switched off pending clarity). Enter the base at OP diagnostic 0%, consultation '20% up to AED 50 (standard)', pharmacy 0%, network Option 1, before any TPA or nationality factor.",
    "Individual DXB-NE Aafiya (F3): Nil base; the Aafiya 10% / 20% co-pay blocks are flat multipliers of the Nil rate (table f_aafiya_copay).",
    "Individual AUH: Nil block = base. The 10% / 20% blocks are flat multipliers per TPA source table (NC & Mednet share theirs: enter it on both keys). F2: enter the NC / Mednet and NAS multipliers with the 10% and 20% labels swapped (10% gives the smaller discount, as Aafiya). F6: NAS 20% uses the derived multiplier, not the 13 erroneous source cells.",
-   "SME (Factors-SME): AML factor by network column with 1.0 at AED 1.5m (GN+), 1m (GN), 500k (RN), 250k (RN2 / RN3 / PCP-RN3); the plan letter selects the column (Key on shows it). Consultation deductible, OP diagnostic, pharmacy limit and pharmacy co-pay from Factors-SME. IP / day-case: 0% / 10% / 20% / 30% on both emirates; the NIL / AED 200 deductible rows are Abu Dhabi only (one family). Maternity columns per the provisional shift (SPEC §12): plan C = RNE, D = RN, E = RN2, F = RN3/PCP; the 'Annual Limit' row is not entered. Dental / optical: plans D-F take the 'Plan 4-6' column.",
+   "SME (Factors-SME): AML factor by network column with 1.0 at AED 1.5m (GN+), 1m (GN), 500k (RN), 250k (RN2 / RN3 / PCP-RN3); the plan letter selects the column (Key on shows it). Consultation deductible, OP diagnostic, pharmacy limit and pharmacy co-pay from Factors-SME. IP / day-case: 0% / 10% / 20% / 30% on both emirates; the NIL / AED 200 deductible rows are Abu Dhabi only (one family). Maternity columns per the provisional shift (SPEC §12): plan C = RNE, D = RN, E = RN2, F = RN3/PCP; the 'Annual Limit' row is ignored (owner, 25 Oct). No SME TPA factor. Dental / optical: plans D-F take the 'Plan 4-6' column.",
    "Nationality groups (SME): ISC = India / Bangladesh / Pakistan; PHL = Philippines; LEVANT_EGY = Egypt, Jordan, Syria, Palestine, Lebanon; OTHER = all others.",
    "F4: consultation deductible '10% flat' is entered as in the source (flagged).",
    "AUH Basic: GROSS basis (F7); the rate table before loadings."
   ],
   "provisional": [
-   "SME maternity column shift (plan C = RNE, D = RN, E = RN2, F = RN3/PCP) and the 'Annual Limit' row - to confirm with the cedant (HANDOVER item 2)"
+   "SME maternity column shift (plan C = RNE, D = RN, E = RN2, F = RN3/PCP) - to confirm with the cedant (HANDOVER item 2)"
   ],
   "decided": [
    "Owner 25 Oct 2026: Factors-Individual (OP diagnostic co-pay, consultation deductible, pharmacy co-pay, network option, nationality, TPA) switched off for every Individual DXB-NE TPA until clarified; Aafiya DXB-NE keeps only its co-pay block factors (F3).",
@@ -1653,7 +1633,9 @@
    "Owner 25 Oct 2026: SME has its own consultation deductible table (Factors-SME); Individual has none.",
    "Owner 25 Oct 2026: SME IP / day-case co-pay is one family: 0-30% on both emirates, NIL / AED 200 deductible rows Abu Dhabi only.",
    "Owner 25 Oct 2026: the AML-by-network table is SME's (Individual AML is fixed by the ToB); references confirmed per column.",
-   "Owner 25 Oct 2026: SME network options (Option 2 on plans B / C, 'GN excl. named hospitals' on plan B) switched off for now."
+   "Owner 25 Oct 2026: SME network options (Option 2 on plans B / C, 'GN excl. named hospitals' on plan B) switched off for now.",
+   "Owner 25 Oct 2026: SME has no TPA factor (none on the Factors-SME sheet).",
+   "Owner 25 Oct 2026: the SME maternity 'Annual Limit' row is ignored (not entered, not priced)."
   ]
  }
 }

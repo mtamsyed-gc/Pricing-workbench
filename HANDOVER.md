@@ -151,14 +151,16 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, #12 amended, #13, #17–#21; SPEC v0.4 §4.3,
 §4.5, §5, §6, §7, §8.0, §8.4, §12). Still open:
 1. GC work laptop: run `py tools\laptop_check.py` (pinned Py 3.12) for the merged heads; personal-laptop PASSes are provisional.
-2. UFIC confirmations (SPEC §12): SME maternity column labels (owner assumption: RNE = RN, RN = RN2, RN2 = RN3); the
-   maternity "Annual Limit" row (ignored for now); F4 consultation deductible "10%" = 1.085 (kept, flagged).
+   Owner (25 Oct): runs it once he is happy with the tool and the synthetic runs and testing here.
+2. UFIC confirmations (SPEC §12): SME maternity column labels (owner assumption: RNE = RN, RN = RN2, RN2 = RN3) — to
+   confirm with UFIC; F4 consultation deductible "10%" = 1.085 (kept, flagged). DECIDED 25 Oct: the maternity "Annual
+   Limit" row is ignored; SME has no TPA factor (none on the Factors-SME sheet; removed from the UFIC cedant structure).
 3. "GN excl. named hospitals" network factor on Plan 2 (SME): switched off for now (owner, 25 Oct; see item 12).
-4. Real scorecard weights for UFIC (examples/scorecard_weights.json is fictional).
+4. Real scorecard weights for UFIC (examples/scorecard_weights.json is fictional). Owner (25 Oct): we propose.
 5. F2 swap and F3 multipliers are applied in the run's expiring UFIC catalogue spec (outside the repo, runs/).
 6. Scorecard (SPEC silent): when all single options have the same value on a criterion there is no scale and everyone,
    panels included, scores 100 (e.g. a panel's larger capacity gets no credit if every option offers the same share).
-   Keep, or give panels a fixed credit there?
+   Keep, or give panels a fixed credit there? Owner (25 Oct): we propose.
 7. WS5 — DECIDED (owner, 25 Oct): Factors-Individual is switched off for every Individual DXB-NE TPA until clarified
    (no OP diagnostic / consultation / pharmacy / network option / nationality / TPA factor tables); Aafiya DXB-NE keeps
    only its co-pay block factors. The long tables keep the TPA group column (needed for this split).
