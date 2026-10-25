@@ -7,6 +7,9 @@
 3. End-to-end run of every CLI tool on the synthetic fixtures, in runs/laptop_check/<UTC stamp>/ (never committed),
    from a working directory that is NOT the repo (paths must resolve from the scripts' own location).
 4. Path lengths under the repo and the run folder stay below the Windows 260-character limit.
+5. WS4 release gate: the end-to-end `run` on the fixtures, twice; the second run must be byte-identical.
+Run from an installed release zip (RELEASE.json at the root, no .git) the check also verifies that the release ships no
+reference/ or client example, and reports the repo-only cedant-example checks as SKIP (not FAIL).
 Writes laptop_check_report.md + .json in the run folder and prints the .md path. Exit code 0 = all PASS.
 The owner returns the report (or its summary line) to the session; the work order is not done until it is PASS.
 Work orders that add a tool add its check to TOOL_CHECKS below (CLAUDE.md working method).
@@ -114,7 +117,25 @@ def tool_checks(run: Path):
                                                 str(run / "template_from_readback.xlsx")], 0, "structure hash"),
         ("t cedant cedant structure example", PW + ["t", "cedant", str(REPO / "examples" / "ufic_2027" / "template_spec.json"),
                                                     "--out", str(run / "example_cedant.xlsx")], 0, "structure hash"),
+        # WS4: the end-to-end run (release gate), twice into separate run roots; the second must be byte-identical
+        ("run end to end (fixtures)", PW + ["run", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "e2e1"),
+                                            "--hashes", str(run / "e2e1_hashes.json")], 0, "RUN COMPLETE"),
+        ("run again (second run)", PW + ["run", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "e2e2"),
+                                         "--hashes", str(run / "e2e2_hashes.json")], 0, "RUN COMPLETE"),
     ]
+
+
+def needs_example(cmd) -> bool:
+    """Checks on the structure-only cedant example: repo only, the release zip does not ship it (CLAUDE.md)."""
+    return cmd is not None and any("ufic_2027" in str(x) for x in cmd)
+
+
+def release_info() -> dict | None:
+    """RELEASE.json written by tools/package.py; None in a repo clone."""
+    p = REPO / "RELEASE.json"
+    if p.exists() and not (REPO / ".git").exists():
+        return json.loads(p.read_text(encoding="utf-8"))
+    return None
 
 
 def excel_open(paths) -> tuple[bool, str]:
@@ -147,9 +168,20 @@ def main(argv=None):
     cwd = Path(tempfile.gettempdir())          # deliberately not the repo
     results = []
 
-    def add(name, ok, detail, tail=None):
-        results.append({"check": name, "status": "PASS" if ok else "FAIL", "detail": detail, "tail": tail or []})
-        print(f"{'PASS' if ok else 'FAIL'}  {name}  {detail}")
+    def add(name, ok, detail, tail=None, status=None):
+        st = status or ("PASS" if ok else "FAIL")
+        results.append({"check": name, "status": st, "detail": detail, "tail": tail or []})
+        print(f"{st}  {name}  {detail}")
+
+    rel = release_info()
+    if rel is not None:
+        import re                                # tools/pw.py shadows the pw package here: read the version as text
+        m = re.search(r'__version__ = "([^"]+)"', (REPO / "pw" / "__init__.py").read_text(encoding="utf-8"))
+        __version__ = m.group(1) if m else None
+        shipped = [x for x in ("reference", "examples/ufic_2027", "runs/RUN_SYN") if (REPO / x).exists()]
+        add("installed release contents", not shipped and rel.get("version") == __version__,
+            f"release {rel.get('version')} @ {rel.get('commit')} (pw {__version__}); "
+            + (f"must not ship: {shipped}" if shipped else "no reference/ or client example"))
 
     # 1. environment
     is_win = platform.system() == "Windows"
@@ -183,22 +215,41 @@ def main(argv=None):
                     for c in ("CAT_ALPHA", "CAT_BETA", "CAT_GAMMA", "CAT_DELTA", "CAT_RETIREE", "CAT_IPMI")]
             add(name, all(o[0] for o in outs), "; ".join(o[1] for o in outs), [t for o in outs for t in o[2]][-6:])
             continue
+        if rel is not None and needs_example(cmd) and not (REPO / "examples" / "ufic_2027").exists():
+            add(name, True, "not in the release (repo-only cedant example)", status="SKIP")
+            continue
         ok, det, tail = _run(cmd, cwd, expect_rc=rc, must_contain=text)
         add(name, ok, det, tail)
+    # WS4 acceptance: the second end-to-end run reproduces every output byte for byte
+    try:
+        h1 = json.loads((run / "e2e1_hashes.json").read_text(encoding="utf-8"))
+        h2 = json.loads((run / "e2e2_hashes.json").read_text(encoding="utf-8"))
+        diff = sorted(k for k in set(h1) | set(h2) if h1.get(k) != h2.get(k))
+        add("run byte-identical on a second run", bool(h1) and not diff,
+            f"{len(h1)} files identical" if not diff else f"{len(diff)} differ: {diff[:5]}")
+    except (OSError, ValueError) as ex:
+        add("run byte-identical on a second run", False, repr(ex))
     # generated workbooks open with openpyxl
     try:
         from openpyxl import load_workbook
         for f in ("template.xlsx", "example_template.xlsx", "cedant.xlsx", "example_cedant.xlsx", "template_from_readback.xlsx",
                   "runs/RUN_SYN/out/RateIndex.xlsx",
-                  "runs/RUN_SYN/out/TreatyFeed.xlsx", "runs/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx", "runs/RUN_SYN/out/ValueMap.xlsx"):
+                  "runs/RUN_SYN/out/TreatyFeed.xlsx", "runs/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx", "runs/RUN_SYN/out/ValueMap.xlsx",
+                  "e2e1/RUN_SYN/out/TreatyFeed.xlsx", "e2e1/RUN_SYN/out/OptionTerms.xlsx",
+                  "e2e1/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx"):
+            if f.startswith("example_") and rel is not None and not (run / f).exists():
+                continue                                     # repo-only example, skipped above
             load_workbook(run / f).close()
         add("generated workbooks open", True, "openpyxl load ok")
     except Exception as ex:  # noqa: BLE001
         add("generated workbooks open", False, repr(ex))
     # WS5 acceptance: both cedant-example workbooks (cedant mode and reinsurer mode) open in Excel itself
     if is_win:
-        ok, det = excel_open([run / "example_cedant.xlsx", run / "example_template.xlsx", run / "cedant.xlsx"])
-        add("workbooks open in Excel (cedant example: cedant + reinsurer; fixture cedant)", ok, det)
+        books = [run / "example_cedant.xlsx", run / "example_template.xlsx", run / "cedant.xlsx",
+                 run / "e2e1" / "RUN_SYN" / "out" / "Recommendation_Pack_RUN_SYN.xlsx",
+                 run / "e2e1" / "RUN_SYN" / "out" / "TreatyFeed.xlsx"]
+        ok, det = excel_open([b for b in books if b.exists() or not b.name.startswith("example_")])
+        add("workbooks open in Excel (cedant example when shipped; fixture cedant; run pack and TreatyFeed)", ok, det)
     # 4. path lengths
     longest = max((len(str(p)) for root in (REPO, run) for p in root.rglob("*")), default=0)
     add("path length < 260", longest < MAX_PATH, f"longest {longest} chars")
@@ -211,9 +262,13 @@ def main(argv=None):
     if not commit and (REPO / "COMMIT.txt").exists():      # package copied without git history
         commit, branch = (REPO / "COMMIT.txt").read_text(encoding="utf-8").strip(), "package"
     commit, branch = commit or "unknown", branch or "unknown"
+    if rel is not None:
+        commit, branch = rel.get("commit") or commit, f"release {rel.get('version')}"
     n_fail = sum(r["status"] == "FAIL" for r in results)
-    summary = (f"LAPTOP CHECK {'PASS' if not n_fail else 'FAIL'}: {len(results) - n_fail}/{len(results)} checks, "
-               f"branch {branch} @ {commit}, {stamp}")
+    n_skip = sum(r["status"] == "SKIP" for r in results)
+    n_run = len(results) - n_skip
+    summary = (f"LAPTOP CHECK {'PASS' if not n_fail else 'FAIL'}: {n_run - n_fail}/{n_run} checks"
+               + (f" ({n_skip} skipped: not in release)" if n_skip else "") + f", branch {branch} @ {commit}, {stamp}")
     rep = {"summary": summary, "branch": branch, "commit": commit, "stamp": stamp, "python": platform.python_version(),
            "platform": platform.platform(), "results": results}
     (run / "laptop_check_report.json").write_text(json.dumps(rep, indent=1), encoding="utf-8")

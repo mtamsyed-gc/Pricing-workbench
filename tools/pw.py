@@ -15,6 +15,10 @@
   t cedant <template_spec.json> --out <xlsx>                     cedant rate workbook (SPEC §8.5): GC fills current rates
   t cedant-read <filled.xlsx> --spec <template_spec.json> --out runs\\<RunID>\\expiring.json [--id ID] [--owner NAME]
                                                                  read back into the EXPIRING catalogue (gated; report beside --out)
+  run <run_config.json> [--runs-root <dir>] [--hashes <json>]
+                                   end-to-end run (WS4): catalogue specs (V1, V2) -> exposure (V0, coverage) -> V3 ->
+                                   V4 -> submissions (T ingest, V5) -> B1 / B2 / TreatyFeed (treaty contract) -> A -> D;
+                                   every gate in runs/<RunID>/run_manifest.json; exit 2 when a gate stops the run
   index <run_config.json>          B1 + B2: RateFactors, RateIndex (+ sensitivities), TreatyFeed, OptionTerms
   benefit <run_config.json>        B1 level 1 only: BenefitDiff, BenefitFactors
   benchmark <run_config.json>      A market benchmark: ValueMap, GapRegister, TaxonomyReconciliation
@@ -211,6 +215,25 @@ def cmd_t(a):
         print(f"parsed {len(parsed.values)} values (hash_ok={parsed.hash_ok}, {len(parsed.warnings)} warnings) -> {out}")
 
 
+def cmd_run(a):
+    from pw.pipeline import output_hashes, run_all
+    from pw.rate_index import load_run_config
+    r = run_all(load_run_config(a.run_config), Path(a.runs_root) if a.runs_root else None)
+    g = r["gates"]
+    print("gates: " + "; ".join(f"{k} {v['status']}" if "status" in v else
+                                f"{k} " + ", ".join(f"{i} {x['status']}" for i, x in sorted(v.items()))
+                                for k, v in sorted(g.items())))
+    if a.hashes:
+        h = output_hashes(r["dir"])
+        hp = Path(a.hashes)
+        hp.parent.mkdir(parents=True, exist_ok=True)
+        hp.write_text(json.dumps(h, indent=1) + "\n", encoding="utf-8", newline="\n")
+        print(f"{len(h)} output file hashes -> {hp}")
+    print(f"RUN {r['status']}: {r['dir']} (manifest: run_manifest.json)")
+    if r["status"] != "COMPLETE":
+        sys.exit(2)
+
+
 def cmd_index(a):
     from pw.rate_index import load_run_config, run_b2
     cfg = load_run_config(a.run_config)
@@ -221,6 +244,7 @@ def cmd_index(a):
     print(tot[["option_id", "lives", "index", "index_benefit_adj", "unpriced_share"]].to_string(index=False))
     if r["TreatyFeed"] is not None:
         print(r["TreatyFeed"][["option_id", "treaty_book", "premium_change_pct", "lr_adjustment_pts"]].to_string(index=False))
+        print(f"treaty tool scenarios: {r['dir'] / 'out' / 'TreatyScenarios.json'}")
 
 
 def cmd_benefit(a):
@@ -315,6 +339,11 @@ def main(argv=None):
     p.add_argument("--run")
     p.add_argument("--runs-root")
     p.set_defaults(fn=cmd_t)
+    p = sub.add_parser("run")
+    p.add_argument("run_config")
+    p.add_argument("--runs-root")
+    p.add_argument("--hashes")
+    p.set_defaults(fn=cmd_run)
     p = sub.add_parser("index")
     p.add_argument("run_config")
     p.add_argument("--runs-root")

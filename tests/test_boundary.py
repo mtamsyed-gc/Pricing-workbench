@@ -3,7 +3,7 @@ excludes reference/. The forbidden token list lives in the example folder so tes
 import re
 import zipfile
 
-from _util import REPO, load_json, tmpdir
+from _util import REPO, load_json, requires, tmpdir
 
 SCANNED = ["pw", "registry", "fixtures", "tests", "tools", "contracts", "specs"]
 TEXT = {".py", ".json", ".csv", ".md", ".txt"}
@@ -21,6 +21,7 @@ def _texts():
                     yield p, " ".join(z.read(n).decode("utf-8", "replace") for n in z.namelist() if n.endswith(".xml"))
 
 
+@requires("examples/ufic_2027")
 def test_no_cedant_tokens_outside_examples_and_reference():
     tokens = load_json(REPO / "examples" / "ufic_2027" / "expected_structure.json")["forbidden_tokens"]
     pats = [(t, re.compile(r"(?<![A-Za-z0-9])" + re.escape(t) + r"(?![A-Za-z0-9])")) for t in tokens]
@@ -44,6 +45,7 @@ def test_package_excludes_reference_and_client_examples():
             assert len(z.namelist()) == len(names)
 
 
+@requires("examples/ufic_2027")
 def test_check_bundle_has_runner_and_examples_but_no_reference():
     import sys
     sys.path.insert(0, str(REPO / "tools"))

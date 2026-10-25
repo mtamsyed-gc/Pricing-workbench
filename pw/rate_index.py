@@ -246,6 +246,44 @@ def treaty_feed(rf: pd.DataFrame, book_map: pd.DataFrame, lapse: dict, experienc
 
 
 TREATY_FEED_EXTRAS = ("rate_factor", "lapse", "experience_lr", "asif_lr")
+TREATY_TOOL_BOOK_SLOTS = 8          # treatymodel 2.0 spec.NB (contracts/treaty_feed_contract.json)
+
+
+def treaty_scenarios(tf: pd.DataFrame, book_slots: dict, n_slots: int = TREATY_TOOL_BOOK_SLOTS) -> dict:
+    """TreatyScenarios.json (CR #23, owner 25 Oct 2026): the TreatyFeed in the treaty tool's config schema
+    (treatymodel 2.0, configs/treaty_template_example.json), one scenario per option:
+        books.volume[slot] = 1 + premium_change_pct / 100     books.lr_adj[slot] = lr_adjustment_pts / 100
+        prem_chg = lr_chg = 0 (the change is carried per book; setting them as well would count it twice)
+    Book slots come from run input treaty.book_slots {treaty_book: slot 1..8}; a slot without a book keeps the tool's
+    defaults (volume 1, lr_adj 0). Reinsurer terms ('ri') are owner inputs in the tool and are not written."""
+    from . import MappingRequired
+    if not isinstance(book_slots, dict) or not book_slots:
+        raise ProposalRequired("treaty.book_slots missing: map each treaty book to the treaty tool's book slot (1-8)")
+    slots = {}
+    for b, sl in book_slots.items():
+        if not isinstance(sl, int) or isinstance(sl, bool) or not 1 <= sl <= n_slots:
+            raise SpecError(f"treaty.book_slots['{b}'] = {sl!r}: slot must be an integer 1..{n_slots}")
+        if sl in slots.values():
+            raise SpecError(f"treaty.book_slots: slot {sl} used by more than one treaty book")
+        slots[b] = sl
+    missing = sorted(set(tf["treaty_book"]) - set(slots))
+    if missing:
+        raise MappingRequired(f"{len(missing)} treaty book(s) have no treaty-tool slot (treaty.book_slots)", missing)
+    scen = []
+    for oid, g in tf.groupby("option_id", sort=True):
+        vol, adj = [1.0] * n_slots, [0.0] * n_slots
+        for r in g.itertuples(index=False):
+            i = slots[r.treaty_book] - 1
+            vol[i] = round(1 + float(r.premium_change_pct) / 100, 12)
+            adj[i] = round(float(r.lr_adjustment_pts) / 100, 12)
+        scen.append({"name": str(oid), "description": f"Workbench option {oid}: per-book premium and LR change from "
+                                                      f"TreatyFeed (standard mix)",
+                     "prem_chg": 0.0, "lr_chg": 0.0, "books": {"volume": vol, "lr_adj": adj}})
+    return {"meta": {"source": "pricing workbench TreatyFeed (CR #23)", "schema": "treatymodel 2.0 config: scenarios",
+                     "book_slots": {b: slots[b] for b in sorted(slots)},
+                     "note": "Reinsurer terms (ri: shares, commission, corridor, cap, profit share) are owner inputs: "
+                             "add them before building the tool."},
+            "scenarios": scen}
 TERM_FIELDS = ["reinsurer", "share_by_book", "premium_basis", "commission", "corridor", "cap", "profit_share",
                "conditions", "validity"]
 
@@ -264,7 +302,7 @@ def load_run_config(path) -> dict:
     {"run_id", "expiring": catalogue.json | spec.json,
      "exposure": {"dim_life", "maps", "manifest"?, "snapshot_date", "contract_version"?},
      "cuts"?: [[dims], ...], "eval_options"?: {...evaluator options...},
-     "treaty"?: {"book_map": csv, "lapse": {book: x}, "experience": csv},
+     "treaty"?: {"book_map": csv, "lapse": {book: x}, "experience": csv, "book_slots": {book: treaty-tool slot 1..8}},
      "benefit_overrides"?: [{"family", "option", "relativity"}], "v5"?: {"outlier_band": [lo, hi]},
      "duckdb"?: {"memory_limit", "threads"}}"""
     import json
@@ -272,6 +310,7 @@ def load_run_config(path) -> dict:
     p = Path(path).resolve()
     cfg = json.loads(p.read_text(encoding="utf-8"))
     cfg["_base"] = str(p.parent)
+    cfg["_file"] = p.name
     return cfg
 
 
@@ -332,9 +371,10 @@ def run_benefit(cfg: dict, runs_root=None, exposure=None):
     return bd, bf
 
 
-def run_b2(cfg: dict, runs_root=None) -> dict:
+def run_b2(cfg: dict, runs_root=None, exposure=None, coverage=None) -> dict:
     """Exposure (V0 + coverage report) -> B1 level 1 -> RateFactors / RateIndex (+ sensitivities) -> TreatyFeed ->
-    OptionTerms, written to runs/<RunID>/out with the manifest."""
+    OptionTerms, written to runs/<RunID>/out with the manifest. `exposure` / `coverage` may be passed in by the
+    end-to-end run (pw.pipeline) so the exposure is built and gated once."""
     import json
     from .benefit_value import plan_ratio
     from .exposure import build_exposure, coverage_report
@@ -348,11 +388,11 @@ def run_b2(cfg: dict, runs_root=None) -> dict:
     ec = cfg["exposure"]
     if not ec.get("snapshot_date"):
         raise ProposalRequired("exposure.snapshot_date is required for the standard mix (lives in force, SPEC §5)")
-    ex = build_exposure(_path(cfg, ec["dim_life"]), _path(cfg, ec["maps"]),
-                        _path(cfg, ec["manifest"]) if ec.get("manifest") else None,
-                        contract_version=ec.get("contract_version"), snapshot_date=ec["snapshot_date"], strict=False)
+    ex = exposure if exposure is not None else build_exposure(
+        _path(cfg, ec["dim_life"]), _path(cfg, ec["maps"]), _path(cfg, ec["manifest"]) if ec.get("manifest") else None,
+        contract_version=ec.get("contract_version"), snapshot_date=ec["snapshot_date"], strict=False)
     eopts = {**(cfg.get("eval_options") or {}), **({"duckdb": cfg["duckdb"]} if cfg.get("duckdb") else {})}
-    cov = coverage_report(expiring, ex, eopts)
+    cov = coverage if coverage is not None else coverage_report(expiring, ex, eopts)
     bd, bf = run_benefit(cfg, runs_root, exposure=ex)
     rf, ri = run_index(expiring, opts, ex.cells, cfg.get("cuts"), plan_ratio(bf), eopts)
     out = rd / "out"
@@ -366,6 +406,12 @@ def run_b2(cfg: dict, runs_root=None) -> dict:
         xp = pd.read_csv(_path(cfg, t["experience"]))
         tf = treaty_feed(rf, bm, t.get("lapse") or {}, xp)
         m["TreatyFeed"] = write_table("TreatyFeed", tf, out, ["option_id", "treaty_book"], extra_ok=TREATY_FEED_EXTRAS)
+        ts = treaty_scenarios(tf, t.get("book_slots"))
+        tsp = out / "TreatyScenarios.json"
+        tsp.write_text(json.dumps(ts, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+        import hashlib
+        m["TreatyScenarios"] = {"json": tsp.name, "scenarios": len(ts["scenarios"]),
+                                "sha256": hashlib.sha256(tsp.read_bytes()).hexdigest()}
     terms = {}
     for oid in opts:
         tp = rd / "options" / oid / "terms.json"

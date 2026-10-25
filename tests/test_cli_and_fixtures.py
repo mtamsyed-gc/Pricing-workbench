@@ -3,7 +3,7 @@ import hashlib
 import subprocess
 import sys
 
-from _util import FIX, REPO, tmpdir
+from _util import FIX, REPO, requires, tmpdir
 
 PW = [sys.executable, str(REPO / "tools" / "pw.py")]
 
@@ -23,8 +23,6 @@ def test_cli_commands():
         assert "5 flagged" in _run("gates", "v2", str(FIX / "CAT_BETA" / "spec.json"), "--out", str(d / "v2.csv")).stdout
         assert '"OK"' in _run("gates", "v0", str(FIX / "EXPO_SYN" / "dim_life.csv"), "--manifest",
                               str(FIX / "EXPO_SYN" / "run_manifest.csv")).stdout
-        out = _run("t", "generate", str(REPO / "examples" / "ufic_2027" / "template_spec.json"), "--out", str(d / "u.xlsx")).stdout
-        assert "structure hash" in out
         r = _run("exposure", "build", str(FIX / "EXPO_SYN" / "dim_life.csv"), "--maps", str(FIX / "EXPO_SYN" / "maps"),
                  ok=False)
         assert r.returncode == 2 and "MappingRequired" in r.stderr
@@ -32,6 +30,13 @@ def test_cli_commands():
                  "--manifest", str(FIX / "EXPO_SYN" / "run_manifest.csv"), "--catalogue", str(FIX / "CAT_ALPHA" / "spec.json"),
                  "--out", str(d / "x"))
         assert "coverage PASS" in r.stdout
+
+
+@requires("examples/ufic_2027")
+def test_cli_generate_cedant_example():
+    with tmpdir() as d:
+        out = _run("t", "generate", str(REPO / "examples" / "ufic_2027" / "template_spec.json"), "--out", str(d / "u.xlsx")).stdout
+        assert "structure hash" in out
 
 
 def test_fixtures_rebuild_identical_content():

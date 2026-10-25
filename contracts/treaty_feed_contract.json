@@ -1,0 +1,160 @@
+{
+ "contract": "workbench -> treaty tool scenario feed",
+ "target": "see treatymodel_version.txt",
+ "source": "SPEC §7 (TreatyFeed, OptionTerms) with CR #5-#7; units: premium_change_pct and lr_adjustment_pts in percent points",
+ "treatymodel_verified": true,
+ "treatymodel_note": "Compared on 25 Oct 2026 with treatymodel 2.0 in PBM (treatymodel/, branch claude/inspiring-rubin-7ncppi) and its vendored copy ete-dashboard side_tools/treaty_tool/ (VERSION = commit a07c945, same as treatymodel_version.txt). CR #23 approved (owner, 25 Oct 2026): the run writes TreatyScenarios.json in the tool's config schema; TreatyFeed and OptionTerms unchanged.",
+ "tables": {
+  "TreatyFeed": {
+   "key": [
+    "option_id",
+    "treaty_book"
+   ],
+   "columns": [
+    {
+     "name": "option_id",
+     "type": "string",
+     "nullable": false
+    },
+    {
+     "name": "treaty_book",
+     "type": "string",
+     "nullable": false
+    },
+    {
+     "name": "premium_change_pct",
+     "type": "float",
+     "nullable": false,
+     "finite": true
+    },
+    {
+     "name": "lr_adjustment_pts",
+     "type": "float",
+     "nullable": false,
+     "finite": true
+    },
+    {
+     "name": "basis_note",
+     "type": "string",
+     "nullable": false
+    }
+   ],
+   "extra_columns_allowed": [
+    "rate_factor",
+    "lapse",
+    "experience_lr",
+    "asif_lr"
+   ]
+  },
+  "OptionTerms": {
+   "key": [
+    "option_id"
+   ],
+   "columns": [
+    {
+     "name": "option_id",
+     "type": "string",
+     "nullable": false
+    },
+    {
+     "name": "reinsurer",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "share_by_book",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "premium_basis",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "commission",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "corridor",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "cap",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "profit_share",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "conditions",
+     "type": "string",
+     "nullable": true
+    },
+    {
+     "name": "validity",
+     "type": "string",
+     "nullable": true
+    }
+   ],
+   "extra_columns_allowed": [
+    "comments"
+   ]
+  }
+ },
+ "treatymodel_findings": {
+  "inputs": {
+   "scenario_general": "prem_chg 'Premium change % (all books)' and lr_chg 'Loss ratio change (+/- pts, all books)': fractions (cell format +0.0%, 0.02 = +2 pts)",
+   "per_book": "volume 'Volume factor (x experience premium)' fraction, default 1.0; lr_adj 'LR adjustment (+/- pts)' fraction; er_ovr; ff_rate",
+   "per_reinsurer": "RI_TERMS: basis (Net/Gross premium), comm_type (None/Flat/Sliding), comm_flat, comm_max, comm_lr_max, comm_min, comm_lr_min, fee_rate, fee_base, corr_from, corr_to, cap, ps_type (Tiered/Margin share/None), ps_exp, ms_share, tiers t1-t4 (u, s, f), lr_basis, ps_base, lr_override; all percentages as fractions",
+   "share_matrix": "share of each book per reinsurer (fraction, total per book <= 100%)",
+   "slots": {
+    "books": 8,
+    "reinsurers": 6,
+    "scenarios": 12
+   }
+  },
+  "gaps": {
+   "G1_units": "TreatyFeed premium_change_pct and lr_adjustment_pts are in percent (CR #7); the tool takes fractions: divide by 100 on entry",
+   "G2_premium_change_level": "TreatyFeed is per treaty book. Entered per book as volume = 1 + premium_change_pct / 100 and lr_adj = lr_adjustment_pts / 100 it reproduces the workbench as-if (premium x rate factor x (1 - lapse), claims x (1 - lapse)); prem_chg and lr_chg then stay 0. Owner to confirm (CR #23)",
+   "G3_terms_structure": "OptionTerms carries the Terms sheet as free text; the tool needs structured terms (commission type and rates, corridor from / to, cap, profit share type and tiers) and a share per book. Numeric commission / profit share / corridor / cap / share exist only in terms_scores.csv (scorecard input)",
+   "G4_book_names": "treaty_book values (treaty_book_map.csv) must equal the tool's Setup book names; at most 8 books, 6 reinsurers (options) and 12 scenarios per workbook"
+  },
+  "interface": "config JSON (configs/treaty_template_example.json schema, treatymodel.config.normalise); scenarios[].books.volume / lr_adj are lists by book slot; scenarios[].ri are owner inputs (tool README section 4). The Excel Scenarios library is the manual route.",
+  "engine": "book premium = experience premium x volume x (1 + prem_chg); claims = net premium x (experience LR + lr_adj + lr_chg)",
+  "resolution": {
+   "G1": "fractions in TreatyScenarios.json",
+   "G2": "per-book volume and lr_adj by book slot (run input treaty.book_slots)",
+   "G3": "reinsurer terms stay owner inputs in the tool (its README section 4); OptionTerms stays reference text",
+   "G4": "warnings beyond 8 books, 6 options (reinsurer slots), 12 scenarios"
+  }
+ },
+ "scenarios_file": {
+  "name": "TreatyScenarios.json",
+  "schema": "treatymodel 2.0 config 'scenarios' (configs/treaty_template_example.json; treatymodel.config.normalise)",
+  "scenario_keys": [
+   "name",
+   "description",
+   "prem_chg",
+   "lr_chg",
+   "books"
+  ],
+  "book_keys": [
+   "volume",
+   "lr_adj"
+  ],
+  "rules": [
+   "volume[slot] = 1 + premium_change_pct / 100",
+   "lr_adj[slot] = lr_adjustment_pts / 100",
+   "prem_chg = lr_chg = 0",
+   "lists have one value per book slot (8)",
+   "volume > 0, values finite",
+   "ri (reinsurer terms) not written: owner inputs"
+  ]
+ }
+}
