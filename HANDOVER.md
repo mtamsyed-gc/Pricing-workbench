@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (WS4 integration and release 0.0.2 on branch ws4-integration, PR open, laptop check PENDING; before that: WS5 merged PR #9, OD2 PR #11, OD3 PR #12).
+Last updated: 2026-10-25 (WS4 integration and release 0.0.2 merged to main, PR #13 @ 7347fcc; laptop check from the installed release zip PASS (provisional) @ 1accbbb; before that: WS5 merged PR #9, OD2 PR #11, OD3 PR #12).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -41,7 +41,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | OD1 | Owner decisions on HANDOVER items 1–21 (SPEC v0.4; UFIC example; riders; B2 split; B1; V5; scorecard; benchmark) | Merged to main (PR #7, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ 32e7a31; GC work laptop run outstanding | Done |
 | WS5 | Cedant rate workbook (SPEC §8.5): GC fills current rates in our layout; read back into the expiring catalogue; UFIC structure | Merged to main (PR #9, 25 Oct) | **PASS (25 Oct, provisional)** — functional PASS on owner's personal laptop @ 21003ca (Win 11, Py 3.14.6): suite 112/112, every tool check, UFIC cedant + reinsurer workbooks and the fixture cedant workbook open in Excel; only environment lines fail (Py 3.14 not 3.12, unpinned packages). GC work laptop run outstanding | GC fills the UFIC cedant workbook in `runs\`, `t cedant-read` to PASS, then `t generate --expiring` and issue (UFIC deadline 5 Nov) |
 | WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC (open item 4); items 15–17 decided 24 Oct (OD1) |
-| WS4 | Integration, release: `pw run` end to end, manifest gates, treaty contract check, release zip 0.0.2, laptop check as release gate | Branch ws4-integration, PR open | **PENDING** — from the installed release zip: `py tools\package.py` then unzip and `RUN_LAPTOP_CHECK.bat` (or `py tools\laptop_check.py` in `pricing-workbench-0.0.2\`) | Owner: laptop check from the release zip; none (CR #23 approved and applied; version 0.0.2 set) |
+| WS4 | Integration, release: `pw run` end to end, manifest gates, treaty contract check, release zip 0.0.2, laptop check as release gate | Merged to main (PR #13, 25 Oct) | **PASS (25 Oct, provisional)** — from the installed release zip 0.0.2 @ 1accbbb on the owner's personal laptop (Win 11, Py 3.14.6): release contents, test suite, every tool check, `run` twice byte-identical (46 files), pack and TreatyFeed open in Excel; 3 cedant-example checks SKIP (not in release); only environment lines fail. Launched with a default-`py` copy of RUN_LAPTOP_CHECK.bat (the shipped one requires Py 3.12). GC work laptop run outstanding | Done; release a GC test version (1.0.0) from main after the GC work laptop check passes |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
 
@@ -213,5 +213,5 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
 
 ## Timeline driver
 UFIC reinsurer submissions due 5 Nov 2026. Priority order: UFIC data (WS5 merged: GC fills the
-UFIC copy in `runs\`, reads it back, and the reinsurer template is generated with `--expiring`) → WS4 (integration,
-release on GC laptops) → WS6 (Merit as-if, other repo, can run in parallel) → WS7.
+UFIC copy in `runs\`, reads it back, and the reinsurer template is generated with `--expiring`) → GC work laptop check of release 0.0.2 →
+WS6 (Merit as-if, other repo, can run in parallel) → WS7.
