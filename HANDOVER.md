@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-26 (CR #25: Merit contract IP4-9 (Merit v7.5.0) pinned beside IP4-8, release 0.0.6 on branch cr25-merit-ip4-9, laptop check PENDING; before: 2026-10-25 release 0.0.5 merged: WS8 release hardening — TENDER_TEMPLATE and TRAINING_TENDER with step files in the release, readable Excel views, one-at-a-time live laptop check. Laptop check of 0.0.5 on the owner's personal laptop 48/49, Python-version line waived by the owner. User guide (private artifact) updated to 0.0.5 with context, data requirements and output analysis. Next: 1.0.0 on the owner's word, then the first real tender run).
+Last updated: 2026-10-26 (CR #26 / WS9 written: Spec Builder workbook, SPEC §8.6, branch ws9-spec-builder, spec only, no code yet; before: CR #25: Merit contract IP4-9 (Merit v7.5.0) pinned beside IP4-8, release 0.0.6 on branch cr25-merit-ip4-9, laptop check PENDING; before: 2026-10-25 release 0.0.5 merged: WS8 release hardening — TENDER_TEMPLATE and TRAINING_TENDER with step files in the release, readable Excel views, one-at-a-time live laptop check. Laptop check of 0.0.5 on the owner's personal laptop 48/49, Python-version line waived by the owner. User guide (private artifact) updated to 0.0.5 with context, data requirements and output analysis. Next: 1.0.0 on the owner's word, then the first real tender run).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -10,7 +10,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | SPEC.md | Canonical model, registries, catalogue/benefit/exposure models, evaluator and gates V1–V5, output contracts, tender template generator, fixtures, work-order summary, UFIC source flags F1–F8 |
 | docs/workorders/WS0.md | Full work order for the first session (core + contracts + generator core + other work orders) |
 | docs/CHANGE_REQUESTS.md | Contract change requests (all decided; CR #17 = work order WS7) |
-| docs/workorders/WS1–WS8 | Work orders (WS7: structured benefit proposals, CR #17; WS8: release hardening, 0.0.5) |
+| docs/workorders/WS1–WS9 | Work orders (WS7: structured benefit proposals, CR #17; WS8: release hardening, 0.0.5; WS9: Spec Builder workbook, CR #26) |
 | docs/cedant_workbook_guide.md | WS5 fill guide for GC: what goes where, Nil-base rule, TPA basis, source flags, gate |
 | tools/laptop_check.py | SPEC §13 laptop acceptance: run `py tools\laptop_check.py` on the laptop after every change; since WS4 also the release gate (end-to-end `run` twice, byte-identical), runnable from the installed release zip |
 | docs/INSTALL.md | WS4: release contents, versioning, install on a GC laptop, running a tender end to end |
@@ -47,6 +47,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
 | WS8 | Release hardening (0.0.5): tender folders + step files in the release, `tender new`, readable Excel views, laptop check lock + live console | Merged to main (PR #17, 25 Oct) | **PASS (owner override, 25 Oct)** — from the installed 0.0.5 release zip @ e0b9e35 on the owner's personal laptop (Win 11, Py 3.14.6): 48/49, 3 skipped (not in release); the only FAIL is the Python 3.12 line, which the owner waived ("assume if it works fine it'll work on the GC laptop"). Every pin, the suite, every tool, the training tender's four steps, byte-identical rerun and Excel open PASS; lock and live console confirmed by hand. The refused second start emptied the running check's console file: fixed in the merge commit (console reset only after the lock is taken) | Cut 1.0.0 when the owner says; GC laptop run optional |
 | CR #25 | Merit contract IP4-9 (Merit v7.5.0, ete-dashboard 3eaaa30) pinned beside IP4-8 (same 4 redactions); field map IP4-9 = IP4-8; SPEC §5; V0 OK on both; exposure tests on both; laptop check line "gates v0 contract check, Merit v7.5.0 (IP4-9, CR #25)"; release 0.0.6. Note for runs: where Merit calculates the policy type, PolicyTypeUsed is now 'Group' (was 'Non-SME'): `segment_map.csv` needs a 'Group' row (MappingRequired otherwise) | Branch cr25-merit-ip4-9, PR open | **PENDING**: `py tools\laptop_check.py` (or RUN_LAPTOP_CHECK.bat from the 0.0.6 release zip) | Owner runs the laptop check, then merge |
+| WS9 | Spec Builder workbook (SPEC §8.6, CR #26): `t spec-builder` / `t spec-read`, step files 0a / 0b, guide; reinsurer + cedant sections as structured rows; JSON master; no preview | Work order and SPEC text on branch ws9-spec-builder (PR open, docs only) | — (no code in this PR) | Owner approves the PR; then a WS9 build thread on the same branch name implements it (release 0.0.7) |
 
 ### WS8 notes for the next sessions
 - Found by the first full dry run of release 0.0.4 on the owner's personal laptop (25 Oct 2026; synthetic UFIC-shaped
