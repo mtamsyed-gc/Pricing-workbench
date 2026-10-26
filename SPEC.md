@@ -1,6 +1,6 @@
 # Pricing Workbench — Specification: Canonical Model, Contracts, Template Generator
 
-Version 0.4 · 24 Oct 2026 (v0.2: owner's tender-template principle, §8.0; UFIC structure derived from the reference document, §8.4; v0.3: laptop acceptance after every change, §13, CR #1; v0.4: owner decisions on HANDOVER items 1–21 — UFIC bands, plan → network map and source flags, §8.4 / §12; B1 order and rider value, §4.3; benchmark rules, §4.5; coverage rule, §5; riders and V5, §6 / §8; B2 split and scorecard rules, §7; v0.5: cedant rate workbook, §8.5) · Owner: Etam (GC L&H IMEA)
+Version 0.4 · 24 Oct 2026 (v0.2: owner's tender-template principle, §8.0; UFIC structure derived from the reference document, §8.4; v0.3: laptop acceptance after every change, §13, CR #1; v0.4: owner decisions on HANDOVER items 1–21 — UFIC bands, plan → network map and source flags, §8.4 / §12; B1 order and rider value, §4.3; benchmark rules, §4.5; coverage rule, §5; riders and V5, §6 / §8; B2 split and scorecard rules, §7; v0.5: cedant rate workbook, §8.5; v0.6: Spec Builder workbook, §8.6, CR #26) · Owner: Etam (GC L&H IMEA)
 Status: design baseline for WS0. WS1–WS6 build against this document; changes only via `docs/CHANGE_REQUESTS.md`.
 First applied case: UFIC medical QS 2027 tender. The model is cedant-agnostic: no cedant, TPA or catalogue logic in code.
 
@@ -351,6 +351,28 @@ non-numeric mandatory cells, missing / duplicate reference rows, defaults naming
 codes stop the read with the cell list). The filled cedant copy holds client rates and lives only in `runs/`; the
 repo holds the spec (structure only).
 
+### 8.6 Spec Builder workbook (owner decision 26 Oct 2026; CR #26, work order WS9)
+
+`template_spec.json` can be authored in Excel by users who do not edit JSON. The tool generates a **Spec Builder**
+workbook (blank, or pre-filled from an existing spec), the user fills it with dropdowns and input cells, and the tool
+reads it back into `template_spec.json`.
+
+- **JSON is the master.** The builder is an editing view of one spec; every other tool, the run config and the run
+  manifest keep naming and hashing `template_spec.json` only. The builder is never a run input.
+- **Scope:** the whole spec of §8.1 and the cedant sections of §8.5 (factor tables, riders, plan defaults,
+  benefits, `cedant_workbook`).
+- **Structured rows only:** no cell holds JSON. Formula (order, rounding, min / max premium), splits (marital,
+  member section), row sections, custom rows and refer cells each have their own table. `formula.refer_rules` is not
+  carried until it has a use.
+- **Read-back is gated** as the cedant read (§8.5): any problem stops the read with the cell list and no spec is
+  written; the result must then pass the template spec validator and the cedant model. Fields the builder does not
+  carry (notes, source flags, pending items, owner records, unknown keys) are kept from the base spec when one is
+  given, otherwise dropped with a warning.
+- **Round trip:** spec → builder → spec leaves the normalised spec, its structure hash and the cedant spec hash
+  unchanged, so the issued template and the cedant workbook are byte-identical.
+- **No preview output** (owner, 26 Oct 2026): the generated tender template and cedant workbook are the check.
+- A pre-filled builder for a client spec holds structure only (as the spec) and stays outside the release.
+
 ---
 
 ## 9. Catalogue spec format (sketch)
@@ -410,6 +432,7 @@ repo holds the spec (structure only).
 | WS6 | Merit Annex option slicer + as-if page reading `RateFactors` (ete-dashboard repo) | As-if equals workbench numbers on fixtures |
 | WS5 | Cedant rate workbook (§8.5): generate, fill (GC), read back into the expiring catalogue; UFIC structure | Round trip prices EXPO_SYN identically to CAT_ALPHA; UFIC cedant workbook generates with every block, factor family, rider and default |
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Accepted proposal changes richness by a hand-checked amount; ignored changes nothing |
+| WS9 | Spec Builder workbook (§8.6, CR #26): author `template_spec.json` in Excel; generate blank / pre-filled, gated read-back | Every repo spec round-trips with unchanged structure hash and byte-identical workbooks; a blank-filled builder reproduces C_ALPHA |
 
 Every work order is also subject to the laptop acceptance check (§13).
 
