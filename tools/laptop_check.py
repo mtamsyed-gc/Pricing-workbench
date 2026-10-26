@@ -39,6 +39,7 @@ FIX = REPO / "fixtures"
 PY = sys.executable
 PW = [PY, str(HERE / "pw.py")]
 MAX_PATH = 260
+LOCK_PATH = REPO / "runs" / "laptop_check" / "RUNNING.lock"     # tests point this elsewhere
 LOCK_STALE_HOURS = 3
 EXIT_LOCKED = 3
 _CONSOLE: list = []                         # [Path] when --console is given
@@ -233,7 +234,7 @@ def main(argv=None):
     ap.add_argument("--quick", action="store_true", help="skip the full test suite (tool checks only)")
     ap.add_argument("--console", help="also append every result line to this file (started empty)")
     a = ap.parse_args(argv)
-    lock = REPO / "runs" / "laptop_check" / "RUNNING.lock"
+    lock = LOCK_PATH
     busy = acquire_lock(lock)
     if busy:                         # screen only: the running check owns the console file
         print(busy, flush=True)
@@ -272,8 +273,9 @@ def _main(a):
             f"release {rel.get('version')} @ {rel.get('commit')} (pw {__version__}); "
             + (f"must not ship: {shipped}" if shipped else "no reference/ or client example"))
         kits = {k: len(step_commands(REPO.parent / k)) for k in ("TENDER_TEMPLATE", "TRAINING_TENDER")}
-        add("release tender folders beside the tool", all(v == 4 for v in kits.values()),
-            ", ".join(f"{k}: {v} step files" for k, v in kits.items()))
+        guide = REPO.parent / "USER_GUIDE.html"
+        add("release tender folders and user guide beside the tool", all(v == 4 for v in kits.values()) and guide.exists(),
+            ", ".join(f"{k}: {v} step files" for k, v in kits.items()) + f"; USER_GUIDE.html {'present' if guide.exists() else 'MISSING'}")
 
     # 1. environment
     is_win = platform.system() == "Windows"

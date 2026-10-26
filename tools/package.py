@@ -2,7 +2,8 @@
 
 Release (default): pricing-workbench-<version>/ with the code, registry, contracts, specs, synthetic fixtures, tests,
 tools and docs, plus RELEASE.json (version, commit, exclusions) and COMMIT.txt in that folder; at the zip root
-RUN_LAPTOP_CHECK.bat, TENDER_TEMPLATE/ (blank tender folder) and TRAINING_TENDER/ (synthetic) - pw/tender_kit.py. Install notes: docs/INSTALL.md. The version is pw.__version__ (single source).
+RUN_LAPTOP_CHECK.bat, USER_GUIDE.html (from docs/), TENDER_TEMPLATE/ (blank tender folder) and TRAINING_TENDER/
+(synthetic) - pw/tender_kit.py. Install notes: docs/INSTALL.md. The version is pw.__version__ (single source).
 
 --check-bundle: the laptop-acceptance bundle for the GC work laptop (SPEC §13): release contents plus the
 structure-only examples/ (the cedant example checks need them), COMMIT.txt and RUN_LAPTOP_CHECK.bat at the root.
@@ -26,6 +27,8 @@ sys.path.insert(0, str(REPO))
 
 EXCLUDE_DIRS = {"reference", "runs", "out", ".git", "__pycache__", ".venv", ".pytest_cache"}
 EXCLUDE_PATHS = {("examples", "ufic_2027")}
+GUIDE = ("docs", "USER_GUIDE.html")             # shipped once, at the zip root (owner, 26 Oct 2026)
+GUIDE_ARC = "USER_GUIDE.html"
 EXCLUDE_SUFFIX = {".pyc", ".parquet", ".tmp"}
 EXCLUDE_NAMES = {"RELEASE.json", "COMMIT.txt"}          # written fresh into every package
 
@@ -35,6 +38,8 @@ def included(rel: Path, check_bundle: bool = False) -> bool:
     if any(p in EXCLUDE_DIRS or p.startswith(".venv") for p in parts):
         return False
     if not check_bundle and any(tuple(parts[:len(x)]) == x for x in EXCLUDE_PATHS):
+        return False
+    if tuple(parts) == GUIDE:
         return False
     if rel.suffix in EXCLUDE_SUFFIX or rel.name.startswith("~$") or (len(parts) == 1 and rel.name in EXCLUDE_NAMES):
         return False
@@ -78,6 +83,9 @@ def build(out: Path, check_bundle: bool = False) -> list[str]:
         for root, fs in ((TEMPLATE_NAME, template_files()), (TRAINING_NAME, training_files())):
             for rel, data in sorted(fs.items()):
                 extra[f"{root}/{rel}"] = data
+        guide = REPO.joinpath(*GUIDE)
+        if guide.exists():
+            extra[GUIDE_ARC] = guide.read_bytes()
         if True:
             for arc, data in extra.items():
                 zi = zipfile.ZipInfo(arc, date_time=(1980, 1, 1, 0, 0, 0))

@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-26 (CR #25: Merit contract IP4-9 (Merit v7.5.0) pinned beside IP4-8, release 0.0.6 on branch cr25-merit-ip4-9, laptop check PENDING; before: 2026-10-25 release 0.0.5 merged: WS8 release hardening — TENDER_TEMPLATE and TRAINING_TENDER with step files in the release, readable Excel views, one-at-a-time live laptop check. Laptop check of 0.0.5 on the owner's personal laptop 48/49, Python-version line waived by the owner. User guide (private artifact) updated to 0.0.5 with context, data requirements and output analysis. Next: 1.0.0 on the owner's word, then the first real tender run).
+Last updated: 2026-10-26 (release 1.0.0, the first official GC test release: 0.0.6 (CR #25, Merit IP4-9 pinned beside IP4-8, PR #18) plus the user guide shipped at the zip root as USER_GUIDE.html (docs/USER_GUIDE.html; screenshots from the synthetic training tender only). Laptop check of 0.0.6 on the owner's personal laptop with the Python-version line waived by the owner; 1.0.0 differs from 0.0.6 only by the version, the guide and its release/laptop-check line. Next: the first real tender run (UFIC: fill the cedant workbook, issue the template by 5 Nov)).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
