@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-25 (release 0.0.5 merged: WS8 release hardening — TENDER_TEMPLATE and TRAINING_TENDER with step files in the release, readable Excel views, one-at-a-time live laptop check. Laptop check of 0.0.5 on the owner's personal laptop 48/49, Python-version line waived by the owner. User guide (private artifact) updated to 0.0.5 with context, data requirements and output analysis. Next: 1.0.0 on the owner's word, then the first real tender run).
+Last updated: 2026-10-26 (CR #25: Merit contract IP4-9 (Merit v7.5.0) pinned beside IP4-8, release 0.0.6 on branch cr25-merit-ip4-9, laptop check PENDING; before: 2026-10-25 release 0.0.5 merged: WS8 release hardening — TENDER_TEMPLATE and TRAINING_TENDER with step files in the release, readable Excel views, one-at-a-time live laptop check. Laptop check of 0.0.5 on the owner's personal laptop 48/49, Python-version line waived by the owner. User guide (private artifact) updated to 0.0.5 with context, data requirements and output analysis. Next: 1.0.0 on the owner's word, then the first real tender run).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -19,8 +19,9 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | requirements-native.txt | Runtime pins (same as ete-dashboard) |
 
 ## Related repos and tools
-- ete-dashboard / side_tools/merit (Merit v7.3.x): exposure and experience source. Contract `side_tools/merit/config/model_contract.json`
-  (IP4-8): dim_life carries Policy Type, TPA, Region Group, Network, Plan / Category, Relation, Gender Group, Marital Status,
+- ete-dashboard / side_tools/merit (Merit v7.5.0, contract IP4-9; IP4-8 runs from v7.3.x / v7.4.0 still accepted, CR #25):
+  exposure and experience source. Contract `side_tools/merit/config/model_contract.json`
+  (IP4-8 / IP4-9, same layout): dim_life carries Policy Type, TPA, Region Group, Network, Plan / Category, Relation, Gender Group, Marital Status,
   AgeAtInception, NewRenewal, Distribution, WrittenLY/Prem, EarnedLY/Prem; no co-pay field. Merit itself is not changed by this repo.
 - ete-dashboard / side_tools/treaty_tool (treatymodel 2.0, master in PBM): P&L by scenario; fed by `TreatyFeed` (premium change %,
   LR adjustment per treaty book) and `OptionTerms`. Do not edit it here.
@@ -45,6 +46,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
 | WS8 | Release hardening (0.0.5): tender folders + step files in the release, `tender new`, readable Excel views, laptop check lock + live console | Merged to main (PR #17, 25 Oct) | **PASS (owner override, 25 Oct)** — from the installed 0.0.5 release zip @ e0b9e35 on the owner's personal laptop (Win 11, Py 3.14.6): 48/49, 3 skipped (not in release); the only FAIL is the Python 3.12 line, which the owner waived ("assume if it works fine it'll work on the GC laptop"). Every pin, the suite, every tool, the training tender's four steps, byte-identical rerun and Excel open PASS; lock and live console confirmed by hand. The refused second start emptied the running check's console file: fixed in the merge commit (console reset only after the lock is taken) | Cut 1.0.0 when the owner says; GC laptop run optional |
+| CR #25 | Merit contract IP4-9 (Merit v7.5.0, ete-dashboard 3eaaa30) pinned beside IP4-8 (same 4 redactions); field map IP4-9 = IP4-8; SPEC §5; V0 OK on both; exposure tests on both; laptop check line "gates v0 contract check, Merit v7.5.0 (IP4-9, CR #25)"; release 0.0.6. Note for runs: where Merit calculates the policy type, PolicyTypeUsed is now 'Group' (was 'Non-SME'): `segment_map.csv` needs a 'Group' row (MappingRequired otherwise) | Branch cr25-merit-ip4-9, PR open | **PENDING**: `py tools\laptop_check.py` (or RUN_LAPTOP_CHECK.bat from the 0.0.6 release zip) | Owner runs the laptop check, then merge |
 
 ### WS8 notes for the next sessions
 - Found by the first full dry run of release 0.0.4 on the owner's personal laptop (25 Oct 2026; synthetic UFIC-shaped

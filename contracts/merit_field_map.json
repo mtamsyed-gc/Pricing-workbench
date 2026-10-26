@@ -36,6 +36,41 @@
     "earned_prem_gross": "EarnedPrem_Gross",
     "life_key": "LifeKey"
    }
+  },
+  "IP4-9": {
+   "required": {
+    "policy_type": "PolicyTypeUsed",
+    "tpa": "TPA",
+    "region_group": "Region Group",
+    "network": "Network",
+    "plan_label": "Plan / Category",
+    "relation": "Relation",
+    "gender": "Gender",
+    "gender_group": "Gender Group",
+    "marital": "Marital Status",
+    "nationality_group": "Nationality Group",
+    "age": "AgeAtInception",
+    "uwy": "UWY",
+    "new_renewal": "NewRenewal",
+    "distribution": "Distribution",
+    "group_size": "GroupSize",
+    "written_ly_net": "WrittenLY_Net",
+    "written_ly_gross": "WrittenLY_Gross",
+    "written_prem_net": "WrittenPrem_Net",
+    "written_prem_gross": "WrittenPrem_Gross",
+    "earned_ly_net": "EarnedLY_Net",
+    "earned_prem_net": "EarnedPrem_Net"
+   },
+   "optional": {
+    "policy_type_raw": "Policy Type",
+    "cov_start": "CovStart",
+    "cov_end": "CovEnd",
+    "zp_net": "ZP_Net",
+    "zp_gross": "ZP_Gross",
+    "earned_ly_gross": "EarnedLY_Gross",
+    "earned_prem_gross": "EarnedPrem_Gross",
+    "life_key": "LifeKey"
+   }
   }
  }
 }

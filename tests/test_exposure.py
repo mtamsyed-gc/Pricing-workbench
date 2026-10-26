@@ -1,4 +1,5 @@
-"""Exposure builder, gate V0 (pinned IP4-8 and a synthetic contract version with one renamed column), coverage."""
+"""Exposure builder, gate V0 (pinned IP4-8 and IP4-9, and a synthetic contract version with one renamed column),
+coverage."""
 import csv
 import json
 
@@ -40,6 +41,22 @@ def _syn_contract_run(d, with_map: bool):
 def test_v0_same_version_ok():
     r = check_contract(D / "dim_life.csv", read_manifest(D / "run_manifest.csv"))
     assert r["status"] == "OK" and r["version"] == "IP4-8" and not r["missing"]
+
+
+def test_v0_ip4_9_pinned_ok_and_same_layout():
+    """CR #25: Merit v7.5.0 (IP4-9) is pinned beside IP4-8; same dim_life layout, so both pass V0 and build equal cells."""
+    pins = {v: json.loads((REPO / "contracts" / f"merit_model_contract_{v}.json").read_text(encoding="utf-8"))
+            for v in ("IP4-8", "IP4-9")}
+    assert pins["IP4-9"]["version"] == "IP4-9"
+    assert pins["IP4-9"]["tables"]["dim_life"]["columns"] == pins["IP4-8"]["tables"]["dim_life"]["columns"]
+    assert load_field_map()["versions"]["IP4-9"] == load_field_map()["versions"]["IP4-8"]
+    r = check_contract(D / "dim_life.csv", {"contract_version": "IP4-9"})
+    assert r["status"] == "OK" and r["map_version"] == "IP4-9" and not r["missing"] and r["column_diff"] == {
+        "added": [], "removed": []}
+    ex9 = build_exposure(D / "dim_life.csv", D / "maps", contract_version="IP4-9", strict=False)
+    ex8 = build_exposure(D / "dim_life.csv", D / "maps", D / "run_manifest.csv", strict=False)
+    assert ex9.v0["status"] == "OK" and ex8.v0["status"] == "OK" and ex8.v0["version"] == "IP4-8"
+    assert ex9.cells.equals(ex8.cells)
 
 
 def test_v0_synthetic_renamed_column_with_field_map_entry_proceeds():
