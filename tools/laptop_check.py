@@ -129,6 +129,8 @@ def tool_checks(run: Path):
         ("evaluate with trace", PW + ["evaluate", str(a), str(cells), "--out", str(run / "prices.csv"), "--trace",
                                       str(run / "trace.csv")], 0, "PRICED"),
         ("gates v0 contract check", PW + ["gates", "v0", str(e / "dim_life.csv"), "--manifest", str(e / "run_manifest.csv")], 0, '"OK"'),
+        ("gates v0 contract check, Merit v7.5.0 (IP4-9, CR #25)", PW + ["gates", "v0", str(e / "dim_life.csv"), "--version", "IP4-9"],
+         0, '"OK"'),
         ("gates v1 (all fixtures)", None, 0, None),
         ("gates v2 block consistency", PW + ["gates", "v2", str(FIX / "CAT_BETA" / "spec.json"), "--out", str(run / "v2.csv")], 0, "5 flagged"),
         ("exposure build strict (expects MappingRequired)", PW + ["exposure", "build", str(e / "dim_life.csv"), "--maps", str(e / "maps")],
