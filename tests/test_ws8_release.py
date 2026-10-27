@@ -155,12 +155,17 @@ def test_a_refused_second_check_leaves_the_running_checks_console_file_alone():
     """Found on the owner's laptop (25 Oct 2026): the refused start emptied the running check's console file."""
     lc = _laptop_check()
     lock = REPO / "runs" / "laptop_check" / "RUNNING.lock"
+    # Inside a laptop check (which runs this suite) the real lock is already held: that is the refused-start case
+    # itself, so the test uses it and leaves it alone (found on the owner's laptop, 27 Oct 2026, release 0.0.7).
+    held = lock.exists()
     with tmpdir() as d:
         con = d / "console.txt"
         con.write_text("PASS  something\n", encoding="utf-8")
-        assert lc.acquire_lock(lock) is None
+        if not held:
+            assert lc.acquire_lock(lock) is None
         try:
             assert lc.main(["--quick", "--console", str(con)]) == lc.EXIT_LOCKED
         finally:
-            lock.unlink()
+            if not held:
+                lock.unlink()
         assert con.read_text(encoding="utf-8") == "PASS  something\n"
