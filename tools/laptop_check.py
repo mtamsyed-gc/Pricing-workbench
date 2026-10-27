@@ -101,12 +101,25 @@ def step_commands(tender: Path) -> list[list[str]]:
     return out
 
 
+def spec_step_commands(tender: Path) -> list[list[str]]:
+    """WS9: the pw.py arguments of the optional Spec Builder step files 0a / 0b (read from the .bat files)."""
+    out = []
+    for bat in sorted(tender.glob("0[ab]_*.bat")):
+        for ln in bat.read_text(encoding="ascii").splitlines():
+            if ln.startswith('%PY% "%PWDIR%\\tools\\pw.py" '):
+                out.append([x.replace("\\", os.sep) for x in ln.split(" ", 2)[2].split()])
+    return out
+
+
 def tender_checks(run: Path):
     """WS8: tender new (blank, training) and the training tender's four steps, run from the tender folder as the
     step files run them (commands read from the .bat files)."""
     t = run / "tenders" / "TRAINING"
     checks = [("tender new (blank folder)", PW + ["tender", "new", str(run / "tenders" / "NEW_TENDER")], 0, "blank tender folder"),
               ("tender new --training", PW + ["tender", "new", str(t), "--training"], 0, "training tender")]
+    # WS9: steps 0a / 0b on the training tender first; 0b rewrites inputs\template_spec.json, which steps 1-4 then use
+    checks.append(("training tender step 0a spec builder", ("SPECSTEP", 0), 0, "Spec Builder", t))
+    checks.append(("training tender step 0b spec read-back", ("SPECSTEP", 1), 0, "SPEC READ PASS", t))
     for i, (name, text) in enumerate(zip(("step 1 cedant workbook", "step 2 cedant read-back", "step 3 tender template",
                                           "step 4 evaluation"), ("structure hash", "CEDANT READ PASS", "structure hash",
                                                                  "RUN COMPLETE"))):
@@ -192,6 +205,19 @@ def tool_checks(run: Path):
                                             "--hashes", str(run / "e2e1_hashes.json")], 0, "RUN COMPLETE"),
         ("run again (second run)", PW + ["run", str(FIX / "RUN_SYN" / "run_config.json"), "--runs-root", str(run / "e2e2"),
                                          "--hashes", str(run / "e2e2_hashes.json")], 0, "RUN COMPLETE"),
+        # WS9: Spec Builder (SPEC §8.6): pre-filled and blank builders, gated read-back to an unchanged spec, the
+        # cedant example's builder
+        ("t spec-builder (fixture spec)", PW + ["t", "spec-builder", str(FIX / "C_ALPHA" / "template_spec.json"), "--out",
+                                                str(run / "spec_builder.xlsx")], 0, "Spec Builder"),
+        ("t spec-builder blank", PW + ["t", "spec-builder", "--out", str(run / "spec_builder_blank.xlsx")], 0, "blank"),
+        ("t spec-read (fixture builder)", PW + ["t", "spec-read", str(run / "spec_builder.xlsx"), "--base",
+                                                str(FIX / "C_ALPHA" / "template_spec.json"), "--out",
+                                                str(run / "spec_read" / "template_spec.json")], 0, "SPEC READ PASS"),
+        ("t spec-read blank builder (expects the gate to stop)", PW + ["t", "spec-read", str(run / "spec_builder_blank.xlsx"),
+                                                                       "--out", str(run / "spec_blank" / "template_spec.json")],
+         2, "SPEC READ FAIL"),
+        ("t spec-builder cedant structure example", PW + ["t", "spec-builder", str(REPO / "examples" / "ufic_2027" / "template_spec.json"),
+                                                          "--out", str(run / "example_spec_builder.xlsx")], 0, "Spec Builder"),
         *tender_checks(run),
     ]
 
@@ -272,10 +298,12 @@ def _main(a):
         add("installed release contents", not shipped and rel.get("version") == __version__,
             f"release {rel.get('version')} @ {rel.get('commit')} (pw {__version__}); "
             + (f"must not ship: {shipped}" if shipped else "no reference/ or client example"))
-        kits = {k: len(step_commands(REPO.parent / k)) for k in ("TENDER_TEMPLATE", "TRAINING_TENDER")}
+        kits = {k: (len(step_commands(REPO.parent / k)), len(spec_step_commands(REPO.parent / k)))
+                for k in ("TENDER_TEMPLATE", "TRAINING_TENDER")}
         guide = REPO.parent / "USER_GUIDE.html"
-        add("release tender folders and user guide beside the tool", all(v == 4 for v in kits.values()) and guide.exists(),
-            ", ".join(f"{k}: {v} step files" for k, v in kits.items()) + f"; USER_GUIDE.html {'present' if guide.exists() else 'MISSING'}")
+        add("release tender folders and user guide beside the tool", all(v == (4, 2) for v in kits.values()) and guide.exists(),
+            ", ".join(f"{k}: {v[0]} step files + {v[1]} Spec Builder steps" for k, v in kits.items())
+            + f"; USER_GUIDE.html {'present' if guide.exists() else 'MISSING'}")
 
     # 1. environment
     is_win = platform.system() == "Windows"
@@ -301,6 +329,12 @@ def _main(a):
     # 3. tools
     for name, cmd, rc, text, *ccwd in tool_checks(run):
         ccwd = ccwd[0] if ccwd else cwd
+        if isinstance(cmd, tuple) and cmd[0] == "SPECSTEP":       # a training tender Spec Builder step (WS9)
+            steps = spec_step_commands(ccwd) if ccwd.exists() else []
+            if len(steps) != 2:
+                add(name, False, f"{len(steps)} Spec Builder step file command(s) found in {ccwd}")
+                continue
+            cmd = PW + steps[cmd[1]]
         if isinstance(cmd, tuple) and cmd[0] == "STEP":           # a training tender step file's command
             steps = step_commands(ccwd) if ccwd.exists() else []
             if len(steps) != 4:
@@ -332,10 +366,22 @@ def _main(a):
             f"{len(h1)} files identical" if not diff else f"{len(diff)} differ: {diff[:5]}")
     except (OSError, ValueError) as ex:
         add("run byte-identical on a second run", False, repr(ex))
+    # WS9 acceptance: the read-back of an unchanged builder is the same spec; step 0b leaves the training spec unchanged
+    try:
+        same = []
+        for got, want in ((run / "spec_read" / "template_spec.json", FIX / "C_ALPHA" / "template_spec.json"),
+                          (run / "tenders" / "TRAINING" / "inputs" / "template_spec.json",
+                           run / "tenders" / "TRAINING" / "inputs" / "template_spec.previous.json")):
+            same.append(json.loads(got.read_text(encoding="utf-8")) == json.loads(want.read_text(encoding="utf-8")))
+        add("spec builder round trip gives the same spec", all(same), "fixture read-back and training step 0b: "
+            + ", ".join("same" if x else "DIFFERENT" for x in same))
+    except (OSError, ValueError) as ex:
+        add("spec builder round trip gives the same spec", False, repr(ex))
     # generated workbooks open with openpyxl
     try:
         from openpyxl import load_workbook
         for f in ("template.xlsx", "example_template.xlsx", "cedant.xlsx", "example_cedant.xlsx", "template_from_readback.xlsx",
+                  "spec_builder.xlsx", "spec_builder_blank.xlsx", "example_spec_builder.xlsx", "tenders/TRAINING/work/spec_builder.xlsx",
                   "runs/RUN_SYN/out/RateIndex.xlsx",
                   "runs/RUN_SYN/out/TreatyFeed.xlsx", "runs/RUN_SYN/out/Recommendation_Pack_RUN_SYN.xlsx", "runs/RUN_SYN/out/ValueMap.xlsx",
                   "e2e1/RUN_SYN/out/TreatyFeed.xlsx", "e2e1/RUN_SYN/out/OptionTerms.xlsx",
@@ -350,7 +396,8 @@ def _main(a):
         add("generated workbooks open", False, repr(ex))
     # WS5 acceptance: both cedant-example workbooks (cedant mode and reinsurer mode) open in Excel itself
     if is_win:
-        books = [run / "example_cedant.xlsx", run / "example_template.xlsx", run / "cedant.xlsx",
+        books = [run / "example_cedant.xlsx", run / "example_template.xlsx", run / "cedant.xlsx", run / "spec_builder.xlsx",
+                 run / "example_spec_builder.xlsx",
                  run / "e2e1" / "RUN_SYN" / "out" / "Recommendation_Pack_RUN_SYN.xlsx",
                  run / "e2e1" / "RUN_SYN" / "out" / "TreatyFeed.xlsx"]
         ok, det = excel_open([b for b in books if b.exists() or not b.name.startswith("example_")])

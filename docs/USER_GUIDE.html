@@ -212,6 +212,7 @@ dl.gloss dd { margin: 0 }
   <div><b>Tender template</b>The template the reinsurers fill, with the expiring rates shown for reference.<span class="out">3_make_tender_template</span></div>
   <div><b>Evaluate</b>Gates, rate index on the Merit cuts, benefit value, treaty feed and the scorecard.<span class="out">4_run_evaluation</span></div>
 </div>
+<p>Before step 1, the tender's structure can be set up or changed in Excel with the <b>Spec Builder</b>, using the optional steps <code>0a_make_spec_builder</code> and <code>0b_read_spec_builder</code> (chapter 9).</p>
 </div>
 
 <!-- ============================================================ context -->
@@ -627,8 +628,9 @@ dl.gloss dd { margin: 0 }
 <li>the benefit lines to compare.</li>
 </ul>
 Note anything irregular in the source (shared tables, swapped labels, flat multipliers, erroneous cells) as a note on the cedant workbook's Cover.</div></li>
-<li><div><b>Write the spec.</b> There are two routes.
+<li><div><b>Write the spec.</b> There are three routes.
 <ul>
+<li><b>In Excel, with the Spec Builder</b> (the usual route; no JSON or Python): steps 0a and 0b, described in the next section.</li>
 <li><b>By hand</b>, from the listing above, as was done for the first tender. Start from the training spec or the example above.</li>
 <li><b>From an existing catalogue spec</b>, if the cedant's workbook has already been mapped into a catalogue:
 <div class="cmd"><span class="lbl">Command Prompt, in pricing-workbench-&lt;version&gt;</span><pre>py -3.12 tools\pw.py t generate --from-catalogue &lt;catalogue spec.json&gt; --tender tender.json --out-spec template_spec.json --out template.xlsx</pre><button class="copy">Copy</button></div>
@@ -640,6 +642,45 @@ Codes must match the registries and the exposure maps: product, regulator and be
 <li><div><b>Check the reinsurer view.</b> After GC has filled the cedant workbook and step 2 passes, run step 3 and look at the tender template the way a reinsurer will: the Cover, each rate sheet, Factor Tables, Add-ons and Terms.</div></li>
 <li><div><b>Freeze and issue.</b> Keep the spec, the issued template and its structure hash together in the tender folder. From here on the spec does not change.</div></li>
 </ol>
+
+<h3>Setting it up in Excel: the Spec Builder</h3>
+<p>The Spec Builder is an Excel view of <code>template_spec.json</code>: dropdowns and yellow cells instead of JSON. <b>The JSON stays the master.</b> The tool reads the builder back into the JSON, and every step after it uses the JSON.</p>
+<ol class="checklist">
+<li><div><b>Make the builder.</b> Double-click <code>0a_make_spec_builder.bat</code>. It writes <code>work\spec_builder.xlsx</code>, pre-filled from <code>inputs\template_spec.json</code>, or blank when there is none.</div></li>
+<li><div><b>Fill or change it</b> and save it as <code>inputs\spec_builder.xlsx</code>. Yellow cells are inputs (* = mandatory); grey cells are information.</div></li>
+<li><div><b>Read it back.</b> Double-click <code>0b_read_spec_builder.bat</code>.
+<ul>
+<li><code>SPEC READ PASS</code> writes <code>inputs\template_spec.json</code>. The previous one is kept as <code>template_spec.previous.json</code>.</li>
+<li><code>SPEC READ FAIL</code> lists each problem with its sheet and cell (e.g. <code>Blocks!G7 age band set 'X' is not defined</code>) and leaves the spec untouched. The full list is in <code>inputs\template_spec_read_report.csv</code>. Fix the cells and run 0b again.</li>
+</ul></div></li>
+<li><div><b>Check the result with steps 1 and 3</b>, as in the list above.</div></li>
+</ol>
+<p>You can fix and re-read the same builder as often as needed, also after a PASS. If someone else changes <code>template_spec.json</code> after your builder was made, step 0b stops (<code>spec_changed</code>): make a new builder with 0a and copy your changes into it, so nobody's edit is lost.</p>
+<div class="tbl"><table>
+<thead><tr><th>Sheet</th><th>One row per</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>Tender</td><td>field</td><td>Cedant, tender id, currency, basis, dates, contact; the reference sheets shown to reinsurers; options. Blank = the tool's default.</td></tr>
+<tr><td>Lists</td><td>value</td><td>Dropdown sources for TPAs, rating regions, networks, band sets and column sets. Add a new name here first. Not read back.</td></tr>
+<tr><td>Age bands</td><td>band</td><td>Band set, label, age from, age to (open top band: to 120). Source "file …" = kept in the age bands file: edit that file, not these rows.</td></tr>
+<tr><td>Columns</td><td>column key</td><td>Two rows with the same set and label make one column (e.g. M/SF = male, and single female). MF and RATE are built in.</td></tr>
+<tr><td>Sheets</td><td>rate sheet</td><td>Product × emirate: name (max 31 characters), title, product, regulator, rating region, row source, column set, refer text, formula.</td></tr>
+<tr><td>Co-pay basis</td><td>family</td><td>The basis the base rates are quoted at (e.g. copay_op_diag = 0%).</td></tr>
+<tr><td>Blocks / Plans</td><td>TPA block / plan</td><td>Block id, TPA, label, splits, overrides; then each block's plans with the TPA's network label, in column order.</td></tr>
+<tr><td>Sections / Custom rows / Refer cells</td><td>section / row key / rule</td><td>The structured fields below.</td></tr>
+<tr><td>Factor tables / Riders / Options</td><td>table / rider / option</td><td>Cedant workbook tables; their options and the reference option (Reference = Y, one per key) are on Options.</td></tr>
+<tr><td>Plan defaults / Benefits / Cedant workbook / Cedant notes</td><td>family / code / field / note</td><td>What the cedant workbook asks per plan, and its Cover.</td></tr>
+</tbody></table></div>
+<p><b>The structured fields.</b></p>
+<ul>
+<li><b>Formula</b> (Sheets): how the cedant's premium is built at read-back. <i>BASE, FACTORS, MODULES</i> (base × factors, then riders) or <i>BASE, MODULES, FACTORS</i>; blank = default.</li>
+<li><b>Splits</b> (Blocks: Marital split, Member split = Y): the block uses the sheet's <i>Marital split columns</i> and its <i>Member split</i> sections.</li>
+<li><b>Sections</b>: row sections with their own member category and band set. <i>Applies to</i> = <code>Sheet rows</code>, <code>Member split</code>, or a block id.</li>
+<li><b>Custom rows</b>: hand-built rows for irregular tables; two lines with the same row label and section make one row covering both keys (e.g. 00-64 Employee &amp; Dependants). One row source per sheet or block: a band set, sections or custom rows.</li>
+<li><b>Refer cells</b>: cells reinsurers do not quote. Blank = any; a cell matching every filled field is a refer cell (e.g. Member category PARENT = the whole parents row).</li>
+</ul>
+<div class="note"><b>Typing text that looks like a number or date.</b>
+<p>Excel turns <code>10%</code> into 0.1 and <code>1-2</code> into a date. The read stops on such a cell ("type it as text"): start the entry with an apostrophe (<code>'10%</code>). Do not rename or delete the builder's sheets or columns; the read stops if one is missing, so nothing is dropped silently. Notes, source flags and owner records the builder does not show are kept from the current JSON.</p></div>
+<p>A builder pre-filled from a client spec holds the tender's structure only (labels, never rates). Keep it in the tender folder on the GC laptop. More detail: <code>docs\spec_builder_guide.md</code> in the tool folder.</p>
 
 <h3>What step 1 checks</h3>
 <div class="tbl"><table>
@@ -678,13 +719,17 @@ Codes must match the registries and the exposure maps: product, regulator and be
 <div class="tbl"><table>
 <thead><tr><th>Step file</th><th>Reads</th><th>Writes</th><th>Stops when</th></tr></thead>
 <tbody>
+<tr><td><code>0a_make_spec_builder</code> (optional)</td><td>inputs\template_spec.json, if any</td><td>work\spec_builder.xlsx</td><td>Never (a missing spec gives a blank builder); an invalid spec stops it</td></tr>
+<tr><td><code>0b_read_spec_builder</code> (optional)</td><td>inputs\spec_builder.xlsx, the current spec</td><td>inputs\template_spec.json (old one kept as template_spec.previous.json), template_spec_read_report.csv</td><td>Any problem in the builder (listed by sheet and cell); the spec changed since the builder was made</td></tr>
 <tr><td><code>1_make_cedant_workbook</code></td><td>inputs\template_spec.json</td><td>work\cedant_workbook_blank.xlsx</td><td>The spec is inconsistent</td></tr>
 <tr><td><code>2_read_cedant_workbook</code></td><td>inputs\cedant_filled.xlsx, the spec</td><td>work\expiring.json, work\expiring_read_report.csv</td><td>A rate is blank, non-numeric or ≤ 0; a factor table lacks exactly one reference; a plan default is not in its list; an unknown benefit value; a duplicate row; a renamed sheet; the workbook was made from another spec</td></tr>
 <tr><td><code>3_make_tender_template</code></td><td>the spec, work\expiring.json</td><td>work\tender_template.xlsx</td><td>The expiring catalogue does not fit the spec</td></tr>
 <tr><td><code>4_run_evaluation</code></td><td>run_config.json and everything it names</td><td>runs\&lt;run_id&gt;\</td><td>Any stopping gate (chapter 11)</td></tr>
 </tbody></table></div>
 <p>The commands, if you prefer a Command Prompt in the tender folder:</p>
-<div class="cmd"><span class="lbl">Command Prompt, in the tender folder</span><pre>py -3.12 ..\pricing-workbench-1.0.0\tools\pw.py t cedant inputs\template_spec.json --out work\cedant_workbook_blank.xlsx
+<div class="cmd"><span class="lbl">Command Prompt, in the tender folder</span><pre>py -3.12 ..\pricing-workbench-1.0.0\tools\pw.py t spec-builder inputs\template_spec.json --blank-if-missing --out work\spec_builder.xlsx
+py -3.12 ..\pricing-workbench-1.0.0\tools\pw.py t spec-read inputs\spec_builder.xlsx --base inputs\template_spec.json --out inputs\template_spec.json
+py -3.12 ..\pricing-workbench-1.0.0\tools\pw.py t cedant inputs\template_spec.json --out work\cedant_workbook_blank.xlsx
 py -3.12 ..\pricing-workbench-1.0.0\tools\pw.py t cedant-read inputs\cedant_filled.xlsx --spec inputs\template_spec.json --out work\expiring.json
 py -3.12 ..\pricing-workbench-1.0.0\tools\pw.py t generate inputs\template_spec.json --expiring work\expiring.json --out work\tender_template.xlsx
 py -3.12 ..\pricing-workbench-1.0.0\tools\pw.py run run_config.json --runs-root runs</pre><button class="copy">Copy</button></div>
@@ -820,6 +865,9 @@ Training, SUB_X, BOOK_IND_GREEN:  1.025865 × (1 − 0.06) − 1 = −3.57%;  77
 <tr><td><code>'py' is not recognized</code> or <code>Python 3.12 not found</code></td><td>The Python launcher or Python 3.12 is missing.</td><td>Install the team's Python 3.12 (chapter 3).</td></tr>
 <tr><td><code>ModuleNotFoundError</code> (duckdb, pandas, openpyxl…)</td><td>A package is missing.</td><td>Run the pip install in chapter 3, then the laptop check.</td></tr>
 <tr><td><code>Another laptop check is already running</code>, exit code 3</td><td>A check is running in another window.</td><td>Let it finish. If no other window is open, delete the <code>RUNNING.lock</code> file the message names and start again.</td></tr>
+<tr><td><code>SPEC READ FAIL</code>, exit code 2</td><td>The Spec Builder has missing or inconsistent cells; the spec was not changed.</td><td>Open <code>inputs\template_spec_read_report.csv</code>; fix each listed sheet and cell in <code>inputs\spec_builder.xlsx</code>; run step 0b again.</td></tr>
+<tr><td><code>spec_changed</code> on step 0b</td><td>Someone changed <code>template_spec.json</code> after your builder was made.</td><td>Run step 0a for a new builder from the current spec and copy your changes into it.</td></tr>
+<tr><td><code>not_text</code> on step 0b</td><td>Excel turned a typed value into a number or date (e.g. <code>10%</code> into 0.1).</td><td>Retype it starting with an apostrophe (<code>'10%</code>).</td></tr>
 <tr><td><code>CEDANT READ FAIL</code>, exit code 2</td><td>The filled cedant workbook has missing or inconsistent cells.</td><td>Open <code>work\expiring_read_report.csv</code>; fix each listed sheet and cell; run step 2 again.</td></tr>
 <tr><td><code>spec hash mismatch</code> on the cedant read</td><td>The workbook was made from a different template spec.</td><td>Make a new blank workbook (step 1) from the current spec and copy the values across.</td></tr>
 <tr><td><code>MappingRequired</code>, or <code>COVERAGE FAIL</code></td><td>Merit labels with no row in a mapping table.</td><td>Open <code>runs\&lt;run_id&gt;\gates\coverage_by_reason.csv</code>; add the labels to the named file in <code>exposure\maps\</code>; run step 4 again.</td></tr>
@@ -838,6 +886,7 @@ Training, SUB_X, BOOK_IND_GREEN:  1.025865 × (1 − 0.06) − 1 = −3.57%;  77
 <section class="chap col" id="glossary" data-title="Glossary">
 <div class="chap-head"><span class="chap-n">14</span><h2>Glossary</h2></div>
 <dl class="gloss">
+<dt>Spec Builder</dt><dd>The Excel view of <code>template_spec.json</code> (steps 0a / 0b). The JSON stays the master; the builder is read back into it.</dd>
 <dt>Expiring catalogue</dt><dd>The cedant's current rates, factors, riders and benefits, read back from the cedant workbook (<code>work\expiring.json</code>).</dd>
 <dt>Option</dt><dd>One reinsurer's quote, read into a catalogue of its own. Its <code>option_id</code> names it in every output.</dd>
 <dt>Panel</dt><dd>A lead and followers scored together; followers write at the lead's rates and terms.</dd>
@@ -982,6 +1031,11 @@ Training, SUB_X, BOOK_IND_GREEN:  1.025865 × (1 − 0.06) − 1 = −3.57%;  77
     "d": "A blank tender folder: the same four step files, README, a run_config.json with CHANGE_ME placeholders, an empty terms_scores.csv and a README in each input folder saying what goes there. Copy it and rename it for each tender (chapter 8). Do not work in the original, so the next tender starts clean.",
     "c": [
      {
+      "n": "0a_make_spec_builder.bat, 0b_read_spec_builder.bat",
+      "t": "RUN",
+      "d": "Optional: set up or change the tender structure in Excel with the Spec Builder (chapter 9)."
+     },
+     {
       "n": "1_make_cedant_workbook.bat \u2026 4_run_evaluation.bat",
       "t": "RUN",
       "d": "The four step files, identical in every tender folder."
@@ -1030,6 +1084,18 @@ Training, SUB_X, BOOK_IND_GREEN:  1.025865 × (1 − 0.06) − 1 = −3.57%;  77
     "d": "The synthetic practice tender shipped with the release: every input already in place. Run its four steps once before a real tender (chapter 7).",
     "c": [
      {
+      "n": "0a_make_spec_builder.bat",
+      "t": "RUN",
+      "d": "Optional step 0a: writes work\\spec_builder.xlsx, the tender structure in Excel (pre-filled from inputs\\template_spec.json).",
+      "w": "When the tender structure is set up or changes"
+     },
+     {
+      "n": "0b_read_spec_builder.bat",
+      "t": "RUN",
+      "d": "Optional step 0b: reads inputs\\spec_builder.xlsx back into inputs\\template_spec.json (the previous one kept as template_spec.previous.json). Stops with every problem listed by sheet and cell.",
+      "w": "After filling the Spec Builder"
+     },
+     {
       "n": "1_make_cedant_workbook.bat",
       "t": "RUN",
       "d": "Step 1: makes the blank cedant rate workbook in work\\.",
@@ -1075,6 +1141,12 @@ Training, SUB_X, BOOK_IND_GREEN:  1.025865 × (1 − 0.06) − 1 = −3.57%;  77
       "t": "EDIT",
       "d": "The tender's structure and the filled cedant workbook.",
       "c": [
+       {
+        "n": "spec_builder.xlsx",
+        "t": "EDIT",
+        "d": "The Spec Builder: the tender structure in Excel (step 0a's workbook, filled in and saved here). Step 0b reads it into template_spec.json. Structure only, never rates.",
+        "by": "GC analyst or tool owner"
+       },
        {
         "n": "template_spec.json",
         "t": "LEAVE",
