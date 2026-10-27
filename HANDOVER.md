@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-26 (CR #26 / WS9 written: Spec Builder workbook, SPEC §8.6, branch ws9-spec-builder, spec only, no code yet; before: CR #25: Merit contract IP4-9 (Merit v7.5.0) pinned beside IP4-8, release 0.0.6 on branch cr25-merit-ip4-9, laptop check PENDING; before: 2026-10-25 release 0.0.5 merged: WS8 release hardening — TENDER_TEMPLATE and TRAINING_TENDER with step files in the release, readable Excel views, one-at-a-time live laptop check. Laptop check of 0.0.5 on the owner's personal laptop 48/49, Python-version line waived by the owner. User guide (private artifact) updated to 0.0.5 with context, data requirements and output analysis. Next: 1.0.0 on the owner's word, then the first real tender run).
+Last updated: 2026-10-27 (WS9 built: Spec Builder workbook, `t spec-builder` / `t spec-read`, step files 0a / 0b, release 0.0.7 on branch ws9-spec-builder, laptop check PENDING; before: 2026-10-26 CR #26 / WS9 work order and SPEC §8.6 merged (PR #20); before: CR #25: Merit contract IP4-9 (Merit v7.5.0) pinned beside IP4-8, release 0.0.6 on branch cr25-merit-ip4-9, laptop check PENDING; before: 2026-10-25 release 0.0.5 merged: WS8 release hardening — TENDER_TEMPLATE and TRAINING_TENDER with step files in the release, readable Excel views, one-at-a-time live laptop check. Laptop check of 0.0.5 on the owner's personal laptop 48/49, Python-version line waived by the owner. User guide (private artifact) updated to 0.0.5 with context, data requirements and output analysis. Next: 1.0.0 on the owner's word, then the first real tender run).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -12,6 +12,7 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | docs/CHANGE_REQUESTS.md | Contract change requests (all decided; CR #17 = work order WS7) |
 | docs/workorders/WS1–WS9 | Work orders (WS7: structured benefit proposals, CR #17; WS8: release hardening, 0.0.5; WS9: Spec Builder workbook, CR #26) |
 | docs/cedant_workbook_guide.md | WS5 fill guide for GC: what goes where, Nil-base rule, TPA basis, source flags, gate |
+| docs/spec_builder_guide.md | WS9 guide for non-technical users: the Spec Builder sheets, the five structured fields, the 0a / 0b loop |
 | tools/laptop_check.py | SPEC §13 laptop acceptance: run `py tools\laptop_check.py` on the laptop after every change; since WS4 also the release gate (end-to-end `run` twice, byte-identical), runnable from the installed release zip |
 | docs/INSTALL.md | WS4: release contents, versioning, install on a GC laptop, running a tender end to end |
 | contracts/treaty_feed_contract.json | WS4: TreatyFeed / OptionTerms columns and types checked on every run; treatymodel 2.0 findings and gaps G1–G4 (CR #23) |
@@ -47,7 +48,39 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
 | WS8 | Release hardening (0.0.5): tender folders + step files in the release, `tender new`, readable Excel views, laptop check lock + live console | Merged to main (PR #17, 25 Oct) | **PASS (owner override, 25 Oct)** — from the installed 0.0.5 release zip @ e0b9e35 on the owner's personal laptop (Win 11, Py 3.14.6): 48/49, 3 skipped (not in release); the only FAIL is the Python 3.12 line, which the owner waived ("assume if it works fine it'll work on the GC laptop"). Every pin, the suite, every tool, the training tender's four steps, byte-identical rerun and Excel open PASS; lock and live console confirmed by hand. The refused second start emptied the running check's console file: fixed in the merge commit (console reset only after the lock is taken) | Cut 1.0.0 when the owner says; GC laptop run optional |
 | CR #25 | Merit contract IP4-9 (Merit v7.5.0, ete-dashboard 3eaaa30) pinned beside IP4-8 (same 4 redactions); field map IP4-9 = IP4-8; SPEC §5; V0 OK on both; exposure tests on both; laptop check line "gates v0 contract check, Merit v7.5.0 (IP4-9, CR #25)"; release 0.0.6. Note for runs: where Merit calculates the policy type, PolicyTypeUsed is now 'Group' (was 'Non-SME'): `segment_map.csv` needs a 'Group' row (MappingRequired otherwise) | Branch cr25-merit-ip4-9, PR open | **PENDING**: `py tools\laptop_check.py` (or RUN_LAPTOP_CHECK.bat from the 0.0.6 release zip) | Owner runs the laptop check, then merge |
-| WS9 | Spec Builder workbook (SPEC §8.6, CR #26): `t spec-builder` / `t spec-read`, step files 0a / 0b, guide; reinsurer + cedant sections as structured rows; JSON master; no preview | Work order and SPEC text on branch ws9-spec-builder (PR open, docs only) | — (no code in this PR) | Owner approves the PR; then a WS9 build thread on the same branch name implements it (release 0.0.7) |
+| WS9 | Spec Builder workbook (SPEC §8.6, CR #26): `pw/template/builder.py`, `t spec-builder` / `t spec-read`, step files 0a / 0b in both tender folders, fixture `fixtures/C_ALPHA/spec_builder.xlsx`, guide `docs/spec_builder_guide.md`, release 0.0.7 | Built on branch ws9-spec-builder (PR open); sandbox: suite green, laptop check --quick every tool / step line PASS (environment lines only fail on Linux) | **PENDING**: `py tools\laptop_check.py` (or RUN_LAPTOP_CHECK.bat from the 0.0.7 release zip); also open `runs\laptop_check\<stamp>\example_spec_builder.xlsx` in Excel and try a dropdown | Owner runs the laptop check, then merge |
+
+### WS9 notes for the next sessions
+- `pw/template/builder.py`: `generate_builder(spec | None, out)` (xlsxwriter, deterministic) and
+  `read_builder(xlsx, base_spec, previous_spec)` (openpyxl, header scan, gated; spec None on any problem). Sheets:
+  Cover, Tender and Cedant workbook (field / value), Lists (user dropdown lists, not read back), Age bands, Columns,
+  Sheets, Co-pay basis, Blocks, Plans, Sections, Custom rows, Refer cells, Factor tables, Riders, Options, Plan
+  defaults, Benefits, Cedant notes; hidden `_LISTS` (fixed dropdowns), `_META` (mode SPEC_BUILDER, builder version,
+  source spec hash, source cedant spec hash).
+- Round trip: with the base spec the read gives back the same JSON (content and key order) for T_ALPHA, C_ALPHA and the
+  UFIC example; templates and cedant workbooks byte-identical. Mechanism: fields the builder does not model are copied
+  from the base per object (top level, sheet, block, plan, factor table / rider, formula, options, cedant_workbook);
+  a block whose normalised form is unchanged, and a factor table / rider whose cedant model is unchanged, keep the
+  base's raw JSON. Without a base the read writes a canonical form (factor tables as options x key_values when the
+  rows are a full grid, else rows; reference as one option when it marks the same rows, else by key) with the same
+  meaning (tested: `_semantic` in tests/test_ws9_builder.py).
+- Age bands from `age_bands_file` are shown with Source "file ..."; on read they must equal the file (else stop:
+  edit the file); the spec keeps the file reference. Bands with no Source are written inline.
+- Gates: blank mandatory, not in a fixed list, not a number / whole number / date, duplicates (sheet, block, plan,
+  component, option row, band label, column, co-pay family, plan default, benefit), undefined band set / column set /
+  sheet / block / component / refer plan, age from > to, overlapping bands, two row sources on one sheet or block,
+  reference rows per key, riders with a reference, builder older than the spec (spec_changed; allowed when the
+  spec's .previous.json is the builder's source, i.e. the same builder read again), then the spec validator and the
+  cedant model (`spec_invalid`).
+- Deviations from the work order (reasons in the PR): Plans is a long table (one row per plan), not a plan-letter grid,
+  because plan ids are not letters in every spec; Co-pay basis, Options and Cedant notes are sheets of their own (the
+  work order's Factors / Riders rows split into a table sheet and one Options sheet); the "TPA twice on one sheet" gate
+  is the validator's TPA x plan rule (UFIC NE has three Aafiya blocks with different plans, which is valid); Plan label
+  is mandatory (the template generator needs it); families are suggestions, not gated (a family is a label, e.g.
+  'nationality', while option dimensions and key dimensions are gated by the registry).
+- Laptop check: `t spec-builder` (fixture, blank, UFIC example), `t spec-read` (fixture PASS, blank FAIL), training
+  tender steps 0a / 0b before steps 1-4, "spec builder round trip gives the same spec", builders open (openpyxl,
+  Excel on Windows). Release check expects 4 step files + 2 Spec Builder steps per tender folder.
 
 ### WS8 notes for the next sessions
 - Found by the first full dry run of release 0.0.4 on the owner's personal laptop (25 Oct 2026; synthetic UFIC-shaped

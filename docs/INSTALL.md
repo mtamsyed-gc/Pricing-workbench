@@ -5,7 +5,7 @@
   in `RELEASE.json`, in every run manifest (`versions.pricing_workbench`) and in the Parquet metadata of every output.
 - Scheme (owner, 25 Oct 2026): development releases count up by 0.0.1 and a digit never exceeds 9, so 0.0.9 is
   followed by 0.1.0 (and 0.1.9 by 0.2.0). Only official GC test releases move to 1.0.0 and beyond. 0.0.2 is the first
-  integrated release (WS4); 0.0.3 adds the Windows file-lock retry found on the GC work laptop; 0.0.4 adds the B2 comparison on the Merit cuts (CR #24); 0.0.5 adds the tender folders, readable Excel views and a one-at-a-time, live laptop check (WS8); 0.0.6 pins Merit contract IP4-9 (Merit v7.5.0) beside IP4-8 (CR #25); the WS0–WS5 development line carried 0.1.0-ws0. Enforced by `tests/test_release.py`.
+  integrated release (WS4); 0.0.3 adds the Windows file-lock retry found on the GC work laptop; 0.0.4 adds the B2 comparison on the Merit cuts (CR #24); 0.0.5 adds the tender folders, readable Excel views and a one-at-a-time, live laptop check (WS8); 0.0.6 pins Merit contract IP4-9 (Merit v7.5.0) beside IP4-8 (CR #25); 0.0.7 adds the Spec Builder workbook and step files 0a / 0b (WS9, CR #26); the WS0–WS5 development line carried 0.1.0-ws0. Enforced by `tests/test_release.py`.
 - A release is built from a commit on `main` whose laptop check passed; `RELEASE.json` and `COMMIT.txt` record it.
 
 ## What the zip holds
@@ -15,7 +15,8 @@
 - `RUN_LAPTOP_CHECK.bat` at the zip root.
 - `TENDER_TEMPLATE/` and `TRAINING_TENDER/` at the zip root (WS8, `pw/tender_kit.py`): tender folders with the four
   step files (`1_make_cedant_workbook.bat`, `2_read_cedant_workbook.bat`, `3_make_tender_template.bat`,
-  `4_run_evaluation.bat`), README.txt and the input folders. TENDER_TEMPLATE is blank (a README in each folder says what
+  `4_run_evaluation.bat`), the optional Spec Builder steps `0a_make_spec_builder.bat` / `0b_read_spec_builder.bat`
+  (0.0.7, WS9), README.txt and the input folders. TENDER_TEMPLATE is blank (a README in each folder says what
   goes there; `run_config.json` has CHANGE_ME placeholders). TRAINING_TENDER is complete on synthetic data only (fixture
   cedant spec and filled cedant workbook, EXPO_SYN, the two fixture quotes): run its four steps before a real tender.
   `py tools\pw.py tender new <folder> [--training]` writes another one. A tender folder must sit next to the
@@ -43,6 +44,14 @@
 ## Running a tender
 The simple way (0.0.5): copy `TENDER_TEMPLATE`, rename it, fill its folders and `run_config.json`, and double-click the
 four step files in order (each shows its command and waits). The commands they run are these:
+
+Setting up the tender structure without editing JSON (0.0.7, SPEC §8.6, guide: `docs/spec_builder_guide.md`): step
+`0a_make_spec_builder.bat` writes `work\spec_builder.xlsx` (pre-filled from `inputs\template_spec.json`, blank when there
+is none); fill or change it, save it as `inputs\spec_builder.xlsx`, and run `0b_read_spec_builder.bat`. SPEC READ PASS
+writes `inputs\template_spec.json` (the previous one kept as `template_spec.previous.json`); SPEC READ FAIL lists each
+problem with its sheet and cell and leaves the spec untouched. Commands:
+`py tools\pw.py t spec-builder [<template_spec.json>] --out <builder.xlsx> [--blank-if-missing]` and
+`py tools\pw.py t spec-read <builder.xlsx> --out <template_spec.json> [--base <template_spec.json>]`.
 
 Client inputs (the filled cedant workbook, Merit outputs, submissions, the tender's template spec) stay in a folder of
 their own, never in the repo; outputs go to `runs\<RunID>\` under the release folder (or `--runs-root`):

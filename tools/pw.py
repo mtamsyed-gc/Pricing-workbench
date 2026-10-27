@@ -15,6 +15,11 @@
   t cedant <template_spec.json> --out <xlsx>                     cedant rate workbook (SPEC §8.5): GC fills current rates
   t cedant-read <filled.xlsx> --spec <template_spec.json> --out runs\\<RunID>\\expiring.json [--id ID] [--owner NAME]
                                                                  read back into the EXPIRING catalogue (gated; report beside --out)
+  t spec-builder [<template_spec.json>] --out <builder.xlsx> [--blank-if-missing]
+                                   Spec Builder workbook (SPEC §8.6): the spec in Excel (blank without a spec)
+  t spec-read <builder.xlsx> --out <template_spec.json> [--base <template_spec.json>]
+                                   read the builder back into the spec (gated; report beside --out; the old --out
+                                   is kept as <name>.previous.json)
   run <run_config.json> [--runs-root <dir>] [--hashes <json>]
                                    end-to-end run (WS4): catalogue specs (V1, V2) -> exposure (V0, coverage) -> V3 ->
                                    V4 -> submissions (T ingest, V5) -> B1 / B2 / TreatyFeed (treaty contract) -> A -> D;
@@ -206,6 +211,54 @@ def cmd_t(a):
             raise SystemExit(2)
         cat.write(out)
         print(f"{cat.catalogue_id} ({cat.kind}): {len(cat.scopes)} scope(s) -> {out}")
+    elif a.action == "spec-builder":
+        from pw.template.builder import generate_builder
+        src = Path(a.spec) if a.spec else None
+        if src is not None and not src.exists():
+            if not a.blank_if_missing:
+                raise SystemExit(f"{src} not found (use --blank-if-missing for a blank builder)")
+            print(f"{src} not found: making a blank builder")
+            src = None
+        g = generate_builder(load_template_spec(src) if src else None, _out(a.out, "spec_builder.xlsx"))
+        kind = f"pre-filled from {src.name}" if src else "blank"
+        print(f"{g.path}: Spec Builder ({kind}); " + ", ".join(f"{k} {v}" for k, v in g.counts.items() if v)
+              + (f"; kept from the spec, not shown: {len(g.not_carried)} field(s)" if g.not_carried else ""))
+    elif a.action == "spec-read":
+        from pw.template.builder import read_builder, write_spec
+        out = _out(a.out, "template_spec.json")
+        base = None
+        if a.base and Path(a.base).exists():
+            base = load_template_spec(Path(a.base))
+        elif a.base:
+            print(f"{a.base} not found: reading without a base spec (a new spec)")
+        prev_p = out.with_name(out.stem + ".previous" + out.suffix)
+        prev = load_template_spec(prev_p) if base is not None and prev_p.exists() else None
+        try:
+            spec, rep = read_builder(Path(a.spec), base, prev)
+        except Exception:  # noqa: BLE001  (an unreadable previous spec must not block the read)
+            spec, rep = read_builder(Path(a.spec), base)
+        if spec is not None and spec.get("age_bands_file"):
+            bdir = Path(spec.get("_base_dir") or ".")
+            if (out.parent.resolve() != bdir.resolve() and not (out.parent / spec["age_bands_file"]).exists()):
+                rep.add("", "", "age_bands_file", f"the spec names {spec['age_bands_file']}: copy it next to {out} first")
+                spec = None
+        rp = out.with_name(out.stem + "_read_report.csv")
+        rep.to_frame().to_csv(rp, index=False, lineterminator="\n")
+        print(rep.summary())
+        for p in rep.problems[:40]:
+            print(f"  {p['sheet']}!{p['cell']}  [{p['check']}] {p['message']}" + (f"  (value: {p['value']})" if p["value"] else ""))
+        if len(rep.problems) > 40:
+            print(f"  ... {len(rep.problems) - 40} more: see {rp}")
+        for w in rep.warnings[:20]:
+            print(f"  warning: {w}")
+        print(f"report: {rp}")
+        if spec is None:
+            raise SystemExit(2)                       # the spec on disk is left untouched
+        if out.exists():
+            prev_p.write_bytes(out.read_bytes())
+            print(f"previous spec kept as {prev_p}")
+        write_spec(spec, out)
+        print(f"{spec['tender_id']}: {len(spec['sheets'])} sheet(s) -> {out}")
     elif a.action == "parse":
         from pw.template.parser import parse_submission, to_catalogue
         spec = load_template_spec(Path(a.spec_file))
@@ -334,7 +387,7 @@ def main(argv=None):
     p.add_argument("--workdir")
     p.set_defaults(fn=cmd_gates)
     p = sub.add_parser("t")
-    p.add_argument("action", choices=["generate", "parse", "ingest", "cedant", "cedant-read"])
+    p.add_argument("action", choices=["generate", "parse", "ingest", "cedant", "cedant-read", "spec-builder", "spec-read"])
     p.add_argument("spec", nargs="?")
     p.add_argument("--out")
     p.add_argument("--expiring")
@@ -348,6 +401,8 @@ def main(argv=None):
     p.add_argument("--issued")
     p.add_argument("--run")
     p.add_argument("--runs-root")
+    p.add_argument("--base")
+    p.add_argument("--blank-if-missing", action="store_true")
     p.set_defaults(fn=cmd_t)
     p = sub.add_parser("run")
     p.add_argument("run_config")

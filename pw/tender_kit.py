@@ -60,6 +60,15 @@ STEPS = [
 ]
 
 
+# WS9 (SPEC §8.6): optional steps before step 1 - author or change inputs\template_spec.json in Excel
+SPEC_STEPS = [
+    ("0a_make_spec_builder.bat", "Step 0a - make the Spec Builder workbook (the tender structure in Excel)",
+     r"t spec-builder inputs\template_spec.json --blank-if-missing --out work\spec_builder.xlsx"),
+    ("0b_read_spec_builder.bat", "Step 0b - read the filled Spec Builder back into the tender spec",
+     r"t spec-read inputs\spec_builder.xlsx --base inputs\template_spec.json --out inputs\template_spec.json"),
+]
+
+
 def step_args(i: int) -> list[str]:
     """The pw.py arguments of step i (0-based), split, with Windows separators (also valid on Linux via Path)."""
     return [a.replace("\\", "/") for a in STEPS[i][2].split()]
@@ -83,14 +92,21 @@ Keep this folder NEXT TO the pricing-workbench-<version> folder (same parent fol
 in order. Each step shows the command it runs and waits for a key; exit code 2 means a gate stopped it on purpose
 (the messages say what to fix).
 
+Optional, before step 1 - set up or change the tender structure in Excel instead of editing the JSON:
+  0a_make_spec_builder.bat     Spec Builder workbook            -> work\\spec_builder.xlsx (pre-filled from
+                                                                   inputs\\template_spec.json, blank if there is none)
+  0b_read_spec_builder.bat     read the filled builder back     -> inputs\\template_spec.json (the previous one is kept
+                               (save it as inputs\\spec_builder.xlsx first)   as template_spec.previous.json)
+
   1_make_cedant_workbook.bat   blank cedant rate workbook       -> work\\cedant_workbook_blank.xlsx
   2_read_cedant_workbook.bat   read back the filled workbook    -> work\\expiring.json (+ expiring_read_report.csv)
   3_make_tender_template.bat   template to send to reinsurers   -> work\\tender_template.xlsx
   4_run_evaluation.bat         full evaluation                  -> runs\\<run_id>\\ (start with out\\Recommendation_Pack_*.xlsx)
 
 You fill or replace:
-  inputs\\        template_spec.json (tender structure), scorecard_weights.json, cedant_filled.xlsx (step 1's
-                 workbook after the cedant's current rates are typed in)
+  inputs\\        template_spec.json (tender structure; or spec_builder.xlsx, step 0a's workbook filled in, then
+                 step 0b), scorecard_weights.json, cedant_filled.xlsx (step 1's workbook after the cedant's current
+                 rates are typed in)
   exposure\\      the Merit extract (dim_life.csv, run_manifest.csv) and maps\\ (mapping tables)
   submissions\\   one quote workbook per reinsurer, as returned (filled copies of work\\tender_template.xlsx)
   treaty\\        treaty_book_map.csv, experience.csv
@@ -102,7 +118,8 @@ receive work\\tender_template.xlsx only.
 """
 
 FOLDER_NOTES = {
-    "inputs": "Put here: template_spec.json (the tender's structure, from the tool owner), age bands if the spec names "
+    "inputs": "Put here: template_spec.json (the tender's structure, from the tool owner, or written by step 0b from "
+              "spec_builder.xlsx, step 0a's Spec Builder after you have filled it), age bands if the spec names "
               "a file, scorecard_weights.json, and cedant_filled.xlsx (step 1's workbook after GC has typed in the "
               "cedant's current rates, factors, riders, plan defaults and benefits).",
     "exposure": "Put here the Merit extract for the tender as Merit writes it: dim_life.csv and run_manifest.csv. "
@@ -144,7 +161,7 @@ def _json(d) -> bytes:
 
 
 def _common(name: str, intro: str) -> dict[str, bytes]:
-    files = {f: _bat(t, a) for f, t, a in STEPS}
+    files = {f: _bat(t, a) for f, t, a in SPEC_STEPS + STEPS}
     files["README.txt"] = _txt(README.format(name=name, rule="=" * (len(name) + 39), intro=intro))
     return files
 
@@ -167,6 +184,7 @@ def training_files() -> dict[str, bytes]:
                                    "reinsurers are fictional. Run the four steps in order.")
     files["inputs/template_spec.json"] = (FIX / "C_ALPHA" / "template_spec.json").read_bytes()
     files["inputs/cedant_filled.xlsx"] = (FIX / "C_ALPHA" / "filled.xlsx").read_bytes()
+    files["inputs/spec_builder.xlsx"] = (FIX / "C_ALPHA" / "spec_builder.xlsx").read_bytes()
     files["inputs/scorecard_weights.json"] = (REPO_DIR / "examples" / "scorecard_weights.json").read_bytes()
     e = FIX / "EXPO_SYN"
     for p in sorted([e / "dim_life.csv", e / "run_manifest.csv", *sorted((e / "maps").glob("*.csv"))]):
