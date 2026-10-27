@@ -11,7 +11,8 @@ from pw.gates import v4_round_trip
 from pw.template.builder import (APPLIES_SHEET, HEADER_ROW, T, TOP_KEYS, generate_builder, read_builder, write_spec)
 from pw.template.cedant import generate_cedant_workbook
 from pw.template.generator import generate_template
-from pw.template.spec import CEDANT_SHEET_FIELDS, cedant_model, cedant_spec_hash, load_template_spec, normalise, spec_hash
+from pw.template.spec import (CEDANT_SHEET_FIELDS, cedant_model, cedant_spec_hash, load_template_spec, normalise, spec_hash,
+                              validate_template_spec)
 
 SPECS = {"T_ALPHA": FIX / "T_ALPHA" / "template_spec.json", "C_ALPHA": FIX / "C_ALPHA" / "template_spec.json"}
 EX = REPO / "examples" / "ufic_2027" / "template_spec.json"
@@ -363,6 +364,154 @@ def test_cli_spec_builder_and_read_keep_the_previous_spec():
         assert r.returncode == 2 and "SPEC READ FAIL" in r.stdout and "Sheets!" in r.stdout, r.stdout + r.stderr
         assert (d / "template_spec.json").read_bytes() == before and not (d / "template_spec.previous.json").exists()
         assert (d / "template_spec_read_report.csv").exists()
+
+
+def test_training_tender_spec_steps_run_as_the_step_files_do():
+    """Steps 0a / 0b from the tender folder: a pre-filled builder, then a read-back to the same spec (previous kept);
+    steps 1 to 3 still run on the rewritten spec. The laptop check reads the same commands from the .bat files."""
+    import importlib.util
+    import os
+    import subprocess
+    import sys
+    from pw.tender_kit import SPEC_STEPS, TRAINING_NAME, step_args, write_folder
+    spec = importlib.util.spec_from_file_location("laptop_check_ws9", REPO / "tools" / "laptop_check.py")
+    lc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(lc)
+    with tmpdir() as d:
+        t = d / TRAINING_NAME
+        write_folder(t, training=True)
+        cmds = lc.spec_step_commands(t)
+        assert cmds == [[x.replace("\\", os.sep) for x in a.split()] for _, _, a in SPEC_STEPS]
+        before = (t / "inputs" / "template_spec.json").read_bytes()
+        for args, text in zip(cmds, ("Spec Builder", "SPEC READ PASS")):
+            r = subprocess.run([sys.executable, str(REPO / "tools" / "pw.py"), *args], cwd=str(t), capture_output=True,
+                               text=True, timeout=600)
+            assert r.returncode == 0 and text in r.stdout, (args, r.stdout[-1500:], r.stderr[-1500:])
+        assert (t / "work" / "spec_builder.xlsx").exists()
+        assert (t / "inputs" / "template_spec.previous.json").read_bytes() == before
+        assert json.loads((t / "inputs" / "template_spec.json").read_text(encoding="utf-8")) == json.loads(before)
+        for i, text in ((0, "structure hash"), (1, "CEDANT READ PASS"), (2, "structure hash")):
+            r = subprocess.run([sys.executable, str(REPO / "tools" / "pw.py"), *step_args(i)], cwd=str(t),
+                               capture_output=True, text=True, timeout=600)
+            assert r.returncode == 0 and text in r.stdout, (i, r.stdout[-1500:], r.stderr[-1500:])
+
+
+def test_blank_tender_folder_step_0a_makes_a_blank_builder_and_0b_reads_a_new_spec():
+    import subprocess
+    import sys
+    from pw.tender_kit import SPEC_STEPS, write_folder
+    with tmpdir() as d:
+        t = d / "NEW"
+        write_folder(t)
+        args = [x.replace("\\", "/") for x in SPEC_STEPS[0][2].split()]
+        (t / "work").mkdir(exist_ok=True)
+        r = subprocess.run([sys.executable, str(REPO / "tools" / "pw.py"), *args], cwd=str(t), capture_output=True, text=True)
+        assert r.returncode == 0 and "blank" in r.stdout, r.stdout + r.stderr
+        # a user fills the blank builder with the fixture's content (as in the blank-fill test) and runs 0b
+        shutil.copy(FIX / "C_ALPHA" / "spec_builder.xlsx", t / "inputs" / "spec_builder.xlsx")
+        args = [x.replace("\\", "/") for x in SPEC_STEPS[1][2].split()]
+        r = subprocess.run([sys.executable, str(REPO / "tools" / "pw.py"), *args], cwd=str(t), capture_output=True, text=True)
+        assert r.returncode == 0 and "SPEC READ PASS" in r.stdout and "reading without a base" in r.stdout, r.stdout + r.stderr
+        got = load_template_spec(t / "inputs" / "template_spec.json")
+        assert _semantic(got) == _semantic(load_template_spec(SPECS["C_ALPHA"]))
+        assert not (t / "inputs" / "template_spec.previous.json").exists()
+
+
+def test_a_builder_can_be_read_again_after_a_fix_but_not_over_someone_elses_change():
+    """Review finding 3: the same builder may be read again while the spec on disk is exactly what its last read wrote;
+    the spec from before its first read stays in .previous.json; a hand edit of the spec in between stops the read;
+    an unreadable read record never crashes the read."""
+    import subprocess
+    import sys
+    pw = [sys.executable, str(REPO / "tools" / "pw.py")]
+    with tmpdir() as d:
+        shutil.copy(SPECS["C_ALPHA"], d / "template_spec.json")
+        original = (d / "template_spec.json").read_bytes()
+        subprocess.run(pw + ["t", "spec-builder", str(d / "template_spec.json"), "--out", str(d / "b.xlsx")], check=True,
+                       capture_output=True)
+        read = pw + ["t", "spec-read", str(d / "e.xlsx"), "--base", str(d / "template_spec.json"), "--out",
+                     str(d / "template_spec.json")]
+        for i, label in enumerate(("first edit", "second edit", "third edit")):
+            _edit(d / "b.xlsx", d / "e.xlsx", [("Blocks", "Label", 0, label)])
+            r = subprocess.run(read, capture_output=True, text=True)
+            assert r.returncode == 0, r.stdout
+            assert (i == 0) or "read before" in r.stdout, r.stdout
+            got = json.loads((d / "template_spec.json").read_text(encoding="utf-8"))
+            assert got["sheets"][0]["blocks"][0]["label"] == label
+            assert (d / "template_spec.previous.json").read_bytes() == original
+        # someone edits the spec by hand: the builder's next read stops, nothing is overwritten
+        spec = json.loads((d / "template_spec.json").read_text(encoding="utf-8"))
+        spec["currency"] = "USD"
+        (d / "template_spec.json").write_text(json.dumps(spec, indent=1), encoding="utf-8")
+        edited = (d / "template_spec.json").read_bytes()
+        r = subprocess.run(read, capture_output=True, text=True)
+        assert r.returncode == 2 and "spec_changed" in r.stdout, r.stdout
+        assert (d / "template_spec.json").read_bytes() == edited
+        assert (d / "template_spec.previous.json").read_bytes() == original
+        # a corrupt read record: a clean stop with a report, no traceback
+        (d / "template_spec.builder_read.json").write_text("{bad", encoding="utf-8")
+        r = subprocess.run(read, capture_output=True, text=True)
+        assert r.returncode == 2 and "Traceback" not in r.stderr and "SPEC READ FAIL" in r.stdout, r.stdout + r.stderr
+
+
+def _fmt_edit(src, dst, sheet, header, idx, value, number_format):
+    wb = load_workbook(src)
+    ws = wb[sheet]
+    hdr = {str(ws.cell(HEADER_ROW + 1, c).value or "").rstrip(" *"): c for c in range(1, ws.max_column + 1)}
+    c = ws.cell(HEADER_ROW + 2 + idx, hdr[header])
+    c.value = value
+    c.number_format = number_format
+    wb.save(dst)
+
+
+def test_values_excel_converted_in_text_columns_stop_the_read():
+    """Review finding 1: '10%' typed into a text cell becomes 0.1 (format 0%), '1-2' becomes a date: refused with the
+    cell, never written back in a guessed form. A whole number in General format is what was typed: accepted."""
+    import datetime as dt
+    spec = load_template_spec(SPECS["C_ALPHA"])
+    with tmpdir() as d:
+        generate_builder(spec, d / "b.xlsx")
+        for sheet, header, idx, value, fmt in (("Co-pay basis", "Option", 0, 0.1, "0%"), ("Options", "Option", 1, 0.1, "0%"),
+                                               ("Plans", "Plan label", 0, dt.datetime(2026, 1, 2), "d-mmm"),
+                                               ("Plans", "Plan id", 0, 1.5, "General")):
+            _fmt_edit(d / "b.xlsx", d / "e.xlsx", sheet, header, idx, value, fmt)
+            got, rep = read_builder(d / "e.xlsx", spec)
+            assert got is None and any(p["check"] == "not_text" and p["sheet"] == sheet for p in rep.problems), (sheet, rep.problems)
+        rows, _, _ = _values(d / "b.xlsx")
+        i = next(k for k, r in enumerate(rows["Options"]) if r["Option"] == "1250000")
+        _fmt_edit(d / "b.xlsx", d / "e.xlsx", "Options", "Option", i, 1250000, "General")
+        got, rep = read_builder(d / "e.xlsx", spec)
+        assert rep.status == "PASS", rep.problems
+        assert json.dumps(_strip(got)) == json.dumps(_strip(spec))
+
+
+def test_a_renamed_or_deleted_column_stops_the_read():
+    """Review finding 2: a missing optional column would drop its values silently."""
+    spec = load_template_spec(SPECS["C_ALPHA"])
+    with tmpdir() as d:
+        generate_builder(spec, d / "b.xlsx")
+        wb = load_workbook(d / "b.xlsx")
+        wb["Refer cells"].cell(HEADER_ROW + 1, 4).value = "Sex"
+        wb.save(d / "e.xlsx")
+        got, rep = read_builder(d / "e.xlsx", spec)
+        assert got is None and rep.problems[0]["check"] == "header_missing" and "Gender" in rep.problems[0]["message"]
+        wb = load_workbook(d / "b.xlsx")
+        wb["Blocks"].delete_cols(6)
+        wb.save(d / "e.xlsx")
+        got, rep = read_builder(d / "e.xlsx", spec)
+        assert got is None and rep.problems[0]["check"] == "header_missing" and "Member split" in rep.problems[0]["message"]
+
+
+def test_a_plan_without_a_label_round_trips():
+    """Review finding 4: the spec allows a plan without a label, so the builder does too."""
+    spec = load_template_spec(SPECS["T_ALPHA"])
+    spec["sheets"][0]["blocks"][0]["plans"][0].pop("label")
+    assert validate_template_spec(spec) == []
+    with tmpdir() as d:
+        generate_builder(spec, d / "b.xlsx")
+        got, rep = read_builder(d / "b.xlsx", spec)
+        assert rep.status == "PASS", rep.problems
+        assert json.dumps(_strip(got)) == json.dumps(_strip(spec))
 
 
 def test_training_tender_spec_steps_run_as_the_step_files_do():

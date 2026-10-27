@@ -224,19 +224,28 @@ def cmd_t(a):
         print(f"{g.path}: Spec Builder ({kind}); " + ", ".join(f"{k} {v}" for k, v in g.counts.items() if v)
               + (f"; kept from the spec, not shown: {len(g.not_carried)} field(s)" if g.not_carried else ""))
     elif a.action == "spec-read":
-        from pw.template.builder import read_builder, write_spec
+        import hashlib
+        from pw.template.builder import builder_source_hash, read_builder, write_spec
         out = _out(a.out, "template_spec.json")
         base = None
         if a.base and Path(a.base).exists():
             base = load_template_spec(Path(a.base))
         elif a.base:
             print(f"{a.base} not found: reading without a base spec (a new spec)")
+        # read record (WS9): which builder last wrote --out, and the bytes it wrote. The same builder may be read again
+        # after a fix only while --out is still exactly those bytes; any other change to the spec stops the read.
         prev_p = out.with_name(out.stem + ".previous" + out.suffix)
-        prev = load_template_spec(prev_p) if base is not None and prev_p.exists() else None
-        try:
-            spec, rep = read_builder(Path(a.spec), base, prev)
-        except Exception:  # noqa: BLE001  (an unreadable previous spec must not block the read)
-            spec, rep = read_builder(Path(a.spec), base)
+        rec_p = out.with_name(out.stem + ".builder_read.json")
+        src = builder_source_hash(Path(a.spec))
+        reread = False
+        if base is not None and out.exists() and rec_p.exists() and src:
+            try:
+                rec = json.loads(rec_p.read_text(encoding="utf-8"))
+                reread = (rec.get("builder_source_hash") == src
+                          and rec.get("written_sha256") == hashlib.sha256(out.read_bytes()).hexdigest())
+            except (OSError, ValueError, AttributeError):
+                reread = False                        # an unreadable record only means: not a re-read
+        spec, rep = read_builder(Path(a.spec), base, reread=reread)
         if spec is not None and spec.get("age_bands_file"):
             bdir = Path(spec.get("_base_dir") or ".")
             if (out.parent.resolve() != bdir.resolve() and not (out.parent / spec["age_bands_file"]).exists()):
@@ -254,10 +263,12 @@ def cmd_t(a):
         print(f"report: {rp}")
         if spec is None:
             raise SystemExit(2)                       # the spec on disk is left untouched
-        if out.exists():
+        if out.exists() and not reread:               # a re-read keeps the spec from before this builder's first read
             prev_p.write_bytes(out.read_bytes())
             print(f"previous spec kept as {prev_p}")
         write_spec(spec, out)
+        rec_p.write_text(json.dumps({"builder_source_hash": src, "written_sha256": hashlib.sha256(out.read_bytes()).hexdigest()},
+                                    indent=1) + "\n", encoding="utf-8", newline="\n")
         print(f"{spec['tender_id']}: {len(spec['sheets'])} sheet(s) -> {out}")
     elif a.action == "parse":
         from pw.template.parser import parse_submission, to_catalogue

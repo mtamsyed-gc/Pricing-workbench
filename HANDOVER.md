@@ -69,14 +69,19 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 - Gates: blank mandatory, not in a fixed list, not a number / whole number / date, duplicates (sheet, block, plan,
   component, option row, band label, column, co-pay family, plan default, benefit), undefined band set / column set /
   sheet / block / component / refer plan, age from > to, overlapping bands, two row sources on one sheet or block,
-  reference rows per key, riders with a reference, builder older than the spec (spec_changed; allowed when the
-  spec's .previous.json is the builder's source, i.e. the same builder read again), then the spec validator and the
-  cedant model (`spec_invalid`).
+  reference rows per key, riders with a reference, a renamed / deleted column (header_missing), a text cell holding a
+  value Excel converted (date, or a number in a non-General format, e.g. '10%' -> 0.1: not_text), builder older than
+  the spec (spec_changed), then the spec validator and the cedant model (`spec_invalid`).
+- Re-reading the same builder (CLI): `<out>.builder_read.json` records the builder's source hash and the sha256 of the
+  spec it wrote; a read of the same builder is allowed while --out is still exactly those bytes (any hand edit stops
+  it), and `.previous.json` keeps the spec from before the builder's first read. A corrupt record = not a re-read.
+- Independent review (27 Oct) found 5 defects, all fixed with regression tests: Excel-converted values in text cells,
+  silently dropped renamed / deleted columns, the re-read path overwriting hand edits and losing the original spec,
+  plan label wrongly mandatory, a crash on a corrupt previous file. Spec written atomically (tmp + replace).
 - Deviations from the work order (reasons in the PR): Plans is a long table (one row per plan), not a plan-letter grid,
   because plan ids are not letters in every spec; Co-pay basis, Options and Cedant notes are sheets of their own (the
   work order's Factors / Riders rows split into a table sheet and one Options sheet); the "TPA twice on one sheet" gate
-  is the validator's TPA x plan rule (UFIC NE has three Aafiya blocks with different plans, which is valid); Plan label
-  is mandatory (the template generator needs it); families are suggestions, not gated (a family is a label, e.g.
+  is the validator's TPA x plan rule (UFIC NE has three Aafiya blocks with different plans, which is valid); families are suggestions, not gated (a family is a label, e.g.
   'nationality', while option dimensions and key dimensions are gated by the registry).
 - Laptop check: `t spec-builder` (fixture, blank, UFIC example), `t spec-read` (fixture PASS, blank FAIL), training
   tender steps 0a / 0b before steps 1-4, "spec builder round trip gives the same spec", builders open (openpyxl,

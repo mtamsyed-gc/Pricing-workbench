@@ -22,7 +22,8 @@ other step (cedant workbook, tender template, evaluation) uses the JSON.
      `inputs\template_spec_read_report.csv`.
 4. Check the result: run step 1 (cedant workbook) and step 3 (tender template) and look at them before issuing.
 
-You may fix and re-read the same builder as often as needed, also after a PASS. If someone else changed
+You may fix and re-read the same builder as often as needed, also after a PASS: the tool keeps a small read record
+(`inputs\template_spec.builder_read.json`) and `template_spec.previous.json` stays the spec from before the first read. If someone else changed
 `template_spec.json` after you made your builder, step 0b stops ("the template spec changed since this builder was
 made"). Make a new builder with 0a and copy your changes into it, so nobody's edit is lost.
 
@@ -33,9 +34,12 @@ made"). Make a new builder with 0a and copy your changes into it, so nobody's ed
   codes) refuse other values. User lists (TPAs, rating regions, networks, band sets, column sets) live on the **Lists**
   sheet: add a new name there first, then pick it elsewhere. A value typed past a dropdown is still checked on
   read-back.
+- **Typing text that looks like a number or date**: Excel turns `10%` into 0.1 and `1-2` into a date. The read stops
+  on such a cell ("type it as text"): start the entry with an apostrophe (`'10%`). Pre-filled values are already text.
 - **Spare rows**: each long table has spare formatted rows. You may also insert rows. Rows are read until the end of
   the sheet, and blank rows are skipped.
-- Do not rename or delete the builder's sheets, or the rows of the Tender and Cedant workbook sheets.
+- Do not rename or delete the builder's sheets or columns, or the rows of the Tender and Cedant workbook sheets
+  (the read stops if one is missing, so nothing is dropped silently).
 
 ## The sheets
 | Sheet | One row per | Notes |

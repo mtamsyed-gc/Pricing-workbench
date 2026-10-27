@@ -107,7 +107,7 @@ T = {
                ("Age band set", "in", "@band_set", False, 14), ("Column set", "in", "@column_set", False, 14),
                ("Refer text", "in", None, False, 24), ("Comment", "in", None, False, 50)],
     "Plans": [("Sheet", "in", "@sheet", True, 24), ("Block id", "in", "@block", True, 24), ("Plan id", "in", None, True, 9),
-              ("Plan label", "in", None, True, 16), ("Network", "in", "@network", False, 16), ("Plan number", "int", None, False, 9)],
+              ("Plan label", "in", None, False, 16), ("Network", "in", "@network", False, 16), ("Plan number", "int", None, False, 9)],
     "Sections": [("Sheet", "in", "@sheet", True, 24), ("Applies to", "in", "@applies", True, 24), ("Section label", "in", None, True, 26),
                  ("Member category", "in", "member_category", False, 26), ("Age band set", "in", "@band_set", False, 14),
                  ("Row label (no bands)", "in", None, False, 16)],
@@ -217,6 +217,23 @@ def _s(v) -> str | None:
     return t or None
 
 
+GENERAL_FORMATS = ("General", "@", "0")
+
+
+def _converted(raw, number_format) -> str | None:
+    """Why a text cell's value is not what the user typed, or None. Excel turns '10%' into 0.1 and '1-2' into a date:
+    such a value is refused (never written back in a guessed form)."""
+    if isinstance(raw, (_dt.datetime, _dt.date, _dt.time)):
+        return "Excel turned this into a date"
+    if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        return None
+    if (number_format or "General") not in GENERAL_FORMATS:
+        return f"Excel turned this into a number formatted '{number_format}'"
+    if isinstance(raw, float) and not raw.is_integer():
+        return "Excel turned this into a decimal number"
+    return None
+
+
 def _csv(v) -> list[str]:
     t = _s(v)
     return [x.strip() for x in t.split(",") if x.strip()] if t else []
@@ -248,6 +265,7 @@ class BuilderReadReport:
     problems: list = field(default_factory=list)      # [{sheet, cell, check, message, value}]
     warnings: list = field(default_factory=list)
     counts: dict = field(default_factory=dict)
+    source_hash: str = ""                             # the builder's _META source_spec_hash
 
     @property
     def status(self) -> str:
@@ -387,6 +405,8 @@ def spec_rows(spec: dict | None) -> dict:
         if order is not None and olab is None:
             raise ProposalRequired(f"sheet '{n}': formula order {order} has no Spec Builder option")
         so = sh.get("split_options") or {}
+        if not isinstance((so.get("marital") or {}).get("column_set", ""), str):
+            raise ProposalRequired(f"sheet '{n}': an inline marital split column set has no Spec Builder form; name it")
         if set(so) - {"marital", "member_section"}:
             raise ProposalRequired(f"sheet '{n}': split_options {sorted(set(so) - {'marital', 'member_section'})} unknown")
         if sh.get("rating_region") and sh["rating_region"] not in lists["rating_region"]:
@@ -683,11 +703,19 @@ class _Table:
         if hdr_row is None:
             rep.add(name, "", "header_missing", f"header row not found on '{name}' (expected columns {want})")
             return
+        missing = [h for h in want if h not in self.cols]
+        if missing:            # a renamed or deleted column would silently drop its values: stop instead
+            rep.add(name, a1(hdr_row, 1), "header_missing", f"column(s) {missing} not found in the header row of "
+                    f"'{name}' (do not rename or delete builder columns)")
+            return
+        self.fmt = {}
         for r in range(hdr_row + 1, ws.max_row + 1):
-            vals = {h: ws.cell(r, c).value for h, c in self.cols.items()}
+            cells = {h: ws.cell(r, c) for h, c in self.cols.items()}
+            vals = {h: c.value for h, c in cells.items()}
             if all(_s(v) is None for v in vals.values()):
                 continue
             self.rows.append((r, vals))
+            self.fmt[r] = {h: c.number_format for h, c in cells.items()}
         self.spec = {x[0]: x for x in cols}
 
     def cell(self, r: int, h: str) -> str:
@@ -707,6 +735,12 @@ class _Reader:
         _, kind, lst, mand, _ = t.spec[h]
         raw = row.get(h)
         s = _s(raw)
+        if s is not None and kind not in ("int", "num"):
+            why = _converted(raw, t.fmt.get(r, {}).get(h))
+            if why:
+                self.rep.add(t.name, t.cell(r, h), "not_text", f"'{h}': {why}; type it as text (start with an apostrophe, "
+                             "e.g. '10%)", raw)
+                return None
         if s is None:
             if mand:
                 self.rep.add(t.name, t.cell(r, h), "blank_mandatory", f"'{h}' is mandatory")
@@ -748,6 +782,12 @@ class _Reader:
             if s is None:
                 continue
             ref = a1(r, 4)
+            if kind in ("str", "bool"):
+                why = _converted(raw, ws.cell(r, 4).number_format)
+                if why:
+                    self.rep.add(sname, ref, "not_text", f"{sec}.{code}: {why}; type it as text (start with an "
+                                 "apostrophe)", raw)
+                    continue
             if kind == "bool":
                 if s.upper() not in ("Y", "N"):
                     self.rep.add(sname, ref, "not_in_list", f"{sec}.{code} must be Y or N", raw)
@@ -782,14 +822,15 @@ class _Reader:
         return out
 
 
-def read_builder(xlsx: Path, base_spec: dict | None = None, previous_spec: dict | None = None
+def read_builder(xlsx: Path, base_spec: dict | None = None, reread: bool = False
                  ) -> tuple[dict | None, BuilderReadReport]:
     """Read a filled Spec Builder back into a template spec. Returns (spec, report); spec is None on any problem.
     base_spec: the current template_spec.json (with _base_dir): fields the builder does not carry are kept from it.
-    previous_spec: the spec an earlier read of this builder replaced (template_spec.previous.json): when it is the
-    builder's source, the builder is being read again after a fix, which is allowed."""
+    reread: the caller has verified that base_spec is, byte for byte, what an earlier read of this same builder
+    wrote (the CLI's read record): the builder is read again after a fix, so its older source hash is accepted."""
     rep = BuilderReadReport()
     xlsx = Path(xlsx)
+    rep.source_hash = ""
     try:
         wb = load_workbook(xlsx, data_only=True)
     except Exception as e:  # noqa: BLE001
@@ -800,16 +841,15 @@ def read_builder(xlsx: Path, base_spec: dict | None = None, previous_spec: dict 
         for row in wb[META_SHEET].iter_rows(values_only=True):
             if row and row[0]:
                 meta[str(row[0])] = "" if row[1] is None else str(row[1])
+    rep.source_hash = meta.get("source_spec_hash") or ""
     if meta.get("mode") != MODE:
         rep.add(META_SHEET, "", "not_a_builder", f"{xlsx.name} is not a Spec Builder workbook (no {META_SHEET} mode {MODE})")
         return None, rep
     if base_spec is not None:
         cur = spec_hash(normalise(base_spec))
         src = meta.get("source_spec_hash") or ""
-        again = previous_spec is not None and src and spec_hash(normalise(previous_spec)) == src
-        if src and src != cur and again:
-            rep.warn("this builder was read before (its source is template_spec.previous.json): the earlier read's "
-                     "result is replaced")
+        if src and src != cur and reread:
+            rep.warn("this builder was read before: the result of its earlier read is replaced")
         elif src and src != cur:
             rep.add(META_SHEET, "", "spec_changed", "the template spec changed since this builder was made (its spec hash "
                     f"{cur[:16]} is not the builder's source {src[:16]}): make a new builder from the current spec (step "
@@ -1429,7 +1469,22 @@ def _merge_base(spec: dict, base: dict | None, rep: BuilderReadReport) -> dict:
     return out
 
 
+def builder_source_hash(xlsx: Path) -> str:
+    """The source spec hash in a builder's _META ('' for a blank builder or an unreadable file)."""
+    try:
+        wb = load_workbook(Path(xlsx), read_only=True, data_only=True)
+        meta = {str(r[0]): r[1] for r in wb[META_SHEET].iter_rows(values_only=True) if r and r[0]} if META_SHEET in wb.sheetnames else {}
+        wb.close()
+        return str(meta.get("source_spec_hash") or "")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def write_spec(spec: dict, path: Path):
     """Write a spec as the tool writes JSON (indent 1, UTF-8, LF, trailing newline); internal keys left out."""
+    from ..io_excel import replace_file
     d = {k: v for k, v in spec.items() if k != "_base_dir"}
-    Path(path).write_text(json.dumps(d, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    path = Path(path)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(d, indent=1, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    replace_file(tmp, path)                      # never a half-written spec
