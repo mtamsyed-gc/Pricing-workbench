@@ -167,9 +167,12 @@ def test_a_refused_second_check_leaves_the_running_checks_console_file_alone():
         assert con.read_text(encoding="utf-8") == "PASS  something\n"
 
 
+@requires("docs/USER_GUIDE.html")
 def test_user_guide_ships_at_the_zip_root_for_this_version_and_is_client_free():
     """Owner, 26 Oct 2026 (1.0.0): the user guide ships once, at the zip root; it names this release, carries no client
-    tokens in its text, and its screenshots are of synthetic data only (checked when the guide is built)."""
+    tokens in its text, and its screenshots are of synthetic data only (checked when the guide is built).
+    Repo-only (31 Oct 2026): an installed release holds the guide at the zip root, not in docs/, so this test is
+    SKIPPED there; the laptop check's 'release tender folders and user guide beside the tool' line covers it instead."""
     guide = REPO / "docs" / "USER_GUIDE.html"
     assert guide.exists()
     html = guide.read_text(encoding="utf-8")
