@@ -21,6 +21,7 @@ Work orders that add a tool add its check to TOOL_CHECKS below (CLAUDE.md workin
 from __future__ import annotations
 
 import argparse
+import csv
 import datetime as dt
 import json
 import os
@@ -134,6 +135,11 @@ def tool_checks(run: Path):
     tender = run / "tender.json"
     tender.write_text(json.dumps({"cedant": "FICTIONAL_CEDANT_A", "tender_id": "LAPTOP_CHECK", "deadline": "2026-11-05",
                                   "contact": "laptop check", "issue_date": "2026-10-24"}), encoding="utf-8")
+    dim11 = run / "dim_life_ip4_11.csv"   # CR #27: the fixture dim_life in the IP4-11 layout (two scope columns)
+    with (e / "dim_life.csv").open(newline="", encoding="utf-8") as f, dim11.open("w", newline="", encoding="utf-8") as g:
+        rows = list(csv.reader(f))
+        csv.writer(g, lineterminator="\n").writerows([rows[0] + ["ScopeStatus", "ScopeRule"]]
+                                                       + [r + ["In scope", ""] for r in rows[1:]])
     cells = run / "cells.csv"
     cells.write_text("cell_id,product_type,rating_region,tpa,plan,age,gender,copay_op_diag,nationality_group,maternity_eligible\n"
                      "1,INDIVIDUAL,RGN_A,TPA_RED,P2,33,F,10%,OTHER,N\n2,INDIVIDUAL,RGN_A,TPA_GREEN,P7,75,M,,OTHER,N\n",
@@ -144,6 +150,8 @@ def tool_checks(run: Path):
                                       str(run / "trace.csv")], 0, "PRICED"),
         ("gates v0 contract check", PW + ["gates", "v0", str(e / "dim_life.csv"), "--manifest", str(e / "run_manifest.csv")], 0, '"OK"'),
         ("gates v0 contract check, Merit v7.5.0 (IP4-9, CR #25)", PW + ["gates", "v0", str(e / "dim_life.csv"), "--version", "IP4-9"],
+         0, '"OK"'),
+        ("gates v0 contract check, Merit v7.8.2 (IP4-11, CR #27)", PW + ["gates", "v0", str(dim11), "--version", "IP4-11"],
          0, '"OK"'),
         ("gates v1 (all fixtures)", None, 0, None),
         ("gates v2 block consistency", PW + ["gates", "v2", str(FIX / "CAT_BETA" / "spec.json"), "--out", str(run / "v2.csv")], 0, "5 flagged"),

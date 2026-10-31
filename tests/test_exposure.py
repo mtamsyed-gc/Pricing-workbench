@@ -1,4 +1,4 @@
-"""Exposure builder, gate V0 (pinned IP4-8 and IP4-9, and a synthetic contract version with one renamed column),
+"""Exposure builder, gate V0 (pinned IP4-8, IP4-9 and IP4-11, and a synthetic contract version with one renamed column),
 coverage."""
 import csv
 import json
@@ -59,15 +59,61 @@ def test_v0_ip4_9_pinned_ok_and_same_layout():
     assert ex9.cells.equals(ex8.cells)
 
 
+def _ip4_11_dim_life(d):
+    """The EXPO_SYN dim_life in the IP4-11 layout: Merit v7.6.0+ adds ScopeStatus and ScopeRule (in scope, no rule)."""
+    out = d / "dim_life.csv"
+    with (D / "dim_life.csv").open(newline="", encoding="utf-8") as f, out.open("w", newline="", encoding="utf-8") as g:
+        r = csv.reader(f)
+        w = csv.writer(g, lineterminator="\n")
+        w.writerow(next(r) + ["ScopeStatus", "ScopeRule"])
+        for row in r:
+            w.writerow(row + ["In scope", ""])
+    return out
+
+
+def test_v0_ip4_11_pinned_ok_and_same_cells():
+    """CR #27: Merit v7.8.2 (IP4-11) is pinned beside IP4-8 and IP4-9; dim_life adds two scope columns the builder
+    does not use, so V0 is OK on the IP4-11 layout and the cells equal those of the IP4-8 run."""
+    pins = {v: json.loads((REPO / "contracts" / f"merit_model_contract_{v}.json").read_text(encoding="utf-8"))
+            for v in ("IP4-9", "IP4-11")}
+    assert pins["IP4-11"]["version"] == "IP4-11"
+    c9 = [c for c, _ in pins["IP4-9"]["tables"]["dim_life"]["columns"]]
+    c11 = [c for c, _ in pins["IP4-11"]["tables"]["dim_life"]["columns"]]
+    assert [c for c in c11 if c not in c9] == ["ScopeStatus", "ScopeRule"] and not [c for c in c9 if c not in c11]
+    assert load_field_map()["versions"]["IP4-11"] == load_field_map()["versions"]["IP4-9"]
+    with tmpdir() as d:
+        dl = _ip4_11_dim_life(d)
+        r = check_contract(dl, {"contract_version": "IP4-11"})
+        assert r["status"] == "OK" and r["map_version"] == "IP4-11" and not r["missing"] and r["column_diff"] == {
+            "added": [], "removed": []}
+        ex11 = build_exposure(dl, D / "maps", contract_version="IP4-11", strict=False)
+        ex8 = build_exposure(D / "dim_life.csv", D / "maps", D / "run_manifest.csv", strict=False)
+        assert ex11.v0["status"] == "OK" and ex11.cells.equals(ex8.cells)
+    # an IP4-8-layout file declared as IP4-11 is a WARN naming the two missing scope columns, never a silent OK
+    r = check_contract(D / "dim_life.csv", {"contract_version": "IP4-11"})
+    assert r["status"] == "WARN" and r["column_diff"]["removed"] == ["ScopeStatus", "ScopeRule"]
+
+
+def test_v0_unknown_version_checked_against_latest_pin():
+    """IP4-10 (Merit v7.6.x) is not pinned: V0 warns and checks against the latest version by number (IP4-11), not
+    by string order (which would pick IP4-9)."""
+    with tmpdir() as d:
+        r = check_contract(_ip4_11_dim_life(d), {"contract_version": "IP4-10"})
+        assert r["status"] == "WARN" and r["map_version"] == "IP4-11" and not r["missing"]
+        assert r["column_diff"] == {"added": [], "removed": []}
+
+
 def test_v0_synthetic_renamed_column_with_field_map_entry_proceeds():
     with tmpdir() as d:
         cdir, fm = _syn_contract_run(d, with_map=True)
         # pinned + field-map entry: same version, proceed
         r = check_contract(d / "dim_life.csv", {"contract_version": SYN_VERSION}, field_map=fm, contracts_dir=cdir)
         assert r["status"] == "OK" and r["map_version"] == SYN_VERSION
-        # field-map entry but contract not pinned (new version): proceed with a warning and the column diff
+        # field-map entry but contract not pinned (new version): proceed with a warning and the column diff against the
+        # latest pin by number (IP4-11 since CR #27, which also lists the two scope columns this IP4-8-layout file lacks)
         r = check_contract(d / "dim_life.csv", {"contract_version": SYN_VERSION}, field_map=fm)
-        assert r["status"] == "WARN" and r["column_diff"] == {"added": [RENAMED_TO], "removed": [RENAMED_FROM]}
+        assert r["status"] == "WARN" and r["column_diff"]["added"] == [RENAMED_TO]
+        assert sorted(r["column_diff"]["removed"]) == sorted([RENAMED_FROM, "ScopeStatus", "ScopeRule"])
         ex = build_exposure(d / "dim_life.csv", D / "maps", contract_version=SYN_VERSION, field_map=fm, strict=False)
         ex0 = build_exposure(D / "dim_life.csv", D / "maps", D / "run_manifest.csv", strict=False)
         assert ex.cells.drop(columns="cell_id").equals(ex0.cells.drop(columns="cell_id"))

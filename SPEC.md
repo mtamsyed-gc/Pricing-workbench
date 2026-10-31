@@ -171,7 +171,7 @@ Rules feed the terms comparison (B and D) and are never used in pricing unless d
 
 ## 5. Exposure model
 
-Source: Merit run outputs (`dim_life`, contract IP4-8 or IP4-9), read-only, pinned contract copies in `contracts/merit_model_contract_IP4-8.json` (Merit up to v7.4.0) and `contracts/merit_model_contract_IP4-9.json` (Merit v7.5.0, CR #25: same layout, changed meanings).
+Source: Merit run outputs (`dim_life`, contract IP4-8, IP4-9 or IP4-11), read-only, pinned contract copies in `contracts/merit_model_contract_IP4-8.json` (Merit up to v7.4.0), `contracts/merit_model_contract_IP4-9.json` (Merit v7.5.0, CR #25: same layout, changed meanings) and `contracts/merit_model_contract_IP4-11.json` (Merit v7.7.0 to v7.8.2, CR #27: additive, dim_life gains ScopeStatus and ScopeRule; the field map is unchanged). Merit v7.6.x runs (IP4-10, not pinned) pass V0 with WARN.
 
 `ExposureCell` = aggregation of `dim_life` by the canonical key, carrying:
 - `lives_inforce` (at the snapshot date);
@@ -431,7 +431,7 @@ reads it back into `template_spec.json`.
 | WS4 | Integration, release zip, treaty tool feed | End-to-end synthetic run |
 | WS6 | Merit Annex option slicer + as-if page reading `RateFactors` (ete-dashboard repo) | As-if equals workbench numbers on fixtures |
 | WS5 | Cedant rate workbook (§8.5): generate, fill (GC), read back into the expiring catalogue; UFIC structure | Round trip prices EXPO_SYN identically to CAT_ALPHA; UFIC cedant workbook generates with every block, factor family, rider and default |
-| WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Accepted proposal changes richness by a hand-checked amount; ignored changes nothing |
+| WS7 | **Not built (owner, 31 Oct 2026).** Structured benefit proposals with the owner's accept flag (CR #17); templates carry no proposals sheet, so proposals earn no B1 / scorecard credit | Accepted proposal changes richness by a hand-checked amount; ignored changes nothing |
 | WS9 | Spec Builder workbook (§8.6, CR #26): author `template_spec.json` in Excel; generate blank / pre-filled, gated read-back | Every repo spec round-trips with unchanged structure hash and byte-identical workbooks; a blank-filled builder reproduces C_ALPHA |
 
 Every work order is also subject to the laptop acceptance check (§13).

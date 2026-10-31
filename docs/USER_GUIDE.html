@@ -282,7 +282,7 @@ dl.gloss dd { margin: 0 }
 <li>The snapshot date (run config) falls inside the latest underwriting year, so lives in force are counted.</li>
 <li>Quotes are on the issued template: no inserted rows or columns, no renamed sheets.</li>
 <li>Rates are on the same basis as the template (annual, per member, net or gross as the cover sheet says).</li>
-<li><b>Merit version.</b> The workbench accepts Merit contracts IP4-8 (Merit up to v7.4.0) and IP4-9 (v7.5.0). From v7.5.0, where Merit calculates the policy type itself, larger groups are labelled <code>Group</code> (previously <code>Non-SME</code>): add a <code>Group</code> row to <code>segment_map.csv</code>, or the coverage check stops with MappingRequired.</li>
+<li><b>Merit version.</b> The workbench accepts Merit contracts IP4-8 (Merit up to v7.4.0), IP4-9 (v7.5.0) and IP4-11 (v7.7.0 to v7.8.2). A run from Merit v7.6.x (IP4-10) also loads, with a warning that its contract is not pinned. From v7.7.0 Merit's main tables hold in-scope rows only (the cedant's scope register is already applied), so the workbench needs no scope filter. From v7.5.0, where Merit calculates the policy type itself, larger groups are labelled <code>Group</code> (previously <code>Non-SME</code>): add a <code>Group</code> row to <code>segment_map.csv</code>, or the coverage check stops with MappingRequired.</li>
 </ul>
 <label class="check"><input type="checkbox" data-step="data"> I know which inputs I need and who provides them</label>
 </section>

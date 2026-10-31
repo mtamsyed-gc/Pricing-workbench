@@ -1,6 +1,6 @@
 # Handover — Pricing Workbench
 
-Last updated: 2026-10-27 (release 1.0.0, the first official GC test release: 0.0.7 (WS9 Spec Builder, PR #21; CR #25 Merit IP4-9, PR #18) plus the user guide shipped at the zip root as USER_GUIDE.html (docs/USER_GUIDE.html; screenshots from the synthetic training tender only; Spec Builder chapter added 27 Oct). Laptop check of 1.0.0: PENDING (0.0.7 was 56/57 on the owner's personal laptop, Python-version line only). Next: the first real tender run (UFIC: fill the cedant workbook, issue the template by 5 Nov)).
+Last updated: 2026-10-31 (owner 31 Oct: CR #27 (Merit contract IP4-11, Merit v7.8.2) folded into release 1.0.0 instead of a separate 0.0.8; WS7 not to be built; the 20 merged / superseded branches pruned; the repo stays public with no history purge. Release 1.0.0 = 0.0.7 (WS9 Spec Builder, CR #25) + CR #27 + USER_GUIDE.html at the zip root, on branch release-1.0.0 (PR #19). Laptop check of 1.0.0: PENDING. Next: owner runs the laptop check from the 1.0.0 zip (GC work laptop preferred), merge PR #19, then the first real tender run: UFIC cedant workbook filled and read back, reinsurer template issued by 5 Nov).
 
 Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SPEC sections it names.
 
@@ -20,9 +20,9 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | requirements-native.txt | Runtime pins (same as ete-dashboard) |
 
 ## Related repos and tools
-- ete-dashboard / side_tools/merit (Merit v7.5.0, contract IP4-9; IP4-8 runs from v7.3.x / v7.4.0 still accepted, CR #25):
+- ete-dashboard / side_tools/merit (Merit v7.8.2, contract IP4-11; IP4-8 and IP4-9 runs still accepted; IP4-10 runs from v7.6.x pass with V0 WARN, CR #27):
   exposure and experience source. Contract `side_tools/merit/config/model_contract.json`
-  (IP4-8 / IP4-9, same layout): dim_life carries Policy Type, TPA, Region Group, Network, Plan / Category, Relation, Gender Group, Marital Status,
+  (IP4-8 / IP4-9 same layout; IP4-11 adds ScopeStatus and ScopeRule, unused here): dim_life carries Policy Type, TPA, Region Group, Network, Plan / Category, Relation, Gender Group, Marital Status,
   AgeAtInception, NewRenewal, Distribution, WrittenLY/Prem, EarnedLY/Prem; no co-pay field. Merit itself is not changed by this repo.
 - ete-dashboard / side_tools/treaty_tool (treatymodel 2.0, master in PBM): P&L by scenario; fed by `TreatyFeed` (premium change %,
   LR adjustment per treaty book) and `OptionTerms`. Do not edit it here.
@@ -45,10 +45,12 @@ Read this, then CLAUDE.md, then your work order in docs/workorders/, then the SP
 | WS3 | D scorecard | Merged to main (PR #4, 24 Oct) | **PASS (owner, 24 Oct, provisional)** — functional PASS on owner's personal laptop @ d5396ef; GC work laptop run outstanding | Set real weights for UFIC (open item 4); items 15–17 decided 24 Oct (OD1) |
 | WS4 | Integration, release: `pw run` end to end, manifest gates, treaty contract check, release zip 0.0.2, laptop check as release gate | Merged to main (PR #13, 25 Oct) | **PASS (25 Oct, provisional)** — from the installed release zip 0.0.2 @ 1accbbb on the owner's personal laptop (Win 11, Py 3.14.6): release contents, test suite, every tool check, `run` twice byte-identical (46 files), pack and TreatyFeed open in Excel; 3 cedant-example checks SKIP (not in release); only environment lines fail. Launched with a default-`py` copy of RUN_LAPTOP_CHECK.bat (the shipped one requires Py 3.12). GC work laptop run outstanding | Done; release a GC test version (1.0.0) from main after the GC work laptop check passes |
 | WS6 | Merit Annex as-if page (ete-dashboard repo) | Ready (RateFactors on fixtures: `py tools\pw.py index fixtures/RUN_SYN/run_config.json`) | — | docs/workorders/WS6.md |
-| WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Ready (OD1 merged) | — | docs/workorders/WS7.md |
+| WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | **Not to be built (owner, 31 Oct 2026)**; the UFIC template is issued without a proposals sheet, so benefit proposals arrive free-form and earn no B1 / scorecard credit | — | None. Work order kept in docs/workorders/WS7.md for reference only |
 | WS8 | Release hardening (0.0.5): tender folders + step files in the release, `tender new`, readable Excel views, laptop check lock + live console | Merged to main (PR #17, 25 Oct) | **PASS (owner override, 25 Oct)** — from the installed 0.0.5 release zip @ e0b9e35 on the owner's personal laptop (Win 11, Py 3.14.6): 48/49, 3 skipped (not in release); the only FAIL is the Python 3.12 line, which the owner waived ("assume if it works fine it'll work on the GC laptop"). Every pin, the suite, every tool, the training tender's four steps, byte-identical rerun and Excel open PASS; lock and live console confirmed by hand. The refused second start emptied the running check's console file: fixed in the merge commit (console reset only after the lock is taken) | Cut 1.0.0 when the owner says; GC laptop run optional |
 | CR #25 | Merit contract IP4-9 (Merit v7.5.0, ete-dashboard 3eaaa30) pinned beside IP4-8 (same 4 redactions); field map IP4-9 = IP4-8; SPEC §5; V0 OK on both; exposure tests on both; laptop check line "gates v0 contract check, Merit v7.5.0 (IP4-9, CR #25)"; release 0.0.6. Note for runs: where Merit calculates the policy type, PolicyTypeUsed is now 'Group' (was 'Non-SME'): `segment_map.csv` needs a 'Group' row (MappingRequired otherwise) | Merged to main (PR #18, 26 Oct) | **PASS (owner override, 26 Oct)** — installed 0.0.6 zip @ c5e1c80 on the owner's personal laptop: 48/50, 3 skipped; IP4-9 V0 line PASS; FAILs: the Python 3.12 line (waived) and one test that took the real laptop-check lock held by the running check (test bug from PR #17; fixed in 1.0.0) | Done |
-| WS9 | Spec Builder workbook (SPEC §8.6, CR #26): `pw/template/builder.py`, `t spec-builder` / `t spec-read`, step files 0a / 0b in both tender folders, fixture `fixtures/C_ALPHA/spec_builder.xlsx`, guide `docs/spec_builder_guide.md`, release 0.0.7 | Built on branch ws9-spec-builder (PR #21) | **56/57 (27 Oct)** — from the installed 0.0.7 release @ db88bbd on the owner's personal laptop (Win 11, Py 3.14.6), launched with a default-`py` copy of RUN_LAPTOP_CHECK.bat: suite PASS (160 passed, 13 skipped: not in release), every tool and step line PASS incl. the 5 Spec Builder lines and training steps 0a / 0b, spec round trip same, run byte-identical (48 files), spec_builder.xlsx opens in Excel; the only FAIL is the Python 3.12 line (waived for 0.0.5 on the same basis). Hands-on: the builder opens in Excel and the Product type dropdown lists the registry values. The first run @ c388ef9 found a WS8 test taking the real laptop-check lock (fixed in db88bbd) | Merge on the owner's word; GC laptop run optional |
+| WS9 | Spec Builder workbook (SPEC §8.6, CR #26): `pw/template/builder.py`, `t spec-builder` / `t spec-read`, step files 0a / 0b in both tender folders, fixture `fixtures/C_ALPHA/spec_builder.xlsx`, guide `docs/spec_builder_guide.md`, release 0.0.7 | Merged to main (PR #21, 27 Oct) | **56/57 (27 Oct)** — from the installed 0.0.7 release @ db88bbd on the owner's personal laptop (Win 11, Py 3.14.6), launched with a default-`py` copy of RUN_LAPTOP_CHECK.bat: suite PASS (160 passed, 13 skipped: not in release), every tool and step line PASS incl. the 5 Spec Builder lines and training steps 0a / 0b, spec round trip same, run byte-identical (48 files), spec_builder.xlsx opens in Excel; the only FAIL is the Python 3.12 line (waived for 0.0.5 on the same basis). Hands-on: the builder opens in Excel and the Product type dropdown lists the registry values. The first run @ c388ef9 found a WS8 test taking the real laptop-check lock (fixed in db88bbd) | Done; shipped in 1.0.0 |
+| CR #27 | Merit contract IP4-11 (Merit v7.8.2, ete-dashboard 0fa7e5b) pinned beside IP4-8 and IP4-9 (the CR #25 redactions, also on the new twin tables: 8 strings); field map IP4-11 = IP4-9; V0 OK on an IP4-11 dim_life and picks the latest version by number (string order picked IP4-9); SPEC §5; exposure tests on IP4-11 (cells equal); laptop check line "gates v0 contract check, Merit v7.8.2 (IP4-11, CR #27)". Merit's main tables now hold in-scope rows only, so exposure follows the cedant's scope register with no filter here | **Folded into release 1.0.0 (owner, 31 Oct)**: branch cr27-merit-ip4-11 merged into release-1.0.0; developed as 0.0.8, never released under that number; PR #22 closed in favour of PR #19. Sandbox: 176/176 tests pass on the CR #27 head | PENDING — covered by the 1.0.0 laptop check | Done once 1.0.0 passes |
+| Release 1.0.0 | First official GC test release: 0.0.7 (WS9, CR #25) + CR #27 + `USER_GUIDE.html` at the zip root (synthetic screenshots only; Spec Builder and template_spec chapters; Merit version note covers IP4-11); laptop-check lock path overridable | Branch release-1.0.0, PR #19 open | **PENDING** — `RUN_LAPTOP_CHECK.bat` from the 1.0.0 zip, GC work laptop preferred (pinned Py 3.12; the personal-laptop waiver of the Python line was for development releases) | Owner: laptop check, then merge PR #19 |
 
 ### WS9 notes for the next sessions
 - `pw/template/builder.py`: `generate_builder(spec | None, out)` (xlsxwriter, deterministic) and
@@ -240,7 +242,8 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
    tool checks, `run` x2 byte-identical and Excel PASS; the test suite failed only test_ws5_cedant.test_gate_failures_one_by_one
    (PermissionError WinError 5 on the .tmp -> .xlsx swap in io_excel.make_reproducible: a corporate antivirus / indexer
    lock). Fixed in 0.0.3 (io_excel.replace_file retries ~6 s); re-run the check on the GC laptop from the 0.0.4 zip (0.0.3 + OD4).
-   Owner (25 Oct): runs it once he is happy with the tool and the synthetic runs and testing here.
+   Owner (25 Oct): runs it once he is happy with the tool and the synthetic runs and testing here. 1.0.0 is the first
+   official GC test release, so its check is the one to run on the GC work laptop.
 2. UFIC confirmations (SPEC §12): SME maternity column labels (owner assumption: RNE = RN, RN = RN2, RN2 = RN3) — to
    confirm with UFIC; F4 consultation deductible "10%" = 1.085 (kept, flagged). DECIDED 25 Oct: the maternity "Annual
    Limit" row is ignored; SME has no TPA factor (none on the Factors-SME sheet; removed from the UFIC cedant structure).
@@ -276,7 +279,18 @@ Items 1–21 were decided on 24 Oct 2026 (log: docs/CHANGE_REQUESTS.md #2–#4, 
 - `RiderIndex` output (not scored): rider family x limit, eligible-lives weighted, not-quoted share; TOTAL and product x emirate. B1 (richness) unchanged and still uses catalogue defaults; V3 and the coverage report also unchanged (defaulted share stays informational).
 - UFIC: no nationality factor (removed from the SME structure); no nationality cut.
 
+## Repository housekeeping (owner, 31 Oct 2026)
+- Visibility: the repo stays **public**, and reference/ is **not** purged from history (owner decision, 31 Oct, after the
+  data-boundary flag that reference/ufic holds GC material). The CLAUDE.md boundary still applies to every new commit:
+  reference/ for structure only, never copied into code, fixtures, tests or releases; client rates, exposure and
+  submissions only in runs/ or outside the repo.
+- Branches: the 19 branches merged to main and the superseded ws4-integration-s2 (1.0.0rc1; its work landed as 8be1181)
+  were deleted on 31 Oct. Kept: main, release-1.0.0 (PR #19) and cr27-merit-ip4-11 (folded into release-1.0.0; delete
+  after PR #19 merges). New work: one branch per work order, deleted after merge.
+
 ## Timeline driver
-UFIC reinsurer submissions due 5 Nov 2026. Priority order: UFIC data (WS5 merged: GC fills the
-UFIC copy in `runs\`, reads it back, and the reinsurer template is generated with `--expiring`) → GC work laptop check of release 0.0.2 →
-WS6 (Merit as-if, other repo, can run in parallel) → WS7.
+UFIC reinsurer template due 5 Nov 2026. Priority order: laptop check of release 1.0.0 and merge PR #19 → UFIC data (GC
+fills the UFIC cedant workbook in `runs\`, `t cedant-read` to PASS, F2 swap / F3 multipliers in the run's expiring spec
+(item 5), `t generate --expiring`, issue) → open UFIC confirmations (item 2) → when quotes arrive: `t ingest` per
+reinsurer, `run`, scorecard, TreatyScenarios to the treaty tool → WS6 (Merit as-if, ete-dashboard, can run in parallel).
+WS7 dropped (owner, 31 Oct). Merit run behind the exposure: v7.5+ needs a `Group` row in `segment_map.csv` (CR #25).
