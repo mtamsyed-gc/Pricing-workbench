@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -60,6 +61,11 @@ def load_field_map(path: Path | None = None) -> dict:
     return json.loads(Path(path or CONTRACTS_DIR / "merit_field_map.json").read_text(encoding="utf-8"))
 
 
+def _version_key(v: str):
+    """Order Merit contract versions by number (IP4-8 < IP4-9 < IP4-11); plain string order puts IP4-9 last."""
+    return [int(x) if x.isdigit() else x for x in re.split(r"(\d+)", str(v))]
+
+
 def pinned_contracts(contracts_dir: Path | None = None) -> dict:
     out = {}
     for p in sorted(Path(contracts_dir or CONTRACTS_DIR).glob("merit_model_contract_*.json")):
@@ -79,12 +85,12 @@ def check_contract(dim_life_path: Path, manifest: dict | None = None, contract_v
     if version in fm["versions"]:
         map_version = version
     else:
-        map_version = sorted(fm["versions"])[-1]
+        map_version = max(fm["versions"], key=_version_key)
         msgs.append(f"contract version {version!r} has no field map entry; checking against field map {map_version}"
                     if version else f"run declares no contract version; checking against field map {map_version}")
     req = fm["versions"][map_version]["required"]
     missing = [{"field": f, "column": c} for f, c in req.items() if c not in cols]
-    ref = pins.get(version) or pins.get(map_version) or (pins[sorted(pins)[-1]] if pins else None)
+    ref = pins.get(version) or pins.get(map_version) or (pins[max(pins, key=_version_key)] if pins else None)
     ref_cols = [c for c, _ in ref["tables"][table]["columns"]] if ref else []
     diff = {"added": [c for c in cols if c not in ref_cols], "removed": [c for c in ref_cols if c not in cols]}
     if missing:
