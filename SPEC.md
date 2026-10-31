@@ -171,7 +171,7 @@ Rules feed the terms comparison (B and D) and are never used in pricing unless d
 
 ## 5. Exposure model
 
-Source: Merit run outputs (`dim_life`, contract IP4-8 or IP4-9), read-only, pinned contract copies in `contracts/merit_model_contract_IP4-8.json` (Merit up to v7.4.0) and `contracts/merit_model_contract_IP4-9.json` (Merit v7.5.0, CR #25: same layout, changed meanings).
+Source: Merit run outputs (`dim_life`, contract IP4-8, IP4-9 or IP4-11), read-only, pinned contract copies in `contracts/merit_model_contract_IP4-8.json` (Merit up to v7.4.0), `contracts/merit_model_contract_IP4-9.json` (Merit v7.5.0, CR #25: same layout, changed meanings) and `contracts/merit_model_contract_IP4-11.json` (Merit v7.7.0 to v7.8.2, CR #27: additive, dim_life gains ScopeStatus and ScopeRule; the field map is unchanged). Merit v7.6.x runs (IP4-10, not pinned) pass V0 with WARN.
 
 `ExposureCell` = aggregation of `dim_life` by the canonical key, carrying:
 - `lives_inforce` (at the snapshot date);
