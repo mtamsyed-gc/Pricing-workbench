@@ -60,9 +60,9 @@ def test_installed_release_skips_repo_only_tests_and_clone_does_not():
 
 def test_version_follows_the_owner_scheme():
     """Owner, 25 Oct 2026: 0.d.d while in development, no digit above 9 (0.0.9 -> 0.1.0); 1.0.0+ only for official GC
-    test releases, which this check then needs updating for."""
+    test releases (owner, 26 Oct 2026: 1.0.0 is the first). The no-digit-above-9 rule holds for minor and patch."""
     import re
     m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)", __version__)
     assert m, __version__
     major, minor, patch = map(int, m.groups())
-    assert major == 0 and minor <= 9 and patch <= 9, __version__
+    assert major <= 9 and minor <= 9 and patch <= 9, __version__

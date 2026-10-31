@@ -431,7 +431,7 @@ reads it back into `template_spec.json`.
 | WS4 | Integration, release zip, treaty tool feed | End-to-end synthetic run |
 | WS6 | Merit Annex option slicer + as-if page reading `RateFactors` (ete-dashboard repo) | As-if equals workbench numbers on fixtures |
 | WS5 | Cedant rate workbook (§8.5): generate, fill (GC), read back into the expiring catalogue; UFIC structure | Round trip prices EXPO_SYN identically to CAT_ALPHA; UFIC cedant workbook generates with every block, factor family, rider and default |
-| WS7 | Structured benefit proposals with the owner's accept flag (CR #17) | Accepted proposal changes richness by a hand-checked amount; ignored changes nothing |
+| WS7 | **Not built (owner, 31 Oct 2026).** Structured benefit proposals with the owner's accept flag (CR #17); templates carry no proposals sheet, so proposals earn no B1 / scorecard credit | Accepted proposal changes richness by a hand-checked amount; ignored changes nothing |
 | WS9 | Spec Builder workbook (§8.6, CR #26): author `template_spec.json` in Excel; generate blank / pre-filled, gated read-back | Every repo spec round-trips with unchanged structure hash and byte-identical workbooks; a blank-filled builder reproduces C_ALPHA |
 
 Every work order is also subject to the laptop acceptance check (§13).

@@ -152,20 +152,38 @@ def test_run_laptop_check_bat_streams_to_the_console_file():
 
 
 def test_a_refused_second_check_leaves_the_running_checks_console_file_alone():
-    """Found on the owner's laptop (25 Oct 2026): the refused start emptied the running check's console file."""
+    """Found on the owner's laptop (25 Oct 2026): the refused start emptied the running check's console file.
+    Uses its own lock (26 Oct 2026: run inside a laptop check, the real lock is held by that check)."""
     lc = _laptop_check()
-    lock = REPO / "runs" / "laptop_check" / "RUNNING.lock"
-    # Inside a laptop check (which runs this suite) the real lock is already held: that is the refused-start case
-    # itself, so the test uses it and leaves it alone (found on the owner's laptop, 27 Oct 2026, release 0.0.7).
-    held = lock.exists()
     with tmpdir() as d:
+        lock = lc.LOCK_PATH = d / "RUNNING.lock"
         con = d / "console.txt"
         con.write_text("PASS  something\n", encoding="utf-8")
-        if not held:
-            assert lc.acquire_lock(lock) is None
+        assert lc.acquire_lock(lock) is None
         try:
             assert lc.main(["--quick", "--console", str(con)]) == lc.EXIT_LOCKED
         finally:
-            if not held:
-                lock.unlink()
+            lock.unlink()
         assert con.read_text(encoding="utf-8") == "PASS  something\n"
+
+
+@requires("docs/USER_GUIDE.html")
+def test_user_guide_ships_at_the_zip_root_for_this_version_and_is_client_free():
+    """Owner, 26 Oct 2026 (1.0.0): the user guide ships once, at the zip root; it names this release, carries no client
+    tokens in its text, and its screenshots are of synthetic data only (checked when the guide is built).
+    Repo-only (31 Oct 2026): an installed release holds the guide at the zip root, not in docs/, so this test is
+    SKIPPED there; the laptop check's 'release tender folders and user guide beside the tool' line covers it instead."""
+    guide = REPO / "docs" / "USER_GUIDE.html"
+    assert guide.exists()
+    html = guide.read_text(encoding="utf-8")
+    assert html.lstrip().lower().startswith("<!doctype html>") and f"release {__version__}" in html
+    sys.path.insert(0, str(REPO / "tools"))
+    import package
+    with tmpdir() as d:
+        names = package.build(d / "r.zip")
+        assert "USER_GUIDE.html" in names and f"pricing-workbench-{__version__}/docs/USER_GUIDE.html" not in names
+    if (REPO / "examples" / "ufic_2027").exists():
+        text = re.sub(r"data:image/[a-z]+;base64,[A-Za-z0-9+/=]+", "", html)
+        tokens = load_json(REPO / "examples" / "ufic_2027" / "expected_structure.json")["forbidden_tokens"]
+        hits = [t for t in tokens if re.search(r"(?<![A-Za-z0-9])" + re.escape(t) + r"(?![A-Za-z0-9])", text)]
+        assert not hits, hits
