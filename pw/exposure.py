@@ -62,7 +62,7 @@ def load_field_map(path: Path | None = None) -> dict:
 
 
 def _version_key(v: str):
-    """Order Merit contract versions by number (IP4-8 < IP4-9 < IP4-11); plain string order puts IP4-9 last."""
+    """Order Merit contract versions by number (IP4-8 < IP4-9 < IP4-11 < IP4-13); plain string order puts IP4-9 last."""
     return [int(x) if x.isdigit() else x for x in re.split(r"(\d+)", str(v))]
 
 

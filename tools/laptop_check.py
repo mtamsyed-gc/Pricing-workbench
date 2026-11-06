@@ -140,6 +140,12 @@ def tool_checks(run: Path):
         rows = list(csv.reader(f))
         csv.writer(g, lineterminator="\n").writerows([rows[0] + ["ScopeStatus", "ScopeRule"]]
                                                        + [r + ["In scope", ""] for r in rows[1:]])
+    dim13 = run / "dim_life_ip4_13.csv"   # CR #28: the same file in the IP4-13 layout (nine more columns, Merit's no-mapping values)
+    with dim11.open(newline="", encoding="utf-8") as f, dim13.open("w", newline="", encoding="utf-8") as g:
+        rows = list(csv.reader(f))
+        new13 = ["Opt_1", "Opt_2", "Opt_3", "Opt_4", "Opt_5", "ReinsuredPct", "ReinsuredPctSource", "TreatyCededPct", "CededPct"]
+        csv.writer(g, lineterminator="\n").writerows([rows[0] + new13] + [r + [""] * 5 + ["1", "Payer not in the policy table: 100%", "", ""]
+                                                                         for r in rows[1:]])
     cells = run / "cells.csv"
     cells.write_text("cell_id,product_type,rating_region,tpa,plan,age,gender,copay_op_diag,nationality_group,maternity_eligible\n"
                      "1,INDIVIDUAL,RGN_A,TPA_RED,P2,33,F,10%,OTHER,N\n2,INDIVIDUAL,RGN_A,TPA_GREEN,P7,75,M,,OTHER,N\n",
@@ -152,6 +158,8 @@ def tool_checks(run: Path):
         ("gates v0 contract check, Merit v7.5.0 (IP4-9, CR #25)", PW + ["gates", "v0", str(e / "dim_life.csv"), "--version", "IP4-9"],
          0, '"OK"'),
         ("gates v0 contract check, Merit v7.8.2 (IP4-11, CR #27)", PW + ["gates", "v0", str(dim11), "--version", "IP4-11"],
+         0, '"OK"'),
+        ("gates v0 contract check, Merit v8.0.11 (IP4-13, CR #28)", PW + ["gates", "v0", str(dim13), "--version", "IP4-13"],
          0, '"OK"'),
         ("gates v1 (all fixtures)", None, 0, None),
         ("gates v2 block consistency", PW + ["gates", "v2", str(FIX / "CAT_BETA" / "spec.json"), "--out", str(run / "v2.csv")], 0, "5 flagged"),
